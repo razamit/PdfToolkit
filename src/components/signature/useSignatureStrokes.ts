@@ -8,12 +8,13 @@ const MAX_CANVAS_DPR = 2
 /**
  * Captures pointer strokes on a canvas in normalized [0,1] coordinates and
  * keeps the canvas painted: DPR-scaled backing store synced on resize, full
- * redraw whenever strokes change. Seed strokes pre-fill the surface.
+ * redraw whenever strokes change. `loadStrokes` replaces the canvas content
+ * wholesale (e.g. with a signature picked from the library).
  */
-export function useSignatureStrokes(seedStrokes: SignatureStroke[]) {
+export function useSignatureStrokes() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const observerRef = useRef<ResizeObserver | null>(null)
-  const [strokes, setStrokes] = useState<SignatureStroke[]>(seedStrokes)
+  const [strokes, setStrokes] = useState<SignatureStroke[]>([])
   const strokesRef = useRef(strokes)
   strokesRef.current = strokes
   const isDrawingRef = useRef(false)
@@ -60,6 +61,10 @@ export function useSignatureStrokes(seedStrokes: SignatureStroke[]) {
   const undo = useCallback(() => setStrokes((previous) => previous.slice(0, -1)), [])
   const clear = useCallback(() => setStrokes([]), [])
 
+  /** Replace the canvas content. The exact array is kept, so callers can
+   * detect later modifications by reference inequality. */
+  const loadStrokes = useCallback((next: SignatureStroke[]) => setStrokes(next), [])
+
   return {
     canvasRef: attachCanvas,
     strokes,
@@ -72,6 +77,7 @@ export function useSignatureStrokes(seedStrokes: SignatureStroke[]) {
     },
     undo,
     clear,
+    loadStrokes,
   }
 }
 

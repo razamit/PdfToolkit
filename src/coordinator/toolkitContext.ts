@@ -4,6 +4,7 @@ import type {
   PageDescriptor,
   RememberedSignature,
   SignaturePlacement,
+  StoredSignature,
 } from '@/domain/types'
 import type { Selection } from '@/hooks/useSelection'
 import type { ThumbnailRenderManager } from '@/managers/ThumbnailRenderManager'
@@ -36,16 +37,21 @@ export interface ToolkitContextValue {
 
   /** Page currently being signed (null while the signature modal is closed). */
   signingPage: PageDescriptor | null
+  /** Session library of drawn signatures, newest first. */
+  signatureLibrary: StoredSignature[]
   beginSign: (pageId: string) => void
   cancelSign: () => void
-  /** Add a signature to a page, remember it for reuse, and close the modal. */
+  /**
+   * Add a signature to a page and close the modal. `newSignature` is stored in
+   * the session library; pass null when an unmodified library signature was
+   * reused, so no duplicate entry is created.
+   */
   addSignature: (
     pageId: string,
     placement: SignaturePlacement,
-    remembered: RememberedSignature,
+    newSignature: RememberedSignature | null,
   ) => void
   removeSignature: (pageId: string, signatureId: string) => void
-  getLastSignature: () => RememberedSignature | null
 }
 
 export const ToolkitContext = createContext<ToolkitContextValue | null>(null)

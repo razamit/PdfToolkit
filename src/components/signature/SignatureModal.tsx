@@ -15,7 +15,7 @@ type SignatureStep = 'rect' | 'draw'
  * does not, so an in-progress drawing can't be lost by a stray tap.
  */
 export function SignatureModal() {
-  const { signingPage, cancelSign, addSignature, removeSignature, getLastSignature } =
+  const { signingPage, cancelSign, addSignature, removeSignature, signatureLibrary } =
     usePdfToolkit()
   const [step, setStep] = useState<SignatureStep>('rect')
   const [chosenRect, setChosenRect] = useState<NormalizedRect | null>(null)
@@ -40,7 +40,7 @@ export function SignatureModal() {
   const handleComplete = (
     pngDataUrl: string,
     inkRect: NormalizedRect,
-    remembered: RememberedSignature,
+    newSignature: RememberedSignature | null,
   ) => {
     if (!chosenRect) return
     addSignature(
@@ -51,7 +51,7 @@ export function SignatureModal() {
         rect: mapRectWithin(chosenRect, inkRect),
         rotationAtSign: signingPage.rotation,
       },
-      remembered,
+      newSignature,
     )
   }
 
@@ -75,7 +75,7 @@ export function SignatureModal() {
         ) : (
           <SignatureDrawStep
             aspectRatio={rectAspectRatio}
-            initialSignature={getLastSignature()}
+            library={signatureLibrary}
             onBack={() => setStep('rect')}
             onComplete={handleComplete}
           />

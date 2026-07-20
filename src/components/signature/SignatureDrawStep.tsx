@@ -1,11 +1,4 @@
-import { useMemo, type PointerEventHandler, type Ref } from 'react'
-
-interface DrawHandlers {
-  onPointerDown: PointerEventHandler<HTMLCanvasElement>
-  onPointerMove: PointerEventHandler<HTMLCanvasElement>
-  onPointerUp: PointerEventHandler<HTMLCanvasElement>
-  onPointerCancel: PointerEventHandler<HTMLCanvasElement>
-}
+import { useRef, useState, type PointerEventHandler, type Ref } from 'react'
 import { Eraser, Undo2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useElementSize } from '@/hooks/useElementSize'
@@ -15,51 +8,87 @@ import {
   normalizeStrokesToBbox,
   renderStrokesToPng,
 } from '@/lib/strokeRendering'
-import type { NormalizedRect, RememberedSignature } from '@/domain/types'
+import type {
+  NormalizedRect,
+  RememberedSignature,
+  SignatureStroke,
+  StoredSignature,
+} from '@/domain/types'
 import { useSignatureStrokes } from './useSignatureStrokes'
+import { SignatureLibraryPanel } from './SignatureLibraryPanel'
+
+interface DrawHandlers {
+  onPointerDown: PointerEventHandler<HTMLCanvasElement>
+  onPointerMove: PointerEventHandler<HTMLCanvasElement>
+  onPointerUp: PointerEventHandler<HTMLCanvasElement>
+  onPointerCancel: PointerEventHandler<HTMLCanvasElement>
+}
 
 interface SignatureDrawStepProps {
   /** Width / height of the chosen placement rect, in absolute display units. */
   aspectRatio: number
-  /** Session's last drawn signature, pre-filled onto the surface when present. */
-  initialSignature: RememberedSignature | null
+  /** Session library of previously drawn signatures, selectable as a starting point. */
+  library: StoredSignature[]
   onBack: () => void
   onComplete: (
     pngDataUrl: string,
     inkRect: NormalizedRect,
-    remembered: RememberedSignature,
+    /** Null when an unmodified library signature was reused (no new library entry). */
+    newSignature: RememberedSignature | null,
   ) => void
 }
 
 /**
- * Second modal step: a drawing canvas with the chosen rect's aspect ratio.
- * Saving crops the ink to its bounding box, so the placed signature is exactly
- * what was drawn (no stretch to the full rect).
+ * Second modal step: a drawing canvas with the chosen rect's aspect ratio,
+ * plus a panel of saved signatures that can be loaded onto the canvas. Saving
+ * crops the ink to its bounding box, so the placed signature is exactly what
+ * is on the canvas (no stretch to the full rect).
  */
 export function SignatureDrawStep({
   aspectRatio,
-  initialSignature,
+  library,
   onBack,
   onComplete,
 }: SignatureDrawStepProps) {
-  const seedStrokes = useMemo(
-    () => (initialSignature ? fitStrokesIntoSurface(initialSignature, aspectRatio) : []),
-    [initialSignature, aspectRatio],
-  )
-  const { canvasRef, strokes, hasInk, handlers, undo, clear } = useSignatureStrokes(seedStrokes)
+  const { canvasRef, strokes, hasInk, handlers, undo, clear, loadStrokes } = useSignatureStrokes()
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const loadedStrokesRef = useRef<SignatureStroke[] | null>(null)
+
+  // Reference equality works because every draw/undo/clear produces a new array.
+  const isPristineSelection = selectedId !== null && strokes === loadedStrokesRef.current
+
+  const handleSelect = (signature: StoredSignature) => {
+    const fitted = fitStrokesIntoSurface(signature, aspectRatio)
+    loadedStrokesRef.current = fitted
+    setSelectedId(signature.id)
+    loadStrokes(fitted)
+  }
 
   const handleSave = () => {
     const rendered = renderStrokesToPng(strokes, aspectRatio)
     if (!rendered) return
-    onComplete(rendered.dataUrl, rendered.bbox, {
-      strokes: normalizeStrokesToBbox(strokes, rendered.bbox),
-      aspectRatio: rendered.inkAspectRatio,
-    })
+    const newSignature = isPristineSelection
+      ? null
+      : {
+          strokes: normalizeStrokesToBbox(strokes, rendered.bbox),
+          aspectRatio: rendered.inkAspectRatio,
+          pngDataUrl: rendered.dataUrl,
+        }
+    onComplete(rendered.dataUrl, rendered.bbox, newSignature)
   }
 
   return (
     <div className="flex min-h-0 flex-col">
-      <DrawSurface aspectRatio={aspectRatio} canvasRef={canvasRef} handlers={handlers} />
+      <div className="flex h-[65dvh] min-h-0 shrink flex-col sm:flex-row">
+        <DrawSurface aspectRatio={aspectRatio} canvasRef={canvasRef} handlers={handlers} />
+        {library.length > 0 && (
+          <SignatureLibraryPanel
+            signatures={library}
+            selectedId={isPristineSelection ? selectedId : null}
+            onSelect={handleSelect}
+          />
+        )}
+      </div>
 
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-4">
         <Button variant="outline" onClick={onBack}>
@@ -98,7 +127,7 @@ function DrawSurface({
   return (
     <div
       ref={areaRef}
-      className="flex h-[65dvh] min-h-0 shrink items-center justify-center overflow-hidden bg-muted/30 p-4"
+      className="flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-hidden bg-muted/30 p-4"
     >
       {fitted && fitted.width > 0 && (
         <canvas

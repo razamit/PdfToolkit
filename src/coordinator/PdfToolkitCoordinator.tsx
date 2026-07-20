@@ -6,6 +6,7 @@ import { PdfExportManager } from '@/managers/PdfExportManager'
 import { PageListManager } from '@/managers/PageListManager'
 import { SourceLoadError } from '@/domain/errors'
 import { downloadPdf } from '@/lib/download'
+import { createId } from '@/lib/id'
 import { useSelection } from '@/hooks/useSelection'
 import type {
   GridColumns,
@@ -13,6 +14,7 @@ import type {
   RememberedSignature,
   SignaturePlacement,
   SourceMeta,
+  StoredSignature,
 } from '@/domain/types'
 import {
   ToolkitContext,
@@ -31,6 +33,9 @@ function createManagers() {
 function isPdf(file: File): boolean {
   return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
 }
+
+/** Oldest library entries are dropped beyond this (each holds a PNG data URL). */
+const SIGNATURE_LIBRARY_LIMIT = 12
 
 function toErrorMessage(file: File, error: unknown): string {
   if (error instanceof SourceLoadError) return error.message
@@ -55,10 +60,10 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
   const [busyLabel, setBusyLabel] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [signingPageId, setSigningPageId] = useState<string | null>(null)
+  const [signatureLibrary, setSignatureLibrary] = useState<StoredSignature[]>([])
 
   const pagesRef = useRef<PageDescriptor[]>([])
   const sourcesRef = useRef<Map<string, SourceMeta>>(new Map())
-  const lastSignatureRef = useRef<RememberedSignature | null>(null)
 
   const orderedIds = useMemo(() => pages.map((page) => page.id), [pages])
   const selection = useSelection(orderedIds)
@@ -158,8 +163,12 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
   const cancelSign = useCallback(() => setSigningPageId(null), [])
 
   const addSignature = useCallback(
-    (pageId: string, placement: SignaturePlacement, remembered: RememberedSignature) => {
-      lastSignatureRef.current = remembered
+    (pageId: string, placement: SignaturePlacement, newSignature: RememberedSignature | null) => {
+      if (newSignature) {
+        setSignatureLibrary((previous) =>
+          [{ ...newSignature, id: createId('sig') }, ...previous].slice(0, SIGNATURE_LIBRARY_LIMIT),
+        )
+      }
       applyPages(PageListManager.addSignature(pagesRef.current, pageId, placement))
       setSigningPageId(null)
     },
@@ -171,8 +180,6 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       applyPages(PageListManager.removeSignature(pagesRef.current, pageId, signatureId)),
     [applyPages],
   )
-
-  const getLastSignature = useCallback(() => lastSignatureRef.current, [])
 
   const exportPdf = useCallback(
     async (scope: ExportScope) => {
@@ -236,11 +243,11 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       setGridColumns,
       dismissError,
       signingPage,
+      signatureLibrary,
       beginSign,
       cancelSign,
       addSignature,
       removeSignature,
-      getLastSignature,
     }),
     [
       pages,
@@ -259,11 +266,11 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       resetAll,
       dismissError,
       signingPage,
+      signatureLibrary,
       beginSign,
       cancelSign,
       addSignature,
       removeSignature,
-      getLastSignature,
     ],
   )
 

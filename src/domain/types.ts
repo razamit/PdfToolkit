@@ -52,12 +52,19 @@ export interface SignaturePlacement {
   rotationAtSign: Rotation
 }
 
-/** Session-remembered last drawn signature, kept as vectors for crisp re-rendering. */
+/** A drawn signature remembered for reuse, kept as vectors for crisp re-rendering. */
 export interface RememberedSignature {
   /** Strokes normalized to the ink bounding box. */
   strokes: SignatureStroke[]
   /** Width / height of the ink bounding box in absolute display units. */
   aspectRatio: number
+  /** Cropped transparent PNG of the ink — doubles as the library thumbnail. */
+  pngDataUrl: string
+}
+
+/** A remembered signature stored in the session library. */
+export interface StoredSignature extends RememberedSignature {
+  id: string
 }
 
 /** A single page in the working document, referencing its source. */
