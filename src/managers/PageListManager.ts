@@ -1,4 +1,4 @@
-import type { PageDescriptor, Rotation } from '@/domain/types'
+import type { PageDescriptor, Rotation, SignaturePlacement } from '@/domain/types'
 
 /** Normalize any degree value into the 0/90/180/270 domain. */
 export function normalizeRotation(degrees: number): Rotation {
@@ -50,5 +50,29 @@ export const PageListManager = {
     const toIndex = pages.findIndex((page) => page.id === overId)
     if (fromIndex === -1 || toIndex === -1) return pages
     return moveItem(pages, fromIndex, toIndex)
+  },
+
+  addSignature(
+    pages: PageDescriptor[],
+    pageId: string,
+    signature: SignaturePlacement,
+  ): PageDescriptor[] {
+    return pages.map((page) =>
+      page.id === pageId
+        ? { ...page, signatures: [...(page.signatures ?? []), signature] }
+        : page,
+    )
+  },
+
+  removeSignature(
+    pages: PageDescriptor[],
+    pageId: string,
+    signatureId: string,
+  ): PageDescriptor[] {
+    return pages.map((page) => {
+      if (page.id !== pageId || !page.signatures) return page
+      const remaining = page.signatures.filter((signature) => signature.id !== signatureId)
+      return { ...page, signatures: remaining.length > 0 ? remaining : undefined }
+    })
   },
 }

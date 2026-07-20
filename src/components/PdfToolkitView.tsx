@@ -4,11 +4,12 @@ import { AppHeader } from './AppHeader'
 import { BulkActionBar } from './BulkActionBar'
 import { EmptyState } from './EmptyState'
 import { ThumbnailGrid } from './ThumbnailGrid'
+import { SignatureModal } from './signature/SignatureModal'
 import { BusyOverlay, DragOverlay, ErrorBanner } from './StatusOverlays'
 
 /** Top-level layout: header, drop-anywhere upload, grid or empty state, overlays. */
 export function PdfToolkitView() {
-  const { pages, isBusy, busyLabel, error, addFiles, dismissError } = usePdfToolkit()
+  const { pages, isBusy, busyLabel, error, addFiles, dismissError, signingPage } = usePdfToolkit()
   const { isDragging, dropzoneProps } = useFileUpload(addFiles)
   const hasPages = pages.length > 0
 
@@ -31,6 +32,7 @@ export function PdfToolkitView() {
       <BulkActionBar />
       {isDragging && <DragOverlay />}
       {isBusy && <BusyOverlay label={busyLabel} />}
+      {signingPage && <SignatureModal key={signingPage.id} />}
     </div>
   )
 }

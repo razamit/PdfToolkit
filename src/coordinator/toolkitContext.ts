@@ -1,5 +1,10 @@
 import { createContext, useContext } from 'react'
-import type { GridColumns, PageDescriptor } from '@/domain/types'
+import type {
+  GridColumns,
+  PageDescriptor,
+  RememberedSignature,
+  SignaturePlacement,
+} from '@/domain/types'
 import type { Selection } from '@/hooks/useSelection'
 import type { ThumbnailRenderManager } from '@/managers/ThumbnailRenderManager'
 import type { ImageImportManager } from '@/managers/ImageImportManager'
@@ -28,6 +33,19 @@ export interface ToolkitContextValue {
   resetAll: () => void
   setGridColumns: (columns: GridColumns) => void
   dismissError: () => void
+
+  /** Page currently being signed (null while the signature modal is closed). */
+  signingPage: PageDescriptor | null
+  beginSign: (pageId: string) => void
+  cancelSign: () => void
+  /** Add a signature to a page, remember it for reuse, and close the modal. */
+  addSignature: (
+    pageId: string,
+    placement: SignaturePlacement,
+    remembered: RememberedSignature,
+  ) => void
+  removeSignature: (pageId: string, signatureId: string) => void
+  getLastSignature: () => RememberedSignature | null
 }
 
 export const ToolkitContext = createContext<ToolkitContextValue | null>(null)

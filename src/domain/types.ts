@@ -25,6 +25,41 @@ export interface SourceMeta {
   imageFormat?: ImageFormat
 }
 
+/** Axis-aligned rect in [0,1] fractions of a displayed page box; origin top-left, y down. */
+export interface NormalizedRect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/** One point of a signature stroke, in [0,1] fractions of its drawing surface. */
+export interface StrokePoint {
+  x: number
+  y: number
+}
+
+export type SignatureStroke = StrokePoint[]
+
+/** A hand-drawn signature stamped onto one page. */
+export interface SignaturePlacement {
+  id: string
+  /** Transparent PNG data URL of the ink, cropped to its bounding box. */
+  pngDataUrl: string
+  /** Placement in the page box as it was displayed when the user signed. */
+  rect: NormalizedRect
+  /** The page's user rotation at the moment of signing — frozen, never rewritten on later rotates. */
+  rotationAtSign: Rotation
+}
+
+/** Session-remembered last drawn signature, kept as vectors for crisp re-rendering. */
+export interface RememberedSignature {
+  /** Strokes normalized to the ink bounding box. */
+  strokes: SignatureStroke[]
+  /** Width / height of the ink bounding box in absolute display units. */
+  aspectRatio: number
+}
+
 /** A single page in the working document, referencing its source. */
 export interface PageDescriptor {
   /** Stable unique id for this page instance (also the dnd-kit sortable id). */
@@ -39,6 +74,8 @@ export interface PageDescriptor {
   width: number
   /** Intrinsic page height (PDF points, or image pixels) before rotation. */
   height: number
+  /** Hand-drawn signatures stamped onto this page (absent when none). */
+  signatures?: SignaturePlacement[]
 }
 
 /** Grid sizing: bucketed column counts (more columns = smaller thumbnails). */

@@ -25,6 +25,7 @@ export function usePageThumbnail({
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [visible, setVisible] = useState(false)
   const [ready, setReady] = useState(false)
+  const [bitmapSize, setBitmapSize] = useState<{ width: number; height: number } | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -53,6 +54,7 @@ export function usePageThumbnail({
         canvas.width = bitmap.width
         canvas.height = bitmap.height
         canvas.getContext('2d')?.drawImage(bitmap, 0, 0)
+        setBitmapSize({ width: bitmap.width, height: bitmap.height })
         setReady(true)
       })
       .catch(() => {})
@@ -63,5 +65,5 @@ export function usePageThumbnail({
     }
   }, [visible, sourceId, pageIndex, rotation, targetWidthPx, thumbnailRenderer])
 
-  return { canvasRef, ready }
+  return { canvasRef, ready, bitmapSize }
 }

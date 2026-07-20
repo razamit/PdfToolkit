@@ -1,9 +1,12 @@
 import { memo } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Check, GripVertical, RotateCcw, RotateCw, Trash2 } from 'lucide-react'
+import { Check, GripVertical, PenLine, RotateCcw, RotateCw, Trash2 } from 'lucide-react'
 import { usePageThumbnail } from '@/hooks/usePageThumbnail'
+import { useElementSize } from '@/hooks/useElementSize'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
+import { SignatureOverlay } from '@/components/signature/SignatureOverlay'
+import { fitBoxWithin } from '@/lib/signatureGeometry'
 import { cn } from '@/lib/utils'
 import type { PageDescriptor } from '@/domain/types'
 
@@ -15,6 +18,7 @@ interface PageThumbnailProps {
   onSelect: (id: string, withShift: boolean) => void
   onRotate: (id: string, delta: number) => void
   onRemove: (id: string) => void
+  onSign: (id: string) => void
 }
 
 function PageThumbnailComponent({
@@ -25,6 +29,7 @@ function PageThumbnailComponent({
   onSelect,
   onRotate,
   onRemove,
+  onSign,
 }: PageThumbnailProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: page.id,
@@ -60,6 +65,9 @@ function PageThumbnailComponent({
         </ActionButton>
         <ActionButton label="Rotate right" onClick={() => onRotate(page.id, 90)}>
           <RotateCw className="size-3.5" />
+        </ActionButton>
+        <ActionButton label="Sign page" onClick={() => onSign(page.id)}>
+          <PenLine className="size-3.5" />
         </ActionButton>
         <ActionButton label="Remove page" destructive onClick={() => onRemove(page.id)}>
           <Trash2 className="size-3.5" />
@@ -124,38 +132,65 @@ function PageThumbnailContent({
 }
 
 function PdfThumbnail({ page, targetWidthPx }: { page: PageDescriptor; targetWidthPx: number }) {
-  const { canvasRef, ready } = usePageThumbnail({
+  const { canvasRef, ready, bitmapSize } = usePageThumbnail({
     sourceId: page.sourceId,
     pageIndex: page.sourcePageIndex,
     rotation: page.rotation,
     targetWidthPx,
   })
+  const { ref: areaRef, size: areaSize } = useElementSize<HTMLDivElement>()
+  // The wrapper is sized to the bitmap's aspect (which honors intrinsic
+  // /Rotate), so the signature overlay coincides exactly with the visible page.
+  const fitted =
+    ready && bitmapSize && areaSize
+      ? fitBoxWithin(areaSize, bitmapSize.width / bitmapSize.height)
+      : null
   return (
-    <>
+    <div ref={areaRef} className="flex size-full items-center justify-center">
       {!ready && <div className="absolute inset-3 animate-pulse rounded bg-muted" />}
-      <canvas
-        ref={canvasRef}
-        className={cn(
-          'max-h-full max-w-full bg-white object-contain shadow-sm transition-opacity',
-          ready ? 'opacity-100' : 'opacity-0',
+      <div
+        className={cn('relative transition-opacity', fitted ? 'opacity-100' : 'opacity-0')}
+        style={fitted ?? { width: '80%', height: '80%' }}
+      >
+        <canvas ref={canvasRef} className="size-full bg-white shadow-sm" />
+        {page.signatures && page.signatures.length > 0 && (
+          <SignatureOverlay signatures={page.signatures} frameRotation={page.rotation} />
         )}
-      />
-    </>
+      </div>
+    </div>
   )
 }
 
 function ImageThumbnail({ page }: { page: PageDescriptor }) {
   const { imageManager } = usePdfToolkit()
+  const { ref: areaRef, size: areaSize } = useElementSize<HTMLDivElement>()
   const url = imageManager.getObjectUrl(page.sourceId)
   if (!url) return null
+
+  // Rotation lives on the wrapper; inside it the frame is rotation-0, which is
+  // why the overlay gets frameRotation={0}. The fit accounts for the rotated
+  // footprint so sideways images stay inside the cell.
+  const sideways = page.rotation === 90 || page.rotation === 270
+  const fitted = areaSize
+    ? fitBoxWithin(
+        sideways ? { width: areaSize.height, height: areaSize.width } : areaSize,
+        page.width / page.height,
+      )
+    : null
   return (
-    <img
-      src={url}
-      alt=""
-      draggable={false}
-      style={{ transform: `rotate(${page.rotation}deg)` }}
-      className="max-h-full max-w-full bg-white object-contain shadow-sm transition-transform"
-    />
+    <div ref={areaRef} className="flex size-full items-center justify-center">
+      {fitted && (
+        <div
+          className="relative transition-transform"
+          style={{ ...fitted, transform: `rotate(${page.rotation}deg)` }}
+        >
+          <img src={url} alt="" draggable={false} className="size-full bg-white shadow-sm" />
+          {page.signatures && page.signatures.length > 0 && (
+            <SignatureOverlay signatures={page.signatures} frameRotation={0} />
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 
