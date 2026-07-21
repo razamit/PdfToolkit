@@ -36,10 +36,23 @@ export function PdfToolkitView() {
       </main>
 
       <footer className="border-t py-4">
-        <p className="mx-auto max-w-[1400px] px-4 text-center text-xs text-muted-foreground sm:px-6">
-          Processed entirely in your browser. JPEGs embed byte-for-byte; PDF pages keep their
-          original content and resolution.
-        </p>
+        <div className="mx-auto flex max-w-[1400px] flex-col items-center gap-1.5 px-4 text-center text-xs text-muted-foreground sm:px-6">
+          <p>
+            Processed entirely in your browser. JPEGs embed byte-for-byte; PDF pages keep their
+            original content and resolution.
+          </p>
+          <p>
+            Built by{' '}
+            <a
+              href="https://rzailabs.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-foreground transition-colors hover:text-primary"
+            >
+              RZAiLabs
+            </a>
+          </p>
+        </div>
       </footer>
 
       <BulkActionBar />

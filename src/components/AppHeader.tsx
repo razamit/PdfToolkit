@@ -27,11 +27,21 @@ export function AppHeader() {
               </p>
             </div>
           </div>
-          <span className="flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1 text-xs text-muted-foreground">
-            <ShieldCheck className="size-3.5 text-primary" />
-            <span className="hidden sm:inline">Private · stays on your device</span>
-            <span className="sm:hidden">Private</span>
-          </span>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://rzailabs.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden text-xs text-muted-foreground transition-colors hover:text-foreground md:inline"
+            >
+              Built by <span className="font-medium">RZAiLabs</span>
+            </a>
+            <span className="flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1 text-xs text-muted-foreground">
+              <ShieldCheck className="size-3.5 text-primary" />
+              <span className="hidden sm:inline">Private · stays on your device</span>
+              <span className="sm:hidden">Private</span>
+            </span>
+          </div>
         </div>
 
         {hasPages && (
