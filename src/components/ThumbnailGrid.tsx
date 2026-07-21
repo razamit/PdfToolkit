@@ -19,8 +19,16 @@ import { GRID_COLUMN_CLASS, THUMBNAIL_TARGET_PX } from '@/lib/gridSize'
 import { cn } from '@/lib/utils'
 
 export function ThumbnailGrid() {
-  const { pages, gridColumns, selection, reorder, rotatePages, removePages, beginSign } =
-    usePdfToolkit()
+  const {
+    pages,
+    gridColumns,
+    selection,
+    reorder,
+    rotatePages,
+    removePages,
+    beginSign,
+    beginAnnotate,
+  } = usePdfToolkit()
 
   const sensors = useSensors(
     // A small drag threshold lets clicks (select, rotate, delete) through cleanly.
@@ -67,6 +75,7 @@ export function ThumbnailGrid() {
               onRotate={handleRotate}
               onRemove={handleRemove}
               onSign={beginSign}
+              onAnnotate={beginAnnotate}
             />
           ))}
         </div>

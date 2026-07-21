@@ -52,6 +52,48 @@ export interface SignaturePlacement {
   rotationAtSign: Rotation
 }
 
+/** Fields shared by every annotation stamped onto a page. */
+interface AnnotationBase {
+  id: string
+  /** The page's user rotation when the annotation was created — frozen, never rewritten on later rotates. */
+  rotationAtCreate: Rotation
+}
+
+/** A Helvetica text box stamped onto one page. Lines break on explicit newlines only. */
+export interface TextPlacement extends AnnotationBase {
+  kind: 'text'
+  text: string
+  /** Placement in the page box as it was displayed when the text was added. */
+  rect: NormalizedRect
+  /** Font size in PDF points — exact in the exported document. */
+  fontSizePt: number
+  /** Text color as #rrggbb. */
+  colorHex: string
+}
+
+/** An uploaded or pasted image stamped onto one page. */
+export interface ImagePlacement extends AnnotationBase {
+  kind: 'image'
+  /** JPEG or PNG data URL, embedded as-is at export. */
+  dataUrl: string
+  format: ImageFormat
+  /** Placement in the creation-time displayed page box, already aspect-fitted. */
+  rect: NormalizedRect
+}
+
+/** A text highlight stamped onto one page as translucent line rectangles. */
+export interface HighlightPlacement extends AnnotationBase {
+  kind: 'highlight'
+  /** One merged rect per highlighted text line, in the creation-time displayed frame. */
+  lineRects: NormalizedRect[]
+  /** Highlight color as #rrggbb, drawn with a Multiply blend. */
+  colorHex: string
+}
+
+export type AnnotationPlacement = TextPlacement | ImagePlacement | HighlightPlacement
+
+export type AnnotationTool = 'text' | 'image' | 'highlight'
+
 /** A drawn signature remembered for reuse, kept as vectors for crisp re-rendering. */
 export interface RememberedSignature {
   /** Strokes normalized to the ink bounding box. */
@@ -83,6 +125,8 @@ export interface PageDescriptor {
   height: number
   /** Hand-drawn signatures stamped onto this page (absent when none). */
   signatures?: SignaturePlacement[]
+  /** Text, image, and highlight annotations stamped onto this page (absent when none). */
+  annotations?: AnnotationPlacement[]
 }
 
 /** Grid sizing: bucketed column counts (more columns = smaller thumbnails). */

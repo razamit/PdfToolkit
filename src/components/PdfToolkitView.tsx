@@ -5,11 +5,24 @@ import { BulkActionBar } from './BulkActionBar'
 import { EmptyState } from './EmptyState'
 import { ThumbnailGrid } from './ThumbnailGrid'
 import { SignatureModal } from './signature/SignatureModal'
+import { TextAnnotateModal } from './text/TextAnnotateModal'
+import { ImageAnnotateModal } from './image/ImageAnnotateModal'
+import { HighlightAnnotateModal } from './highlight/HighlightAnnotateModal'
 import { BusyOverlay, DragOverlay, ErrorBanner } from './StatusOverlays'
 
 /** Top-level layout: header, drop-anywhere upload, grid or empty state, overlays. */
 export function PdfToolkitView() {
-  const { pages, isBusy, busyLabel, error, addFiles, dismissError, signingPage } = usePdfToolkit()
+  const {
+    pages,
+    isBusy,
+    busyLabel,
+    error,
+    addFiles,
+    dismissError,
+    signingPage,
+    annotatingPage,
+    annotatingTool,
+  } = usePdfToolkit()
   const { isDragging, dropzoneProps } = useFileUpload(addFiles)
   const hasPages = pages.length > 0
 
@@ -33,6 +46,13 @@ export function PdfToolkitView() {
       {isDragging && <DragOverlay />}
       {isBusy && <BusyOverlay label={busyLabel} />}
       {signingPage && <SignatureModal key={signingPage.id} />}
+      {annotatingPage && annotatingTool === 'text' && <TextAnnotateModal key={annotatingPage.id} />}
+      {annotatingPage && annotatingTool === 'image' && (
+        <ImageAnnotateModal key={annotatingPage.id} />
+      )}
+      {annotatingPage && annotatingTool === 'highlight' && (
+        <HighlightAnnotateModal key={annotatingPage.id} />
+      )}
     </div>
   )
 }

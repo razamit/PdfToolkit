@@ -1,14 +1,16 @@
 import { memo } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Check, GripVertical, PenLine, RotateCcw, RotateCw, Trash2 } from 'lucide-react'
+import { Check, GripVertical, RotateCcw, RotateCw, Trash2 } from 'lucide-react'
 import { usePageThumbnail } from '@/hooks/usePageThumbnail'
 import { useElementSize } from '@/hooks/useElementSize'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { SignatureOverlay } from '@/components/signature/SignatureOverlay'
+import { AnnotateMenu } from '@/components/annotations/AnnotateMenu'
+import { AnnotationOverlay } from '@/components/annotations/AnnotationOverlay'
 import { fitBoxWithin } from '@/lib/signatureGeometry'
 import { cn } from '@/lib/utils'
-import type { PageDescriptor } from '@/domain/types'
+import type { AnnotationTool, PageDescriptor } from '@/domain/types'
 
 interface PageThumbnailProps {
   page: PageDescriptor
@@ -19,6 +21,7 @@ interface PageThumbnailProps {
   onRotate: (id: string, delta: number) => void
   onRemove: (id: string) => void
   onSign: (id: string) => void
+  onAnnotate: (id: string, tool: AnnotationTool) => void
 }
 
 function PageThumbnailComponent({
@@ -30,6 +33,7 @@ function PageThumbnailComponent({
   onRotate,
   onRemove,
   onSign,
+  onAnnotate,
 }: PageThumbnailProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: page.id,
@@ -66,9 +70,7 @@ function PageThumbnailComponent({
         <ActionButton label="Rotate right" onClick={() => onRotate(page.id, 90)}>
           <RotateCw className="size-3.5" />
         </ActionButton>
-        <ActionButton label="Sign page" onClick={() => onSign(page.id)}>
-          <PenLine className="size-3.5" />
-        </ActionButton>
+        <AnnotateMenu page={page} onSign={onSign} onAnnotate={onAnnotate} />
         <ActionButton label="Remove page" destructive onClick={() => onRemove(page.id)}>
           <Trash2 className="size-3.5" />
         </ActionButton>
@@ -156,6 +158,13 @@ function PdfThumbnail({ page, targetWidthPx }: { page: PageDescriptor; targetWid
         {page.signatures && page.signatures.length > 0 && (
           <SignatureOverlay signatures={page.signatures} frameRotation={page.rotation} />
         )}
+        {page.annotations && page.annotations.length > 0 && (
+          <AnnotationOverlay
+            annotations={page.annotations}
+            frameRotation={page.rotation}
+            pageSize={{ width: page.width, height: page.height }}
+          />
+        )}
       </div>
     </div>
   )
@@ -187,6 +196,13 @@ function ImageThumbnail({ page }: { page: PageDescriptor }) {
           <img src={url} alt="" draggable={false} className="size-full bg-white shadow-sm" />
           {page.signatures && page.signatures.length > 0 && (
             <SignatureOverlay signatures={page.signatures} frameRotation={0} />
+          )}
+          {page.annotations && page.annotations.length > 0 && (
+            <AnnotationOverlay
+              annotations={page.annotations}
+              frameRotation={0}
+              pageSize={{ width: page.width, height: page.height }}
+            />
           )}
         </div>
       )}

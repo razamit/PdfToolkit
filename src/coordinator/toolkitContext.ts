@@ -1,5 +1,7 @@
 import { createContext, useContext } from 'react'
 import type {
+  AnnotationPlacement,
+  AnnotationTool,
   GridColumns,
   PageDescriptor,
   RememberedSignature,
@@ -9,6 +11,7 @@ import type {
 import type { Selection } from '@/hooks/useSelection'
 import type { ThumbnailRenderManager } from '@/managers/ThumbnailRenderManager'
 import type { ImageImportManager } from '@/managers/ImageImportManager'
+import type { TextContentManager } from '@/managers/TextContentManager'
 
 export type ExportScope = 'all' | 'selected'
 
@@ -24,6 +27,7 @@ export interface ToolkitContextValue {
   /** Managers needed by presentation components for rendering/lookup. */
   thumbnailRenderer: ThumbnailRenderManager
   imageManager: ImageImportManager
+  textContent: TextContentManager
   getSourceName: (sourceId: string) => string | undefined
 
   addFiles: (files: FileList | File[]) => Promise<void>
@@ -52,6 +56,16 @@ export interface ToolkitContextValue {
     newSignature: RememberedSignature | null,
   ) => void
   removeSignature: (pageId: string, signatureId: string) => void
+
+  /** Page currently being annotated (null while no annotation modal is open). */
+  annotatingPage: PageDescriptor | null
+  /** Which annotation tool the open modal belongs to (null when closed). */
+  annotatingTool: AnnotationTool | null
+  beginAnnotate: (pageId: string, tool: AnnotationTool) => void
+  cancelAnnotate: () => void
+  /** Add an annotation. The modal stays open — each modal closes itself via `cancelAnnotate`. */
+  addAnnotation: (pageId: string, placement: AnnotationPlacement) => void
+  removeAnnotation: (pageId: string, annotationId: string) => void
 }
 
 export const ToolkitContext = createContext<ToolkitContextValue | null>(null)

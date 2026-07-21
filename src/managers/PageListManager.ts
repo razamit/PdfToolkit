@@ -1,4 +1,9 @@
-import type { PageDescriptor, Rotation, SignaturePlacement } from '@/domain/types'
+import type {
+  AnnotationPlacement,
+  PageDescriptor,
+  Rotation,
+  SignaturePlacement,
+} from '@/domain/types'
 
 /** Normalize any degree value into the 0/90/180/270 domain. */
 export function normalizeRotation(degrees: number): Rotation {
@@ -73,6 +78,30 @@ export const PageListManager = {
       if (page.id !== pageId || !page.signatures) return page
       const remaining = page.signatures.filter((signature) => signature.id !== signatureId)
       return { ...page, signatures: remaining.length > 0 ? remaining : undefined }
+    })
+  },
+
+  addAnnotation(
+    pages: PageDescriptor[],
+    pageId: string,
+    annotation: AnnotationPlacement,
+  ): PageDescriptor[] {
+    return pages.map((page) =>
+      page.id === pageId
+        ? { ...page, annotations: [...(page.annotations ?? []), annotation] }
+        : page,
+    )
+  },
+
+  removeAnnotation(
+    pages: PageDescriptor[],
+    pageId: string,
+    annotationId: string,
+  ): PageDescriptor[] {
+    return pages.map((page) => {
+      if (page.id !== pageId || !page.annotations) return page
+      const remaining = page.annotations.filter((annotation) => annotation.id !== annotationId)
+      return { ...page, annotations: remaining.length > 0 ? remaining : undefined }
     })
   },
 }

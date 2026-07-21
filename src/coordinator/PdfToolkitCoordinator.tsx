@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
 import { PdfSourceManager } from '@/managers/PdfSourceManager'
 import { ImageImportManager } from '@/managers/ImageImportManager'
 import { ThumbnailRenderManager } from '@/managers/ThumbnailRenderManager'
+import { TextContentManager } from '@/managers/TextContentManager'
 import { PdfExportManager } from '@/managers/PdfExportManager'
 import { PageListManager } from '@/managers/PageListManager'
 import { SourceLoadError } from '@/domain/errors'
@@ -9,6 +10,8 @@ import { downloadPdf } from '@/lib/download'
 import { createId } from '@/lib/id'
 import { useSelection } from '@/hooks/useSelection'
 import type {
+  AnnotationPlacement,
+  AnnotationTool,
   GridColumns,
   PageDescriptor,
   RememberedSignature,
@@ -26,8 +29,14 @@ function createManagers() {
   const pdfSources = new PdfSourceManager()
   const imageManager = new ImageImportManager()
   const thumbnailRenderer = new ThumbnailRenderManager(pdfSources)
+  const textContent = new TextContentManager(pdfSources)
   const exporter = new PdfExportManager(pdfSources, imageManager)
-  return { pdfSources, imageManager, thumbnailRenderer, exporter }
+  return { pdfSources, imageManager, thumbnailRenderer, textContent, exporter }
+}
+
+interface AnnotatingState {
+  pageId: string
+  tool: AnnotationTool
 }
 
 function isPdf(file: File): boolean {
@@ -53,7 +62,7 @@ function toErrorMessage(file: File, error: unknown): string {
 export function PdfToolkitProvider({ children }: { children: ReactNode }) {
   const managersRef = useRef<ReturnType<typeof createManagers> | null>(null)
   if (!managersRef.current) managersRef.current = createManagers()
-  const { pdfSources, imageManager, thumbnailRenderer, exporter } = managersRef.current
+  const { pdfSources, imageManager, thumbnailRenderer, textContent, exporter } = managersRef.current
 
   const [pages, setPages] = useState<PageDescriptor[]>([])
   const [gridColumns, setGridColumns] = useState<GridColumns>(4)
@@ -61,6 +70,7 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [signingPageId, setSigningPageId] = useState<string | null>(null)
   const [signatureLibrary, setSignatureLibrary] = useState<StoredSignature[]>([])
+  const [annotating, setAnnotating] = useState<AnnotatingState | null>(null)
 
   const pagesRef = useRef<PageDescriptor[]>([])
   const sourcesRef = useRef<Map<string, SourceMeta>>(new Map())
@@ -74,12 +84,13 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
     (meta: SourceMeta) => {
       if (meta.kind === 'pdf') {
         thumbnailRenderer.invalidateSource(meta.id)
+        textContent.invalidateSource(meta.id)
         pdfSources.remove(meta.id)
       } else {
         imageManager.remove(meta.id)
       }
     },
-    [thumbnailRenderer, pdfSources, imageManager],
+    [thumbnailRenderer, textContent, pdfSources, imageManager],
   )
 
   const applyPages = useCallback(
@@ -181,6 +192,29 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
     [applyPages],
   )
 
+  const annotatingPage = useMemo(
+    () => pages.find((page) => page.id === annotating?.pageId) ?? null,
+    [pages, annotating],
+  )
+
+  const beginAnnotate = useCallback(
+    (pageId: string, tool: AnnotationTool) => setAnnotating({ pageId, tool }),
+    [],
+  )
+  const cancelAnnotate = useCallback(() => setAnnotating(null), [])
+
+  const addAnnotation = useCallback(
+    (pageId: string, placement: AnnotationPlacement) =>
+      applyPages(PageListManager.addAnnotation(pagesRef.current, pageId, placement)),
+    [applyPages],
+  )
+
+  const removeAnnotation = useCallback(
+    (pageId: string, annotationId: string) =>
+      applyPages(PageListManager.removeAnnotation(pagesRef.current, pageId, annotationId)),
+    [applyPages],
+  )
+
   const exportPdf = useCallback(
     async (scope: ExportScope) => {
       const selectedIds = selectionRef.current.selectedIds
@@ -210,6 +244,7 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
 
   const resetAll = useCallback(() => {
     thumbnailRenderer.clear()
+    textContent.clear()
     pdfSources.destroyAll()
     imageManager.destroyAll()
     sourcesRef.current.clear()
@@ -217,8 +252,9 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
     setPages([])
     selectionRef.current.clear()
     setSigningPageId(null)
+    setAnnotating(null)
     setError(null)
-  }, [thumbnailRenderer, pdfSources, imageManager])
+  }, [thumbnailRenderer, textContent, pdfSources, imageManager])
 
   const getSourceName = useCallback((sourceId: string) => sourcesRef.current.get(sourceId)?.name, [])
   const dismissError = useCallback(() => setError(null), [])
@@ -233,6 +269,7 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       error,
       thumbnailRenderer,
       imageManager,
+      textContent,
       getSourceName,
       addFiles,
       removePages,
@@ -248,6 +285,12 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       cancelSign,
       addSignature,
       removeSignature,
+      annotatingPage,
+      annotatingTool: annotating?.tool ?? null,
+      beginAnnotate,
+      cancelAnnotate,
+      addAnnotation,
+      removeAnnotation,
     }),
     [
       pages,
@@ -257,6 +300,7 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       error,
       thumbnailRenderer,
       imageManager,
+      textContent,
       getSourceName,
       addFiles,
       removePages,
@@ -271,6 +315,12 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       cancelSign,
       addSignature,
       removeSignature,
+      annotatingPage,
+      annotating,
+      beginAnnotate,
+      cancelAnnotate,
+      addAnnotation,
+      removeAnnotation,
     ],
   )
 

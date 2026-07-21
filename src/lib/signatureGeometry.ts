@@ -125,7 +125,7 @@ export function computePdfPlacement(
 }
 
 /** Map a displayed point (top-left origin, y down) back to unrotated user space (y up). */
-function displayedPointToUserSpace(
+export function displayedPointToUserSpace(
   dx: number,
   dy: number,
   rotation: Rotation,
