@@ -3,6 +3,18 @@
   publish = "dist"
   functions = "netlify/functions"
 
+# Send the Netlify subdomain to the canonical host. Netlify auto-redirects domain
+# *aliases* to the primary domain but never the .netlify.app subdomain, which stays
+# publicly reachable regardless — so without this rule the site answers on two
+# hostnames and splits its own SEO signal. Declared first because a host-level rule
+# has to outrank the path-level ones; `force` is required because a redirect
+# otherwise loses to a matching static file, and index.html matches every path.
+[[redirects]]
+  from = "https://pdfedittoolkit.netlify.app/*"
+  to = "https://freepdfmachine.com/:splat"
+  status = 301
+  force = true
+
 # Public usage counters. Must be declared BEFORE the SPA catch-all below —
 # Netlify applies redirects in order, so a catch-all placed first would swallow
 # this path and serve index.html instead of the JSON.

@@ -6,6 +6,39 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-07-22 — Netlify subdomain redirected to the canonical domain (config only;
+requires a deploy to take effect). 🟡 PARTIAL.**
+The trigger was noticing `pdfedittoolkit.netlify.app` still served the app rather
+than redirecting, so the site answered on two hostnames with identical content
+against a `<link rel="canonical">` naming only one. The first attempt — setting
+`freepdfmachine.com` as the primary domain in the Netlify UI — was the wrong fix
+and is worth recording as a dead end: Netlify auto-redirects domain *aliases* but
+never the `.netlify.app` subdomain, which its own Domains UI shows by labelling
+`www.freepdfmachine.com` "Redirects automatically to primary domain" and the
+subdomain not at all. Replaced with an explicit host-level 301 in `netlify.toml`,
+declared above the `/*` SPA catch-all (which matches every hostname and would
+otherwise swallow it) and carrying `force = true` (without which the redirect
+loses to `index.html` and silently no-ops).
+**Proof:** before-state measured live, primary domain already set —
+`pdfedittoolkit.netlify.app` → `status=200`, no `Location`; `www.freepdfmachine.com`
+→ `status=301` → `https://freepdfmachine.com/`. Domain registration and DNS
+verified independently: `freepdfmachine.com` created 2026-07-22T13:17:09Z at
+NameCheap, nameservers `dns{1..4}.p01.nsone.net` (Netlify DNS), apex 200 with a
+valid cert, `http` → `https` 301. Also resolved a standing unknown from the
+counters entry below: `/api/usage` returns `application/json`, **not** index.html,
+so the redirect ordering there is correct — though it currently returns `{}`,
+consistent with `UMAMI_WEBSITE_ID`/`UMAMI_API_KEY` still being unset, and
+`usage-counters.ts` cannot distinguish "no snapshots yet" from "backend threw".
+**What remains:** the redirect is unverified — a `netlify.toml` change is inert
+until deployed. Re-measure `pdfedittoolkit.netlify.app` for a 301 after the next
+deploy, including a deep path to confirm `:splat` preserves it. Not committed;
+no commit was requested.
+**Files:** `netlify.toml`, `docs/DECISIONS.md`.
+**Cross-refs:** decision row 7, which records why the primary-domain setting was
+insufficient and why the rule's position and `force` flag must not be tidied away.
+
+---
+
 **2026-07-22 — Counters made fresher: snapshot job hourly, display threshold
 lowered (config change only). ✅ DONE.**
 Follow-up to the counters work below. Investigating "when does it fetch from
