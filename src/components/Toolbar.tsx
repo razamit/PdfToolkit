@@ -4,6 +4,7 @@ import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { Button } from './ui/button'
 import { FileInputButton } from './FileInputButton'
 import { GridSizeControl } from './GridSizeControl'
+import { PageSizeControl } from './PageSizeControl'
 
 /** Primary action bar shown above the grid once pages are loaded. */
 export function Toolbar() {
@@ -22,6 +23,7 @@ export function Toolbar() {
 
       <div className="ml-auto flex flex-wrap items-center gap-3">
         <GridSizeControl />
+        <PageSizeControl />
         <ResetButton />
         <Button onClick={() => exportPdf('all')} disabled={isBusy || pages.length === 0}>
           <Download />

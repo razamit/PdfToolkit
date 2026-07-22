@@ -4,6 +4,7 @@ import type {
   AnnotationTool,
   GridColumns,
   PageDescriptor,
+  PageSizeMode,
   RememberedSignature,
   SignaturePlacement,
   StoredSignature,
@@ -30,9 +31,15 @@ export interface ToolkitContextValue {
   textContent: TextContentManager
   getSourceName: (sourceId: string) => string | undefined
 
+  /** Page size applied to the whole document at export ('original' = keep sizes). */
+  pageSizeMode: PageSizeMode
+  setPageSizeMode: (mode: PageSizeMode) => void
+
   addFiles: (files: FileList | File[]) => Promise<void>
   removePages: (ids: string[]) => void
   rotatePages: (ids: string[], delta: number) => void
+  /** Set the export size of the given pages to a preset ('original' restores full size). */
+  resizePages: (ids: string[], preset: PageSizeMode) => void
   reorder: (activeId: string, overId: string) => void
   exportPdf: (scope: ExportScope) => Promise<void>
   resetAll: () => void

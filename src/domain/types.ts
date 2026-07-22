@@ -109,6 +109,12 @@ export interface StoredSignature extends RememberedSignature {
   id: string
 }
 
+/** Named page-size targets for resizing ('match' = the document's dominant page size). */
+export type PageSizePreset = 'match' | 'a4' | 'letter'
+
+/** Export page sizing: keep original sizes, or normalize every page to a preset. */
+export type PageSizeMode = 'original' | PageSizePreset
+
 /** A single page in the working document, referencing its source. */
 export interface PageDescriptor {
   /** Stable unique id for this page instance (also the dnd-kit sortable id). */
@@ -123,6 +129,8 @@ export interface PageDescriptor {
   width: number
   /** Intrinsic page height (PDF points, or image pixels) before rotation. */
   height: number
+  /** Uniform factor applied to the page box at export (absent = original size). */
+  exportScale?: number
   /** Hand-drawn signatures stamped onto this page (absent when none). */
   signatures?: SignaturePlacement[]
   /** Text, image, and highlight annotations stamped onto this page (absent when none). */

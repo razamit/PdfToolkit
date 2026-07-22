@@ -63,14 +63,15 @@ export function TextAnnotateModal() {
         <PreviewSurface page={page}>
           {({ renderedSize, fittedSize }) => (
             <>
-              <div {...surfaceProps} className="absolute inset-0 z-10 cursor-crosshair touch-none" />
+              {/* No z-index on these layers: DOM order stacks them, and a z-index
+                  would break highlight mix-blend-multiply against the canvas. */}
+              <div {...surfaceProps} className="absolute inset-0 cursor-crosshair touch-none" />
               {page.annotations && page.annotations.length > 0 && (
                 <AnnotationOverlay
                   annotations={page.annotations}
                   frameRotation={page.rotation}
                   pageSize={{ width: page.width, height: page.height }}
                   onRemove={(annotationId) => removeAnnotation(page.id, annotationId)}
-                  className="z-20"
                 />
               )}
               {rect && meetsMinimumSize(rect, renderedSize) && (

@@ -89,6 +89,12 @@ function PageThumbnailComponent({
         <span className="text-xs font-medium text-foreground">{index + 1}</span>
         <span className="truncate text-[11px] text-muted-foreground">
           {page.kind === 'image' ? 'Image' : 'PDF page'}
+          {page.exportScale !== undefined && (
+            <span title="Scaled to this size at export">
+              {' · '}
+              {Math.round(page.exportScale * 100)}%
+            </span>
+          )}
         </span>
       </div>
     </div>

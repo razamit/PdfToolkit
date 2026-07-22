@@ -9,11 +9,13 @@ import { SourceLoadError } from '@/domain/errors'
 import { downloadPdf } from '@/lib/download'
 import { createId } from '@/lib/id'
 import { useSelection } from '@/hooks/useSelection'
+import { resizePagesToPreset } from '@/lib/pageSizing'
 import type {
   AnnotationPlacement,
   AnnotationTool,
   GridColumns,
   PageDescriptor,
+  PageSizeMode,
   RememberedSignature,
   SignaturePlacement,
   SourceMeta,
@@ -66,6 +68,7 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
 
   const [pages, setPages] = useState<PageDescriptor[]>([])
   const [gridColumns, setGridColumns] = useState<GridColumns>(4)
+  const [pageSizeMode, setPageSizeMode] = useState<PageSizeMode>('original')
   const [busyLabel, setBusyLabel] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [signingPageId, setSigningPageId] = useState<string | null>(null)
@@ -159,6 +162,12 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
     [applyPages],
   )
 
+  const resizePages = useCallback(
+    (ids: string[], preset: PageSizeMode) =>
+      applyPages(resizePagesToPreset(pagesRef.current, new Set(ids), preset)),
+    [applyPages],
+  )
+
   const reorder = useCallback(
     (activeId: string, overId: string) =>
       applyPages(PageListManager.moveById(pagesRef.current, activeId, overId)),
@@ -231,7 +240,7 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       setBusyLabel('Building your PDF…')
       setError(null)
       try {
-        const bytes = await exporter.export(target)
+        const bytes = await exporter.export(target, pageSizeMode)
         downloadPdf(bytes, 'pdf-toolkit-export.pdf')
       } catch (exportError) {
         setError(exportError instanceof Error ? exportError.message : 'Export failed.')
@@ -239,7 +248,7 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
         setBusyLabel(null)
       }
     },
-    [exporter],
+    [exporter, pageSizeMode],
   )
 
   const resetAll = useCallback(() => {
@@ -271,9 +280,12 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       imageManager,
       textContent,
       getSourceName,
+      pageSizeMode,
+      setPageSizeMode,
       addFiles,
       removePages,
       rotatePages,
+      resizePages,
       reorder,
       exportPdf,
       resetAll,
@@ -302,9 +314,11 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       imageManager,
       textContent,
       getSourceName,
+      pageSizeMode,
       addFiles,
       removePages,
       rotatePages,
+      resizePages,
       reorder,
       exportPdf,
       resetAll,

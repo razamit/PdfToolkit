@@ -1,5 +1,22 @@
 import type { PdfSourceManager } from './PdfSourceManager'
-import { mapTextItemsToRuns, type TextItemLike, type TextRun } from '@/lib/textRunGeometry'
+import {
+  mapTextItemsToRuns,
+  type TextItemLike,
+  type TextMeasurer,
+  type TextRun,
+} from '@/lib/textRunGeometry'
+
+/**
+ * Canvas-based width measurer used to split items into word runs. Only the
+ * *relative* proportions matter, so a generic sans face is a close enough
+ * stand-in for the page's embedded fonts.
+ */
+function createCanvasTextMeasurer(): TextMeasurer {
+  const context = document.createElement('canvas').getContext('2d')
+  if (!context) return (text) => text.length
+  context.font = '100px Helvetica, Arial, sans-serif'
+  return (text) => context.measureText(text).width
+}
 
 /**
  * Extracts text geometry from PDF pages for text-aware highlighting.
@@ -13,6 +30,7 @@ import { mapTextItemsToRuns, type TextItemLike, type TextRun } from '@/lib/textR
 export class TextContentManager {
   private readonly sources: PdfSourceManager
   private readonly cache = new Map<string, Promise<TextRun[]>>()
+  private readonly measureText: TextMeasurer = createCanvasTextMeasurer()
 
   constructor(sources: PdfSourceManager) {
     this.sources = sources
@@ -51,6 +69,6 @@ export class TextContentManager {
     for (const item of content.items) {
       if ('str' in item) items.push(item)
     }
-    return mapTextItemsToRuns(items, viewport)
+    return mapTextItemsToRuns(items, viewport, this.measureText)
   }
 }

@@ -1,6 +1,7 @@
 import { CheckCheck, FileDown, RotateCcw, RotateCw, Trash2, X } from 'lucide-react'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { Button } from './ui/button'
+import { ResizeMenu } from './ResizeMenu'
 
 /** Floating bar with bulk actions for the current multi-select. */
 export function BulkActionBar() {
@@ -23,6 +24,7 @@ export function BulkActionBar() {
           <RotateCw />
           <span className="hidden sm:inline">Rotate right</span>
         </Button>
+        <ResizeMenu pageIds={ids} />
         <Button size="sm" variant="outline" onClick={() => exportPdf('selected')}>
           <FileDown />
           <span className="hidden sm:inline">Export selected</span>

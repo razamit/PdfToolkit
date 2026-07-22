@@ -67,9 +67,12 @@ function HighlightModalContent({ page }: { page: PageDescriptor }) {
         <PreviewSurface page={page}>
           {() => (
             <>
+              {/* Layering relies on DOM order (positioned siblings, no z-index): a
+                  z-index would give the overlay its own stacking context and break
+                  the highlights' mix-blend-multiply against the page canvas. */}
               <div
                 {...surfaceProps}
-                className={cn('absolute inset-0 z-10 touch-none', !noText && 'cursor-text')}
+                className={cn('absolute inset-0 touch-none', !noText && 'cursor-text')}
               />
               {page.annotations && page.annotations.length > 0 && (
                 <AnnotationOverlay
@@ -77,7 +80,6 @@ function HighlightModalContent({ page }: { page: PageDescriptor }) {
                   frameRotation={page.rotation}
                   pageSize={{ width: page.width, height: page.height }}
                   onRemove={(annotationId) => removeAnnotation(page.id, annotationId)}
-                  className="z-20"
                 />
               )}
               <SelectionPreview
@@ -131,7 +133,7 @@ function SelectionPreview({
       {rects.map((rect, index) => (
         <div
           key={index}
-          className="pointer-events-none absolute z-20 mix-blend-multiply"
+          className="pointer-events-none absolute mix-blend-multiply"
           style={{ ...rectToCssPercent(rect), backgroundColor: colorHex }}
         />
       ))}

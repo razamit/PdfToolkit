@@ -3,7 +3,8 @@ import type { PdfSourceManager } from './PdfSourceManager'
 import type { ImageImportManager } from './ImageImportManager'
 import { SignatureStamper } from './SignatureStamper'
 import { AnnotationStamper } from './annotation/AnnotationStamper'
-import type { PageDescriptor, Rotation } from '@/domain/types'
+import { exportScaleFor, resolveTargetExtent } from '@/lib/pageSizing'
+import type { PageDescriptor, PageSizeMode, Rotation } from '@/domain/types'
 
 /** Whether any content (signatures or annotations) is stamped onto this page at export. */
 function hasStamps(descriptor: PageDescriptor): boolean {
@@ -25,6 +26,11 @@ interface Stampers {
  * Unstamped pages are copied once per source and assembled in the user's order;
  * pages with signatures or annotations always get a dedicated copy so a stamp
  * can never leak onto a shared page instance.
+ *
+ * Page resizing (per-page `exportScale` or the global `pageSizeMode`) is a
+ * uniform transform applied after stamping: the embedded content is untouched,
+ * only the page box and coordinate matrix change, so quality is preserved and
+ * stamps keep their on-page proportions.
  */
 export class PdfExportManager {
   private readonly sources: PdfSourceManager
@@ -35,7 +41,10 @@ export class PdfExportManager {
     this.images = images
   }
 
-  async export(pages: PageDescriptor[]): Promise<Uint8Array> {
+  async export(
+    pages: PageDescriptor[],
+    pageSizeMode: PageSizeMode = 'original',
+  ): Promise<Uint8Array> {
     if (pages.length === 0) throw new Error('There are no pages to export.')
 
     const out = await PDFDocument.create()
@@ -44,12 +53,15 @@ export class PdfExportManager {
       annotations: new AnnotationStamper(out),
     }
     const copiedPages = await this.copyAllPdfPages(out, pages)
+    const targetExtent =
+      pageSizeMode === 'original' ? null : resolveTargetExtent(pageSizeMode, pages)
 
     for (const descriptor of pages) {
+      const scale = exportScaleFor(descriptor, targetExtent)
       if (descriptor.kind === 'pdf') {
-        await this.appendPdfPage(out, copiedPages, descriptor, stampers)
+        await this.appendPdfPage(out, copiedPages, descriptor, stampers, scale)
       } else {
-        await this.appendImagePage(out, descriptor, stampers)
+        await this.appendImagePage(out, descriptor, stampers, scale)
       }
     }
     // Default save options (object streams on) are lossless; avoid exotic flags.
@@ -100,6 +112,7 @@ export class PdfExportManager {
     copiedPages: Map<string, PDFPage>,
     descriptor: PageDescriptor,
     stampers: Stampers,
+    scale: number,
   ): Promise<void> {
     const key = hasStamps(descriptor)
       ? descriptor.id
@@ -111,12 +124,14 @@ export class PdfExportManager {
     this.applyRotation(page, descriptor.rotation, true)
     out.addPage(page)
     await this.stampPage(page, descriptor, stampers, intrinsicRotation)
+    this.scalePage(page, scale)
   }
 
   private async appendImagePage(
     out: PDFDocument,
     descriptor: PageDescriptor,
     stampers: Stampers,
+    scale: number,
   ): Promise<void> {
     const meta = this.images.getMeta(descriptor.sourceId)
     if (!meta?.imageFormat) throw new Error('An image source is no longer available for export.')
@@ -132,6 +147,7 @@ export class PdfExportManager {
     this.applyRotation(page, descriptor.rotation, false)
     // Image pages are created here with no intrinsic /Rotate.
     await this.stampPage(page, descriptor, stampers, 0)
+    this.scalePage(page, scale)
   }
 
   private async stampPage(
@@ -146,6 +162,25 @@ export class PdfExportManager {
     if (descriptor.annotations && descriptor.annotations.length > 0) {
       await stampers.annotations.stampAll(page, descriptor.annotations, intrinsicRotation)
     }
+  }
+
+  /**
+   * Uniformly scale a finished page — boxes, content, and annotations together.
+   * Runs after stamping so signatures/annotations shrink or grow with the page
+   * (pdf-lib wraps the existing content stream in a scale matrix). Box origins
+   * are scaled too, because the matrix scales about (0,0) — pdf-lib's own
+   * `page.scale()` leaves origins alone, which drifts non-zero-origin boxes.
+   */
+  private scalePage(page: PDFPage, factor: number): void {
+    if (Math.abs(factor - 1) < 0.001) return
+    const media = page.getMediaBox()
+    page.setMediaBox(media.x * factor, media.y * factor, media.width * factor, media.height * factor)
+    if (page.node.CropBox()) {
+      const crop = page.getCropBox()
+      page.setCropBox(crop.x * factor, crop.y * factor, crop.width * factor, crop.height * factor)
+    }
+    page.scaleContent(factor, factor)
+    page.scaleAnnotations(factor, factor)
   }
 
   /**

@@ -32,18 +32,60 @@ export interface ViewportLike {
   convertToViewportPoint(x: number, y: number): number[]
 }
 
+/** Measures the relative advance width of a string (any consistent unit). */
+export type TextMeasurer = (text: string) => number
+
 /** |shear| / |scale| above which an item counts as rotated in-page and is skipped. */
 const AXIS_ALIGN_TOLERANCE = 0.05
 
-/** Map pdf.js text items to normalized runs, skipping empty and in-page-rotated items. */
-export function mapTextItemsToRuns(items: TextItemLike[], viewport: ViewportLike): TextRun[] {
+/**
+ * Map pdf.js text items to normalized runs, skipping empty and in-page-rotated
+ * items. Items are split into whitespace-separated words — PDFs often encode a
+ * whole line as one item, and word runs are what make selection feel like
+ * selecting text rather than rows. `measure` apportions each word's position
+ * within its item proportionally to measured text widths.
+ */
+export function mapTextItemsToRuns(
+  items: TextItemLike[],
+  viewport: ViewportLike,
+  measure: TextMeasurer,
+): TextRun[] {
   const runs: TextRun[] = []
   for (const item of items) {
     if (item.str.trim() === '' || !isAxisAligned(item.transform)) continue
-    const rect = itemRectInViewport(item, viewport)
-    if (rect) runs.push({ str: item.str, rect })
+    for (const word of splitIntoWordSpans(item.str, measure)) {
+      const rect = spanRectInViewport(item, word.startFraction, word.endFraction, viewport)
+      if (rect) runs.push({ str: word.text, rect })
+    }
   }
   return runs
+}
+
+interface WordSpan {
+  text: string
+  /** Horizontal start/end within the item, as fractions of its advance width. */
+  startFraction: number
+  endFraction: number
+}
+
+/**
+ * Split an item's text into words with measured fractional offsets. The
+ * measurer approximates the embedded font's proportions; small deviations only
+ * shift a word's bar edges by a glyph or so. pdf.js emits `str` in visual
+ * order, so fractions map to geometry for RTL text too.
+ */
+function splitIntoWordSpans(str: string, measure: TextMeasurer): WordSpan[] {
+  const total = measure(str)
+  if (total <= 0) return [{ text: str, startFraction: 0, endFraction: 1 }]
+  const words: WordSpan[] = []
+  for (const match of str.matchAll(/\S+/g)) {
+    words.push({
+      text: match[0],
+      startFraction: measure(str.slice(0, match.index)) / total,
+      endFraction: Math.min(measure(str.slice(0, match.index + match[0].length)) / total, 1),
+    })
+  }
+  return words
 }
 
 function isAxisAligned(transform: number[]): boolean {
@@ -56,14 +98,21 @@ function isAxisAligned(transform: number[]): boolean {
   )
 }
 
-/** Axis-aligned bbox of an item's baseline box, normalized to the viewport. */
-function itemRectInViewport(item: TextItemLike, viewport: ViewportLike): NormalizedRect | null {
+/** Axis-aligned bbox of a horizontal span of an item, normalized to the viewport. */
+function spanRectInViewport(
+  item: TextItemLike,
+  startFraction: number,
+  endFraction: number,
+  viewport: ViewportLike,
+): NormalizedRect | null {
   const [, , , , originX, originY] = item.transform
+  const spanStart = originX + item.width * startFraction
+  const spanEnd = originX + item.width * endFraction
   const corners = [
-    viewport.convertToViewportPoint(originX, originY),
-    viewport.convertToViewportPoint(originX + item.width, originY),
-    viewport.convertToViewportPoint(originX, originY + item.height),
-    viewport.convertToViewportPoint(originX + item.width, originY + item.height),
+    viewport.convertToViewportPoint(spanStart, originY),
+    viewport.convertToViewportPoint(spanEnd, originY),
+    viewport.convertToViewportPoint(spanStart, originY + item.height),
+    viewport.convertToViewportPoint(spanEnd, originY + item.height),
   ]
   const xs = corners.map(([x]) => x / viewport.width)
   const ys = corners.map(([, y]) => y / viewport.height)
