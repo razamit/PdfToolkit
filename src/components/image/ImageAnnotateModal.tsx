@@ -1,84 +1,88 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { createId } from '@/lib/id'
-import { mapRectWithin } from '@/lib/signatureGeometry'
+import { displayedPageSizePt } from '@/lib/annotationGeometry'
 import { AnnotationModalShell } from '@/components/annotations/AnnotationModalShell'
-import { RectChooseStep } from '@/components/annotations/RectChooseStep'
-import type { NormalizedRect } from '@/domain/types'
+import { ArrangeMarksStep } from '@/components/annotations/ArrangeMarksStep'
+import type { NormalizedRect, PageDescriptor } from '@/domain/types'
 import type { AnnotationImage } from '@/lib/readAnnotationImage'
+import type { RenderedSize } from '@/hooks/usePagePreview'
 import { ImagePickStep } from './ImagePickStep'
 
-type ImageStep = 'rect' | 'pick'
-
 /**
- * Two-step image annotation dialog, mirroring the signature flow: choose a
- * placement rectangle on the page, then pick the image (upload or paste).
- * The image is centered and aspect-fitted inside the chosen rectangle.
+ * Image annotation dialog: pick the image (upload or paste) and it lands
+ * centered on the page, ready to drag into place and corner-resize. The
+ * placement waits for the preview's rendered size so the initial rect is
+ * aspect-true even on pages with an intrinsic `/Rotate`.
  */
 export function ImageAnnotateModal() {
   const { annotatingPage, cancelAnnotate, addAnnotation } = usePdfToolkit()
-  const [step, setStep] = useState<ImageStep>('rect')
-  const [chosenRect, setChosenRect] = useState<NormalizedRect | null>(null)
-  const [rectAspectRatio, setRectAspectRatio] = useState(1)
+  const [pickedImage, setPickedImage] = useState<AnnotationImage | null>(null)
+  const [renderedSize, setRenderedSize] = useState<RenderedSize | null>(null)
+  const placedRef = useRef(false)
 
-  if (!annotatingPage) return null
-  const page = annotatingPage
-
-  const handleContinue = (rect: NormalizedRect, aspectRatio: number) => {
-    setChosenRect(rect)
-    setRectAspectRatio(aspectRatio)
-    setStep('pick')
-  }
-
-  const handlePlace = (image: AnnotationImage) => {
-    if (!chosenRect) return
-    addAnnotation(page.id, {
+  useEffect(() => {
+    if (!annotatingPage || !pickedImage || !renderedSize || placedRef.current) return
+    placedRef.current = true
+    addAnnotation(annotatingPage.id, {
       id: createId('ann'),
       kind: 'image',
-      dataUrl: image.dataUrl,
-      format: image.format,
-      rect: mapRectWithin(chosenRect, fitImageWithinRect(image, rectAspectRatio)),
-      rotationAtCreate: page.rotation,
+      dataUrl: pickedImage.dataUrl,
+      format: pickedImage.format,
+      rect: initialImageRect(pickedImage, annotatingPage, renderedSize),
+      rotationAtCreate: annotatingPage.rotation,
     })
-    cancelAnnotate()
-  }
+  }, [annotatingPage, pickedImage, renderedSize, addAnnotation])
+
+  if (!annotatingPage) return null
 
   return (
     <AnnotationModalShell
       title="Add an image"
       subtitle={
-        step === 'rect'
-          ? 'Step 1 of 2 — choose where the image goes.'
-          : 'Step 2 of 2 — pick the image to place.'
+        pickedImage
+          ? 'Place the image — it is already on the page.'
+          : 'Pick an image; it lands on the page ready to move and resize.'
       }
       onClose={cancelAnnotate}
     >
-      {step === 'rect' ? (
-        <RectChooseStep
-          page={page}
-          initialRect={chosenRect}
-          instruction="Drag a rectangle on the page where the image should go."
-          confirmedInstruction="Placement chosen — drag again to adjust."
-          onCancel={cancelAnnotate}
-          onContinue={handleContinue}
+      {pickedImage ? (
+        <ArrangeMarksStep
+          page={annotatingPage}
+          hint="Drag the image to move it; drag its corner handle to resize."
+          onDone={cancelAnnotate}
+          onRenderedSizeChange={setRenderedSize}
         />
       ) : (
-        <ImagePickStep onBack={() => setStep('rect')} onPlace={handlePlace} />
+        <ImagePickStep onCancel={cancelAnnotate} onPlace={setPickedImage} />
       )}
     </AnnotationModalShell>
   )
 }
 
+/** Fraction of the displayed page the freshly placed image initially spans. */
+const INITIAL_IMAGE_PAGE_FRACTION = 0.5
+
 /**
- * Largest centered sub-rect of the chosen box (given its on-screen aspect)
- * that preserves the image's aspect ratio, in fractions of the box.
+ * Centered starting rect for a picked image: aspect-true on screen, spanning
+ * half the displayed page along its limiting dimension. Displayed page points
+ * come from the rendered bitmap's aspect, which honors intrinsic `/Rotate`.
  */
-function fitImageWithinRect(
-  image: { width: number; height: number },
-  rectAspectRatio: number,
+function initialImageRect(
+  image: AnnotationImage,
+  page: PageDescriptor,
+  renderedSize: RenderedSize,
 ): NormalizedRect {
+  const { widthPt, heightPt } = displayedPageSizePt(
+    { width: page.width, height: page.height },
+    renderedSize.width / renderedSize.height,
+  )
   const imageAspect = image.width / image.height
-  const width = imageAspect >= rectAspectRatio ? 1 : imageAspect / rectAspectRatio
-  const height = imageAspect >= rectAspectRatio ? rectAspectRatio / imageAspect : 1
+  const widthOnPagePt = Math.min(
+    INITIAL_IMAGE_PAGE_FRACTION * widthPt,
+    INITIAL_IMAGE_PAGE_FRACTION * heightPt * imageAspect,
+  )
+  const width = widthOnPagePt / widthPt
+  const height = widthOnPagePt / imageAspect / heightPt
   return { x: (1 - width) / 2, y: (1 - height) / 2, width, height }
 }

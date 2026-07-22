@@ -1,5 +1,7 @@
 import type {
   AnnotationPlacement,
+  AnnotationPlacementPatch,
+  NormalizedRect,
   PageDescriptor,
   Rotation,
   SignaturePlacement,
@@ -104,4 +106,52 @@ export const PageListManager = {
       return { ...page, annotations: remaining.length > 0 ? remaining : undefined }
     })
   },
+
+  /** Replace a signature's rect (still expressed in its sign-time frame). */
+  updateSignatureRect(
+    pages: PageDescriptor[],
+    pageId: string,
+    signatureId: string,
+    rect: NormalizedRect,
+  ): PageDescriptor[] {
+    return pages.map((page) => {
+      if (page.id !== pageId || !page.signatures) return page
+      return {
+        ...page,
+        signatures: page.signatures.map((signature) =>
+          signature.id === signatureId ? { ...signature, rect } : signature,
+        ),
+      }
+    })
+  },
+
+  /** Apply a move/resize patch to a text or image annotation (highlights are fixed). */
+  updateAnnotationPlacement(
+    pages: PageDescriptor[],
+    pageId: string,
+    annotationId: string,
+    patch: AnnotationPlacementPatch,
+  ): PageDescriptor[] {
+    return pages.map((page) => {
+      if (page.id !== pageId || !page.annotations) return page
+      return {
+        ...page,
+        annotations: page.annotations.map((annotation) =>
+          applyPlacementPatch(annotation, annotationId, patch),
+        ),
+      }
+    })
+  },
+}
+
+function applyPlacementPatch(
+  annotation: AnnotationPlacement,
+  annotationId: string,
+  patch: AnnotationPlacementPatch,
+): AnnotationPlacement {
+  if (annotation.id !== annotationId || annotation.kind === 'highlight') return annotation
+  if (annotation.kind === 'text') {
+    return { ...annotation, rect: patch.rect, fontSizePt: patch.fontSizePt ?? annotation.fontSizePt }
+  }
+  return { ...annotation, rect: patch.rect }
 }

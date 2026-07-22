@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Highlighter, ImagePlus, PenLine, SquarePen, Type, type LucideIcon } from 'lucide-react'
+import { Highlighter, ImagePlus, Move, PenLine, SquarePen, Type, type LucideIcon } from 'lucide-react'
 import type { AnnotationTool, PageDescriptor } from '@/domain/types'
 
 interface AnnotateMenuProps {
@@ -62,10 +62,21 @@ export function AnnotateMenu({ page, onSign, onAnnotate }: AnnotateMenuProps) {
               onClick={() => choose(() => onAnnotate(page.id, 'highlight'))}
             />
           )}
+          {hasPlacedMarks(page) && (
+            <MenuItem
+              icon={Move}
+              label="Move & resize"
+              onClick={() => choose(() => onAnnotate(page.id, 'arrange'))}
+            />
+          )}
         </div>
       )}
     </div>
   )
+}
+
+function hasPlacedMarks(page: PageDescriptor): boolean {
+  return (page.signatures?.length ?? 0) > 0 || (page.annotations?.length ?? 0) > 0
 }
 
 function MenuItem({

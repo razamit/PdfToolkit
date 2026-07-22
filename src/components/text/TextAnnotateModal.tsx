@@ -2,11 +2,11 @@ import { useCallback, useState } from 'react'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { createId } from '@/lib/id'
 import { meetsMinimumSize } from '@/lib/signatureGeometry'
-import { sanitizeWinAnsiText } from '@/lib/winAnsiText'
+import { sanitizeAnnotationText } from '@/lib/annotationText'
 import { Button } from '@/components/ui/button'
 import { AnnotationModalShell } from '@/components/annotations/AnnotationModalShell'
 import { PreviewSurface } from '@/components/annotations/PreviewSurface'
-import { AnnotationOverlay } from '@/components/annotations/AnnotationOverlay'
+import { ExistingMarksOverlay } from '@/components/annotations/ExistingMarksOverlay'
 import { useRectDrag } from '@/components/signature/useRectDrag'
 import { cn } from '@/lib/utils'
 import type { NormalizedRect } from '@/domain/types'
@@ -20,7 +20,7 @@ import { TextEditLayer } from './TextEditLayer'
  * uses), then add. Lines break on explicit newlines only.
  */
 export function TextAnnotateModal() {
-  const { annotatingPage, cancelAnnotate, addAnnotation, removeAnnotation } = usePdfToolkit()
+  const { annotatingPage, cancelAnnotate, addAnnotation } = usePdfToolkit()
   const { rect, surfaceProps } = useRectDrag(null)
   const [text, setText] = useState('')
   const [fontSizePt, setFontSizePt] = useState(DEFAULT_TEXT_FONT_SIZE_PT)
@@ -30,7 +30,7 @@ export function TextAnnotateModal() {
   const [contentRect, setContentRect] = useState<NormalizedRect | null>(null)
 
   const handleTextChange = useCallback((value: string) => {
-    const sanitized = sanitizeWinAnsiText(value)
+    const sanitized = sanitizeAnnotationText(value)
     if (sanitized !== value) setStrippedUnsupported(true)
     setText(sanitized)
   }, [])
@@ -63,17 +63,8 @@ export function TextAnnotateModal() {
         <PreviewSurface page={page}>
           {({ renderedSize, fittedSize }) => (
             <>
-              {/* No z-index on these layers: DOM order stacks them, and a z-index
-                  would break highlight mix-blend-multiply against the canvas. */}
               <div {...surfaceProps} className="absolute inset-0 cursor-crosshair touch-none" />
-              {page.annotations && page.annotations.length > 0 && (
-                <AnnotationOverlay
-                  annotations={page.annotations}
-                  frameRotation={page.rotation}
-                  pageSize={{ width: page.width, height: page.height }}
-                  onRemove={(annotationId) => removeAnnotation(page.id, annotationId)}
-                />
-              )}
+              <ExistingMarksOverlay page={page} />
               {rect && meetsMinimumSize(rect, renderedSize) && (
                 <TextEditLayer
                   rect={rect}

@@ -92,7 +92,15 @@ export interface HighlightPlacement extends AnnotationBase {
 
 export type AnnotationPlacement = TextPlacement | ImagePlacement | HighlightPlacement
 
-export type AnnotationTool = 'text' | 'image' | 'highlight'
+export type AnnotationTool = 'text' | 'image' | 'highlight' | 'arrange'
+
+/** Geometry patch produced by moving or resizing a placed text/image annotation. */
+export interface AnnotationPlacementPatch {
+  /** New rect, still in the creation-time displayed frame. */
+  rect: NormalizedRect
+  /** New font size when a text annotation was scaled. */
+  fontSizePt?: number
+}
 
 /** A drawn signature remembered for reuse, kept as vectors for crisp re-rendering. */
 export interface RememberedSignature {

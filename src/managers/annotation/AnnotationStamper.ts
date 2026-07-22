@@ -6,6 +6,8 @@ import {
   type PDFPage,
 } from '@cantoo/pdf-lib'
 import { normalizeRotation } from '@/managers/PageListManager'
+import { fetchAnnotationFontBytes } from '@/lib/annotationFont'
+import { textNeedsUnicodeFont } from '@/lib/annotationText'
 import { stampTextAnnotation } from './TextStamper'
 import { stampImageAnnotation } from './ImageStamper'
 import { stampHighlightAnnotation } from './HighlightStamper'
@@ -14,11 +16,14 @@ import type { AnnotationPlacement, ImagePlacement } from '@/domain/types'
 /**
  * Stamps text/image/highlight annotations onto exported pages. Drawing math
  * lives in the per-kind stampers; this facade owns the pdf-lib resources
- * shared across a run: the Helvetica font and each unique embedded image.
+ * shared across a run: the fonts and each unique embedded image. WinAnsi-only
+ * text uses standard Helvetica; anything else (Hebrew) embeds the bundled
+ * Unicode font, subset to the glyphs actually used.
  */
 export class AnnotationStamper {
   private readonly out: PDFDocument
   private helvetica: PDFFont | null = null
+  private unicodeFont: Promise<PDFFont> | null = null
   private readonly embeddedImages = new Map<string, PDFImage>()
 
   constructor(out: PDFDocument) {
@@ -39,7 +44,7 @@ export class AnnotationStamper {
       const totalRotation = normalizeRotation(intrinsicRotation + annotation.rotationAtCreate)
       switch (annotation.kind) {
         case 'text':
-          stampTextAnnotation(page, annotation, totalRotation, this.getHelvetica())
+          stampTextAnnotation(page, annotation, totalRotation, await this.fontFor(annotation.text))
           break
         case 'image':
           stampImageAnnotation(page, annotation, totalRotation, await this.embedImage(annotation))
@@ -51,9 +56,28 @@ export class AnnotationStamper {
     }
   }
 
+  private async fontFor(text: string): Promise<PDFFont> {
+    return textNeedsUnicodeFont(text) ? this.getUnicodeFont() : this.getHelvetica()
+  }
+
   private getHelvetica(): PDFFont {
     if (!this.helvetica) this.helvetica = this.out.embedStandardFont(StandardFonts.Helvetica)
     return this.helvetica
+  }
+
+  private getUnicodeFont(): Promise<PDFFont> {
+    if (!this.unicodeFont) this.unicodeFont = this.embedUnicodeFont()
+    return this.unicodeFont
+  }
+
+  private async embedUnicodeFont(): Promise<PDFFont> {
+    // fontkit is only pulled into the bundle when a Unicode annotation exists.
+    const [{ default: fontkit }, fontBytes] = await Promise.all([
+      import('@pdf-lib/fontkit'),
+      fetchAnnotationFontBytes(),
+    ])
+    this.out.registerFontkit(fontkit)
+    return this.out.embedFont(fontBytes, { subset: true })
   }
 
   private async embedImage(placement: ImagePlacement): Promise<PDFImage> {

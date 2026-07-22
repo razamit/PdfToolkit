@@ -12,8 +12,10 @@ import { useSelection } from '@/hooks/useSelection'
 import { resizePagesToPreset } from '@/lib/pageSizing'
 import type {
   AnnotationPlacement,
+  AnnotationPlacementPatch,
   AnnotationTool,
   GridColumns,
+  NormalizedRect,
   PageDescriptor,
   PageSizeMode,
   RememberedSignature,
@@ -201,6 +203,12 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
     [applyPages],
   )
 
+  const updateSignatureRect = useCallback(
+    (pageId: string, signatureId: string, rect: NormalizedRect) =>
+      applyPages(PageListManager.updateSignatureRect(pagesRef.current, pageId, signatureId, rect)),
+    [applyPages],
+  )
+
   const annotatingPage = useMemo(
     () => pages.find((page) => page.id === annotating?.pageId) ?? null,
     [pages, annotating],
@@ -221,6 +229,14 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
   const removeAnnotation = useCallback(
     (pageId: string, annotationId: string) =>
       applyPages(PageListManager.removeAnnotation(pagesRef.current, pageId, annotationId)),
+    [applyPages],
+  )
+
+  const updateAnnotationPlacement = useCallback(
+    (pageId: string, annotationId: string, patch: AnnotationPlacementPatch) =>
+      applyPages(
+        PageListManager.updateAnnotationPlacement(pagesRef.current, pageId, annotationId, patch),
+      ),
     [applyPages],
   )
 
@@ -297,12 +313,14 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       cancelSign,
       addSignature,
       removeSignature,
+      updateSignatureRect,
       annotatingPage,
       annotatingTool: annotating?.tool ?? null,
       beginAnnotate,
       cancelAnnotate,
       addAnnotation,
       removeAnnotation,
+      updateAnnotationPlacement,
     }),
     [
       pages,
@@ -329,12 +347,14 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       cancelSign,
       addSignature,
       removeSignature,
+      updateSignatureRect,
       annotatingPage,
       annotating,
       beginAnnotate,
       cancelAnnotate,
       addAnnotation,
       removeAnnotation,
+      updateAnnotationPlacement,
     ],
   )
 

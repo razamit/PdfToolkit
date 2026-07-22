@@ -7,7 +7,7 @@ import { mergeRunsIntoLines } from '@/lib/textRunGeometry'
 import { Button } from '@/components/ui/button'
 import { AnnotationModalShell } from '@/components/annotations/AnnotationModalShell'
 import { PreviewSurface } from '@/components/annotations/PreviewSurface'
-import { AnnotationOverlay } from '@/components/annotations/AnnotationOverlay'
+import { ExistingMarksOverlay } from '@/components/annotations/ExistingMarksOverlay'
 import { cn } from '@/lib/utils'
 import type { PageDescriptor } from '@/domain/types'
 import { DEFAULT_HIGHLIGHT_COLOR, HIGHLIGHT_COLORS } from '@/lib/annotationStyles'
@@ -26,7 +26,7 @@ export function HighlightAnnotateModal() {
 }
 
 function HighlightModalContent({ page }: { page: PageDescriptor }) {
-  const { cancelAnnotate, addAnnotation, removeAnnotation } = usePdfToolkit()
+  const { cancelAnnotate, addAnnotation } = usePdfToolkit()
   const { runs, loading, failed } = useTextRuns(page)
   const [colorHex, setColorHex] = useState(DEFAULT_HIGHLIGHT_COLOR)
 
@@ -74,14 +74,7 @@ function HighlightModalContent({ page }: { page: PageDescriptor }) {
                 {...surfaceProps}
                 className={cn('absolute inset-0 touch-none', !noText && 'cursor-text')}
               />
-              {page.annotations && page.annotations.length > 0 && (
-                <AnnotationOverlay
-                  annotations={page.annotations}
-                  frameRotation={page.rotation}
-                  pageSize={{ width: page.width, height: page.height }}
-                  onRemove={(annotationId) => removeAnnotation(page.id, annotationId)}
-                />
-              )}
+              <ExistingMarksOverlay page={page} />
               <SelectionPreview
                 rects={isSelecting ? selectedRuns.map((run) => run.rect) : pendingLineRects}
                 colorHex={colorHex}

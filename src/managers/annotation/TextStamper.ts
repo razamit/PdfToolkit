@@ -1,12 +1,19 @@
-import { degrees, rgb, type PDFFont, type PDFPage } from '@cantoo/pdf-lib'
-import { computeTextAnchor, hexToRgb01, TEXT_LINE_HEIGHT_EM } from '@/lib/annotationGeometry'
-import { sanitizeWinAnsiText } from '@/lib/winAnsiText'
+import { degrees, rgb, type Color, type PDFFont, type PDFPage } from '@cantoo/pdf-lib'
+import {
+  computeTextAnchor,
+  displayedRectWidthPt,
+  hexToRgb01,
+  TEXT_LINE_HEIGHT_EM,
+} from '@/lib/annotationGeometry'
+import { detectBaseDirection, sanitizeAnnotationText } from '@/lib/annotationText'
+import { splitLineIntoVisualRuns } from '@/lib/bidiVisualRuns'
 import type { Rotation, TextPlacement } from '@/domain/types'
 
 /**
  * Draws one text annotation onto an exported page. The anchor is the first
- * line's baseline in the creation-time displayed frame; `drawText` splits on
- * newlines itself and advances by `lineHeight` in the rotated text frame.
+ * line's baseline in the creation-time displayed frame. Each line is drawn as
+ * bidi runs in visual order: left-aligned for LTR text, right-aligned within
+ * the drawn box for RTL text — mirroring the editor's `dir="auto"` rendering.
  */
 export function stampTextAnnotation(
   page: PDFPage,
@@ -15,7 +22,7 @@ export function stampTextAnnotation(
   font: PDFFont,
 ): void {
   // Text is sanitized at input; re-sanitizing here keeps export unable to throw.
-  const text = sanitizeWinAnsiText(placement.text)
+  const text = sanitizeAnnotationText(placement.text)
   if (text.trim() === '') return
 
   const anchor = computeTextAnchor(
@@ -25,13 +32,63 @@ export function stampTextAnnotation(
     page.getCropBox(),
   )
   const { r, g, b } = hexToRgb01(placement.colorHex)
-  page.drawText(text, {
-    x: anchor.x,
-    y: anchor.y,
+  const baseDirection = detectBaseDirection(text)
+  const context: LineDrawContext = {
     font,
-    size: placement.fontSizePt,
-    lineHeight: placement.fontSizePt * TEXT_LINE_HEIGHT_EM,
+    sizePt: placement.fontSizePt,
     color: rgb(r, g, b),
-    rotate: degrees(anchor.rotateDegrees),
+    rotateDegrees: anchor.rotateDegrees,
+    boxWidthPt: displayedRectWidthPt(placement.rect, totalRotation, page.getCropBox()),
+    rightAlign: baseDirection === 'rtl',
+  }
+
+  const radians = (anchor.rotateDegrees * Math.PI) / 180
+  const lineHeightPt = placement.fontSizePt * TEXT_LINE_HEIGHT_EM
+  const lineAdvance = { x: Math.sin(radians) * lineHeightPt, y: -Math.cos(radians) * lineHeightPt }
+  text.split('\n').forEach((line, lineIndex) => {
+    const runs = splitLineIntoVisualRuns(line, baseDirection)
+    if (runs.length === 0) return
+    const origin = {
+      x: anchor.x + lineAdvance.x * lineIndex,
+      y: anchor.y + lineAdvance.y * lineIndex,
+    }
+    drawTextLine(page, runs, origin, context)
+  })
+}
+
+interface LineDrawContext {
+  font: PDFFont
+  sizePt: number
+  color: Color
+  rotateDegrees: number
+  /** Alignment span for RTL lines: the drawn box's width in points. */
+  boxWidthPt: number
+  rightAlign: boolean
+}
+
+/** Draw one line's runs sequentially along the (possibly rotated) baseline. */
+function drawTextLine(
+  page: PDFPage,
+  runs: string[],
+  origin: { x: number; y: number },
+  context: LineDrawContext,
+): void {
+  const { font, sizePt, color, rotateDegrees, boxWidthPt, rightAlign } = context
+  const runWidths = runs.map((run) => font.widthOfTextAtSize(run, sizePt))
+  const lineWidth = runWidths.reduce((sum, width) => sum + width, 0)
+  const radians = (rotateDegrees * Math.PI) / 180
+  const advance = { x: Math.cos(radians), y: Math.sin(radians) }
+
+  let offset = rightAlign ? Math.max(0, boxWidthPt - lineWidth) : 0
+  runs.forEach((run, index) => {
+    page.drawText(run, {
+      x: origin.x + advance.x * offset,
+      y: origin.y + advance.y * offset,
+      font,
+      size: sizePt,
+      color,
+      rotate: degrees(rotateDegrees),
+    })
+    offset += runWidths[index]
   })
 }

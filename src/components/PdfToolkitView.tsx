@@ -8,6 +8,7 @@ import { SignatureModal } from './signature/SignatureModal'
 import { TextAnnotateModal } from './text/TextAnnotateModal'
 import { ImageAnnotateModal } from './image/ImageAnnotateModal'
 import { HighlightAnnotateModal } from './highlight/HighlightAnnotateModal'
+import { ArrangeMarksModal } from './annotations/ArrangeMarksModal'
 import { BusyOverlay, DragOverlay, ErrorBanner } from './StatusOverlays'
 
 /** Top-level layout: header, drop-anywhere upload, grid or empty state, overlays. */
@@ -65,6 +66,9 @@ export function PdfToolkitView() {
       )}
       {annotatingPage && annotatingTool === 'highlight' && (
         <HighlightAnnotateModal key={annotatingPage.id} />
+      )}
+      {annotatingPage && annotatingTool === 'arrange' && (
+        <ArrangeMarksModal key={annotatingPage.id} />
       )}
     </div>
   )

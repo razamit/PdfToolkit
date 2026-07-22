@@ -82,3 +82,17 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Annotation font — the same file PdfExportManager embeds (WYSIWYG preview).
+   The metric overrides pin the CSS line box to the Helvetica AFM values that
+   TEXT_FIRST_BASELINE_EM assumes, so preview baselines match the export.
+--------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Liberation Sans Annotation';
+  src: url('/fonts/LiberationSans-Regular.ttf') format('truetype');
+  font-display: block;
+  ascent-override: 71.8%;
+  descent-override: 20.7%;
+  line-gap-override: 0%;
+}

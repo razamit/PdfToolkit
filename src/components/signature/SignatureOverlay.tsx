@@ -1,8 +1,10 @@
-import { X } from 'lucide-react'
 import { normalizeRotation } from '@/managers/PageListManager'
-import { rectToCssPercent, rotateRect } from '@/lib/signatureGeometry'
+import { inverseRotation, rectToCssPercent, rotateRect } from '@/lib/signatureGeometry'
+import { useElementSize } from '@/hooks/useElementSize'
+import { useMarkTransform } from '@/hooks/useMarkTransform'
+import { RemoveMarkButton, ResizeMarkHandle } from '@/components/annotations/MarkControls'
 import { cn } from '@/lib/utils'
-import type { Rotation, SignaturePlacement } from '@/domain/types'
+import type { NormalizedRect, Rotation, SignaturePlacement } from '@/domain/types'
 import { useRotatedSignaturePng } from './useRotatedSignaturePng'
 
 interface SignatureOverlayProps {
@@ -11,6 +13,8 @@ interface SignatureOverlayProps {
   frameRotation: Rotation
   /** When provided, each signature shows a small remove button. */
   onRemove?: (signatureId: string) => void
+  /** When provided, signatures can be dragged and corner-resized; receives the new rect in the sign-time frame. */
+  onRectChange?: (signatureId: string, rect: NormalizedRect) => void
   className?: string
 }
 
@@ -23,16 +27,20 @@ export function SignatureOverlay({
   signatures,
   frameRotation,
   onRemove,
+  onRectChange,
   className,
 }: SignatureOverlayProps) {
+  const { ref, size } = useElementSize<HTMLDivElement>()
   return (
-    <div className={cn('pointer-events-none absolute inset-0', className)}>
+    <div ref={ref} className={cn('pointer-events-none absolute inset-0', className)}>
       {signatures.map((signature) => (
         <PlacedSignature
           key={signature.id}
           signature={signature}
           frameRotation={frameRotation}
+          overlaySize={size}
           onRemove={onRemove}
+          onRectChange={onRectChange}
         />
       ))}
     </div>
@@ -42,31 +50,38 @@ export function SignatureOverlay({
 function PlacedSignature({
   signature,
   frameRotation,
+  overlaySize,
   onRemove,
+  onRectChange,
 }: {
   signature: SignaturePlacement
   frameRotation: Rotation
+  overlaySize: { width: number; height: number } | null
   onRemove?: (signatureId: string) => void
+  onRectChange?: (signatureId: string, rect: NormalizedRect) => void
 }) {
   const delta = normalizeRotation(frameRotation - signature.rotationAtSign)
   const displayRect = rotateRect(signature.rect, delta)
   const pngUrl = useRotatedSignaturePng(signature.pngDataUrl, delta)
+  const { liveRect, moveHandleProps, resizeHandleProps } = useMarkTransform({
+    displayRect,
+    overlaySize,
+    onCommit: ({ rect }) => onRectChange?.(signature.id, rotateRect(rect, inverseRotation(delta))),
+  })
   if (!pngUrl) return null
 
+  const movable = onRectChange !== undefined
   return (
-    <div className="absolute" style={rectToCssPercent(displayRect)}>
+    <div
+      {...(movable ? moveHandleProps : {})}
+      className={cn('absolute', movable && 'pointer-events-auto cursor-move touch-none')}
+      style={rectToCssPercent(movable ? liveRect : displayRect)}
+    >
       <img src={pngUrl} alt="" draggable={false} className="size-full select-none" />
       {onRemove && (
-        <button
-          type="button"
-          aria-label="Remove signature"
-          title="Remove signature"
-          onClick={() => onRemove(signature.id)}
-          className="pointer-events-auto absolute -right-2.5 -top-2.5 flex size-5 items-center justify-center rounded-full border bg-background text-destructive shadow-sm transition-colors hover:bg-destructive/10"
-        >
-          <X className="size-3" />
-        </button>
+        <RemoveMarkButton label="Remove signature" onClick={() => onRemove(signature.id)} />
       )}
+      {movable && <ResizeMarkHandle handleProps={resizeHandleProps} />}
     </div>
   )
 }

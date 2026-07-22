@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { meetsMinimumSize, rectToCssPercent } from '@/lib/signatureGeometry'
-import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { useRectDrag } from '@/components/signature/useRectDrag'
-import { SignatureOverlay } from '@/components/signature/SignatureOverlay'
 import { PreviewSurface } from './PreviewSurface'
-import { AnnotationOverlay } from './AnnotationOverlay'
+import { ExistingMarksOverlay } from './ExistingMarksOverlay'
 import type { NormalizedRect, PageDescriptor } from '@/domain/types'
 import type { RenderedSize } from '@/hooks/usePagePreview'
 
@@ -21,9 +19,9 @@ interface RectChooseStepProps {
 }
 
 /**
- * Generic first step for annotation modals: drag a rectangle on the page
- * preview. Existing signatures and annotations are shown for context, and
- * annotations are individually removable.
+ * Generic first step for placement modals (signature, image): drag a
+ * rectangle on the page preview. Everything already on the page is shown
+ * and individually removable.
  */
 export function RectChooseStep({
   page,
@@ -33,7 +31,6 @@ export function RectChooseStep({
   onCancel,
   onContinue,
 }: RectChooseStepProps) {
-  const { removeAnnotation } = usePdfToolkit()
   const { rect, surfaceProps } = useRectDrag(initialRect)
   const [renderedSize, setRenderedSize] = useState<RenderedSize | null>(null)
   const canContinue = rect !== null && renderedSize !== null && meetsMinimumSize(rect, renderedSize)
@@ -49,20 +46,8 @@ export function RectChooseStep({
       <PreviewSurface page={page} onRenderedSizeChange={setRenderedSize}>
         {() => (
           <>
-            {/* No z-index on these layers: DOM order stacks them, and a z-index
-                would break highlight mix-blend-multiply against the canvas. */}
             <div {...surfaceProps} className="absolute inset-0 cursor-crosshair touch-none" />
-            {page.signatures && page.signatures.length > 0 && (
-              <SignatureOverlay signatures={page.signatures} frameRotation={page.rotation} />
-            )}
-            {page.annotations && page.annotations.length > 0 && (
-              <AnnotationOverlay
-                annotations={page.annotations}
-                frameRotation={page.rotation}
-                pageSize={{ width: page.width, height: page.height }}
-                onRemove={(annotationId) => removeAnnotation(page.id, annotationId)}
-              />
-            )}
+            <ExistingMarksOverlay page={page} />
             {rect && (
               <div
                 className="pointer-events-none absolute z-30 border-2 border-primary bg-primary/10"

@@ -61,6 +61,16 @@ export function computeTextAnchor(
   return { x: pageBox.x + anchor.x, y: pageBox.y + anchor.y, rotateDegrees: totalRotation }
 }
 
+/** Width of a placement rect in points, measured in its creation-time displayed frame. */
+export function displayedRectWidthPt(
+  rect: NormalizedRect,
+  totalRotation: Rotation,
+  pageBox: PageBox,
+): number {
+  const sideways = totalRotation === 90 || totalRotation === 270
+  return rect.width * (sideways ? pageBox.height : pageBox.width)
+}
+
 /**
  * Displayed page size in PDF points, inferred by matching the rendered
  * bitmap's aspect against the descriptor's intrinsic size. The descriptor

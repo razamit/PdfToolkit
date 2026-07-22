@@ -4,16 +4,16 @@ import { Button } from '@/components/ui/button'
 import { readAnnotationImage, type AnnotationImage } from '@/lib/readAnnotationImage'
 
 interface ImagePickStepProps {
-  onBack: () => void
+  onCancel: () => void
   onPlace: (image: AnnotationImage) => void
 }
 
 /**
- * Second image-annotation step: pick the image to place, by file upload or by
+ * First image-annotation step: pick the image to place, by file upload or by
  * pasting from the clipboard. Upload is the always-reliable path; paste works
  * wherever the browser exposes image clipboard items.
  */
-export function ImagePickStep({ onBack, onPlace }: ImagePickStepProps) {
+export function ImagePickStep({ onCancel, onPlace }: ImagePickStepProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [picked, setPicked] = useState<AnnotationImage | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -78,11 +78,11 @@ export function ImagePickStep({ onBack, onPlace }: ImagePickStepProps) {
 
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-4">
         <p className="text-xs text-muted-foreground">
-          The image keeps its aspect ratio inside the box you chose.
+          The image lands centered on the page — move and resize it there.
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onBack}>
-            Back
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
           </Button>
           <Button disabled={!picked} onClick={() => picked && onPlace(picked)}>
             Place image

@@ -1,10 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { displayedPageSizePt, TEXT_LINE_HEIGHT_EM } from '@/lib/annotationGeometry'
+import { annotationFontFamilyFor } from '@/lib/annotationFont'
 import type { NormalizedRect } from '@/domain/types'
 import type { RenderedSize } from '@/hooks/usePagePreview'
-
-/** CSS stack that substitutes metric-compatible fonts for PDF Helvetica. */
-export const HELVETICA_CSS_STACK = 'Helvetica, Arial, sans-serif'
 
 interface TextEditLayerProps {
   /** The box the user dragged, in fractions of the displayed page. */
@@ -78,7 +76,7 @@ export function TextEditLayer({
   ])
 
   const textStyle = {
-    fontFamily: HELVETICA_CSS_STACK,
+    fontFamily: annotationFontFamilyFor(text),
     fontSize: fontSizePx,
     lineHeight: TEXT_LINE_HEIGHT_EM,
   }
@@ -88,6 +86,7 @@ export function TextEditLayer({
       <textarea
         ref={textareaRef}
         wrap="off"
+        dir="auto"
         spellCheck={false}
         value={text}
         onChange={(event) => onTextChange(event.target.value)}
@@ -106,6 +105,7 @@ export function TextEditLayer({
       <div
         ref={measureRef}
         aria-hidden
+        dir="auto"
         className="invisible absolute left-0 top-0 whitespace-pre"
         style={textStyle}
       >

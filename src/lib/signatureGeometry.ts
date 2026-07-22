@@ -46,6 +46,11 @@ export function rotateRect(rect: NormalizedRect, delta: Rotation): NormalizedRec
   return rotated
 }
 
+/** The rotation that undoes a clockwise `delta` within the unit frame. */
+export function inverseRotation(delta: Rotation): Rotation {
+  return ((360 - delta) % 360) as Rotation
+}
+
 /** Map a rect expressed in fractions of `outer` into `outer`'s own frame. */
 export function mapRectWithin(outer: NormalizedRect, inner: NormalizedRect): NormalizedRect {
   return {

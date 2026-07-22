@@ -1,8 +1,10 @@
 import { createContext, useContext } from 'react'
 import type {
   AnnotationPlacement,
+  AnnotationPlacementPatch,
   AnnotationTool,
   GridColumns,
+  NormalizedRect,
   PageDescriptor,
   PageSizeMode,
   RememberedSignature,
@@ -63,6 +65,8 @@ export interface ToolkitContextValue {
     newSignature: RememberedSignature | null,
   ) => void
   removeSignature: (pageId: string, signatureId: string) => void
+  /** Move/resize a placed signature; the rect stays in its sign-time frame. */
+  updateSignatureRect: (pageId: string, signatureId: string, rect: NormalizedRect) => void
 
   /** Page currently being annotated (null while no annotation modal is open). */
   annotatingPage: PageDescriptor | null
@@ -73,6 +77,12 @@ export interface ToolkitContextValue {
   /** Add an annotation. The modal stays open — each modal closes itself via `cancelAnnotate`. */
   addAnnotation: (pageId: string, placement: AnnotationPlacement) => void
   removeAnnotation: (pageId: string, annotationId: string) => void
+  /** Move/resize a text or image annotation; the patch stays in its creation frame. */
+  updateAnnotationPlacement: (
+    pageId: string,
+    annotationId: string,
+    patch: AnnotationPlacementPatch,
+  ) => void
 }
 
 export const ToolkitContext = createContext<ToolkitContextValue | null>(null)

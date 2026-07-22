@@ -1,12 +1,15 @@
 import type { ReactNode } from 'react'
-import { X } from 'lucide-react'
 import { normalizeRotation } from '@/managers/PageListManager'
-import { rectToCssPercent, rotateRect } from '@/lib/signatureGeometry'
+import { inverseRotation, rectToCssPercent, rotateRect } from '@/lib/signatureGeometry'
 import { displayedPageSizePt, TEXT_LINE_HEIGHT_EM } from '@/lib/annotationGeometry'
+import { annotationFontFamilyFor } from '@/lib/annotationFont'
 import { useElementSize } from '@/hooks/useElementSize'
+import { useMarkTransform } from '@/hooks/useMarkTransform'
 import { cn } from '@/lib/utils'
+import { RemoveMarkButton, ResizeMarkHandle } from './MarkControls'
 import type {
   AnnotationPlacement,
+  AnnotationPlacementPatch,
   HighlightPlacement,
   ImagePlacement,
   Rotation,
@@ -21,6 +24,12 @@ interface AnnotationOverlayProps {
   pageSize: { width: number; height: number }
   /** When provided, each annotation shows a small remove button. */
   onRemove?: (annotationId: string) => void
+  /**
+   * When provided, text and image annotations can be dragged and
+   * corner-resized; receives the new geometry in the creation-time frame.
+   * Highlights stay fixed — they are anchored to the page's text.
+   */
+  onTransform?: (annotationId: string, patch: AnnotationPlacementPatch) => void
   className?: string
 }
 
@@ -36,6 +45,7 @@ export function AnnotationOverlay({
   frameRotation,
   pageSize,
   onRemove,
+  onTransform,
   className,
 }: AnnotationOverlayProps) {
   const { ref, size } = useElementSize<HTMLDivElement>()
@@ -52,6 +62,7 @@ export function AnnotationOverlay({
             overlaySize={size}
             pageSize={pageSize}
             onRemove={onRemove}
+            onTransform={onTransform}
           />
         ))}
     </div>
@@ -65,6 +76,7 @@ interface PlacedProps<T extends AnnotationPlacement> {
   overlaySize: { width: number; height: number }
   pageSize: { width: number; height: number }
   onRemove?: (annotationId: string) => void
+  onTransform?: (annotationId: string, patch: AnnotationPlacementPatch) => void
 }
 
 function PlacedAnnotation(props: PlacedProps<AnnotationPlacement>) {
@@ -79,18 +91,41 @@ function PlacedAnnotation(props: PlacedProps<AnnotationPlacement>) {
   }
 }
 
-function PlacedText({ annotation, delta, overlaySize, pageSize, onRemove }: PlacedProps<TextPlacement>) {
+function PlacedText({
+  annotation,
+  delta,
+  overlaySize,
+  pageSize,
+  onRemove,
+  onTransform,
+}: PlacedProps<TextPlacement>) {
   const displayRect = rotateRect(annotation.rect, delta)
+  const { liveRect, liveScale, moveHandleProps, resizeHandleProps } = useMarkTransform({
+    displayRect,
+    overlaySize,
+    onCommit: ({ rect, scale }) =>
+      onTransform?.(annotation.id, {
+        rect: rotateRect(rect, inverseRotation(delta)),
+        fontSizePt: annotation.fontSizePt * scale,
+      }),
+  })
   const { heightPt } = displayedPageSizePt(pageSize, overlaySize.width / overlaySize.height)
-  const fontSizePx = annotation.fontSizePt * (overlaySize.height / heightPt)
+  const fontSizePx = annotation.fontSizePt * liveScale * (overlaySize.height / heightPt)
+  const movable = onTransform !== undefined
+  const rect = movable ? liveRect : displayRect
 
   return (
-    <div className="absolute" style={rectToCssPercent(displayRect)}>
-      <RotatedContent delta={delta} boxRect={displayRect} overlaySize={overlaySize}>
+    <div
+      {...(movable ? moveHandleProps : {})}
+      className={cn('absolute', movable && 'pointer-events-auto cursor-move touch-none')}
+      style={rectToCssPercent(rect)}
+    >
+      <RotatedContent delta={delta} boxRect={rect} overlaySize={overlaySize}>
         <div
+          dir="auto"
           className="size-full select-none whitespace-pre"
           style={{
-            fontFamily: 'Helvetica, Arial, sans-serif',
+            fontFamily: annotationFontFamilyFor(annotation.text),
             fontSize: fontSizePx,
             lineHeight: TEXT_LINE_HEIGHT_EM,
             color: annotation.colorHex,
@@ -99,19 +134,40 @@ function PlacedText({ annotation, delta, overlaySize, pageSize, onRemove }: Plac
           {annotation.text}
         </div>
       </RotatedContent>
-      {onRemove && <RemoveButton label="Remove text" onClick={() => onRemove(annotation.id)} />}
+      {onRemove && <RemoveMarkButton label="Remove text" onClick={() => onRemove(annotation.id)} />}
+      {movable && <ResizeMarkHandle handleProps={resizeHandleProps} />}
     </div>
   )
 }
 
-function PlacedImage({ annotation, delta, overlaySize, onRemove }: PlacedProps<ImagePlacement>) {
+function PlacedImage({
+  annotation,
+  delta,
+  overlaySize,
+  onRemove,
+  onTransform,
+}: PlacedProps<ImagePlacement>) {
   const displayRect = rotateRect(annotation.rect, delta)
+  const { liveRect, moveHandleProps, resizeHandleProps } = useMarkTransform({
+    displayRect,
+    overlaySize,
+    onCommit: ({ rect }) =>
+      onTransform?.(annotation.id, { rect: rotateRect(rect, inverseRotation(delta)) }),
+  })
+  const movable = onTransform !== undefined
+  const rect = movable ? liveRect : displayRect
+
   return (
-    <div className="absolute" style={rectToCssPercent(displayRect)}>
-      <RotatedContent delta={delta} boxRect={displayRect} overlaySize={overlaySize}>
+    <div
+      {...(movable ? moveHandleProps : {})}
+      className={cn('absolute', movable && 'pointer-events-auto cursor-move touch-none')}
+      style={rectToCssPercent(rect)}
+    >
+      <RotatedContent delta={delta} boxRect={rect} overlaySize={overlaySize}>
         <img src={annotation.dataUrl} alt="" draggable={false} className="size-full select-none" />
       </RotatedContent>
-      {onRemove && <RemoveButton label="Remove image" onClick={() => onRemove(annotation.id)} />}
+      {onRemove && <RemoveMarkButton label="Remove image" onClick={() => onRemove(annotation.id)} />}
+      {movable && <ResizeMarkHandle handleProps={resizeHandleProps} />}
     </div>
   )
 }
@@ -128,7 +184,7 @@ function PlacedHighlight({ annotation, delta, onRemove }: PlacedProps<HighlightP
             style={{ ...rectToCssPercent(displayRect), backgroundColor: annotation.colorHex }}
           >
             {onRemove && index === 0 && (
-              <RemoveButton label="Remove highlight" onClick={() => onRemove(annotation.id)} />
+              <RemoveMarkButton label="Remove highlight" onClick={() => onRemove(annotation.id)} />
             )}
           </div>
         )
@@ -169,19 +225,5 @@ function RotatedContent({
     >
       {children}
     </div>
-  )
-}
-
-function RemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className="pointer-events-auto absolute -right-2.5 -top-2.5 flex size-5 items-center justify-center rounded-full border bg-background text-destructive shadow-sm transition-colors hover:bg-destructive/10"
-    >
-      <X className="size-3" />
-    </button>
   )
 }

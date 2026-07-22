@@ -3,8 +3,8 @@ import { X } from 'lucide-react'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { createId } from '@/lib/id'
 import { mapRectWithin } from '@/lib/signatureGeometry'
+import { RectChooseStep } from '@/components/annotations/RectChooseStep'
 import type { NormalizedRect, RememberedSignature } from '@/domain/types'
-import { RectSelectStep } from './RectSelectStep'
 import { SignatureDrawStep } from './SignatureDrawStep'
 
 type SignatureStep = 'rect' | 'draw'
@@ -15,8 +15,7 @@ type SignatureStep = 'rect' | 'draw'
  * does not, so an in-progress drawing can't be lost by a stray tap.
  */
 export function SignatureModal() {
-  const { signingPage, cancelSign, addSignature, removeSignature, signatureLibrary } =
-    usePdfToolkit()
+  const { signingPage, cancelSign, addSignature, signatureLibrary } = usePdfToolkit()
   const [step, setStep] = useState<SignatureStep>('rect')
   const [chosenRect, setChosenRect] = useState<NormalizedRect | null>(null)
   const [rectAspectRatio, setRectAspectRatio] = useState(1)
@@ -65,12 +64,13 @@ export function SignatureModal() {
       >
         <ModalHeader step={step} onClose={cancelSign} />
         {step === 'rect' ? (
-          <RectSelectStep
+          <RectChooseStep
             page={signingPage}
             initialRect={chosenRect}
+            instruction="Drag a rectangle on the page where the signature should go."
+            confirmedInstruction="Placement chosen — drag again to adjust."
             onCancel={cancelSign}
             onContinue={handleContinue}
-            onRemoveSignature={(signatureId) => removeSignature(signingPage.id, signatureId)}
           />
         ) : (
           <SignatureDrawStep
