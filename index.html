@@ -6,8 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A private, in-browser PDF toolkit. Merge, reorder, rotate, and remove pages with no quality loss. Files never leave your device."
+      content="Free PDF Machine — a private, in-browser PDF editor. Merge, reorder, rotate, sign, and annotate PDFs with no quality loss. Files never leave your device."
     />
+    <meta property="og:title" content="Free PDF Machine" />
+    <meta
+      property="og:description"
+      content="Merge, reorder, rotate, sign, and annotate PDFs entirely in your browser. Nothing is uploaded."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://freepdfmachine.com/" />
+    <link rel="canonical" href="https://freepdfmachine.com/" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,7 +23,17 @@
       rel="stylesheet"
     />
     <link rel="preload" href="/fonts/LiberationSans-Regular.ttf" as="font" type="font/ttf" crossorigin />
-    <title>PDF Toolkit</title>
+    <!--
+      Cookieless analytics. `data-domains` restricts reporting to the live site,
+      so local development and Netlify deploy previews never reach production data.
+    -->
+    <script
+      defer
+      src="https://cloud.umami.is/script.js"
+      data-website-id="d1eee399-b4a5-4a35-adf8-6674e6afe6eb"
+      data-domains="freepdfmachine.com,www.freepdfmachine.com"
+    ></script>
+    <title>Free PDF Machine — edit, merge & sign PDFs in your browser</title>
   </head>
   <body>
     <div id="root"></div>

@@ -1,5 +1,6 @@
-import { Layers, ShieldCheck } from 'lucide-react'
+import { ShieldCheck } from 'lucide-react'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
+import { MachineMark } from './MachineMark'
 import { Toolbar } from './Toolbar'
 
 /** Sticky app header: brand, privacy badge, page summary, and the toolbar. */
@@ -13,16 +14,16 @@ export function AppHeader() {
       <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Layers className="size-5" />
-            </span>
+            <MachineMark />
             <div>
-              <h1 className="text-base font-semibold leading-none tracking-tight">PDF Toolkit</h1>
+              <h1 className="text-base font-semibold leading-none tracking-tight">
+                Free PDF Machine
+              </h1>
               <p className="mt-1 text-xs text-muted-foreground">
                 {hasPages
                   ? `${pages.length} ${pages.length === 1 ? 'page' : 'pages'} · ${sourceCount} ${
                       sourceCount === 1 ? 'file' : 'files'
-                    }`
+                    } loaded`
                   : 'Edit & merge PDFs in your browser'}
               </p>
             </div>

@@ -1,6 +1,15 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
+
+# Public usage counters. Must be declared BEFORE the SPA catch-all below —
+# Netlify applies redirects in order, so a catch-all placed first would swallow
+# this path and serve index.html instead of the JSON.
+[[redirects]]
+  from = "/api/usage"
+  to = "/.netlify/functions/usage-counters"
+  status = 200
 
 # Single-page app: serve index.html for any path.
 [[redirects]]

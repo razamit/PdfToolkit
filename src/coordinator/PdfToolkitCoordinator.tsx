@@ -5,6 +5,7 @@ import { ThumbnailRenderManager } from '@/managers/ThumbnailRenderManager'
 import { TextContentManager } from '@/managers/TextContentManager'
 import { PdfExportManager } from '@/managers/PdfExportManager'
 import { PageListManager } from '@/managers/PageListManager'
+import { createAnalyticsTracker } from '@/analytics/createAnalyticsTracker'
 import { SourceLoadError } from '@/domain/errors'
 import { downloadPdf } from '@/lib/download'
 import { createId } from '@/lib/id'
@@ -35,7 +36,8 @@ function createManagers() {
   const thumbnailRenderer = new ThumbnailRenderManager(pdfSources)
   const textContent = new TextContentManager(pdfSources)
   const exporter = new PdfExportManager(pdfSources, imageManager)
-  return { pdfSources, imageManager, thumbnailRenderer, textContent, exporter }
+  const analytics = createAnalyticsTracker()
+  return { pdfSources, imageManager, thumbnailRenderer, textContent, exporter, analytics }
 }
 
 interface AnnotatingState {
@@ -66,7 +68,8 @@ function toErrorMessage(file: File, error: unknown): string {
 export function PdfToolkitProvider({ children }: { children: ReactNode }) {
   const managersRef = useRef<ReturnType<typeof createManagers> | null>(null)
   if (!managersRef.current) managersRef.current = createManagers()
-  const { pdfSources, imageManager, thumbnailRenderer, textContent, exporter } = managersRef.current
+  const { pdfSources, imageManager, thumbnailRenderer, textContent, exporter, analytics } =
+    managersRef.current
 
   const [pages, setPages] = useState<PageDescriptor[]>([])
   const [gridColumns, setGridColumns] = useState<GridColumns>(4)
@@ -142,6 +145,11 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
           const result = await loadFile(file)
           sourcesRef.current.set(result.meta.id, result.meta)
           added.push(...result.pages)
+          analytics.track({
+            name: 'file-added',
+            kind: result.meta.kind,
+            pageCount: result.pages.length,
+          })
         } catch (loadError) {
           failures.push(toErrorMessage(file, loadError))
         }
@@ -150,30 +158,39 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       setBusyLabel(null)
       if (failures.length > 0) setError(failures.join('\n'))
     },
-    [loadFile, applyPages],
+    [loadFile, applyPages, analytics],
   )
 
   const removePages = useCallback(
-    (ids: string[]) => applyPages(PageListManager.remove(pagesRef.current, new Set(ids))),
-    [applyPages],
+    (ids: string[]) => {
+      applyPages(PageListManager.remove(pagesRef.current, new Set(ids)))
+      analytics.track({ name: 'pages-removed', count: ids.length })
+    },
+    [applyPages, analytics],
   )
 
   const rotatePages = useCallback(
-    (ids: string[], delta: number) =>
-      applyPages(PageListManager.rotate(pagesRef.current, new Set(ids), delta)),
-    [applyPages],
+    (ids: string[], delta: number) => {
+      applyPages(PageListManager.rotate(pagesRef.current, new Set(ids), delta))
+      analytics.track({ name: 'pages-rotated', count: ids.length })
+    },
+    [applyPages, analytics],
   )
 
   const resizePages = useCallback(
-    (ids: string[], preset: PageSizeMode) =>
-      applyPages(resizePagesToPreset(pagesRef.current, new Set(ids), preset)),
-    [applyPages],
+    (ids: string[], preset: PageSizeMode) => {
+      applyPages(resizePagesToPreset(pagesRef.current, new Set(ids), preset))
+      analytics.track({ name: 'pages-resized', preset })
+    },
+    [applyPages, analytics],
   )
 
   const reorder = useCallback(
-    (activeId: string, overId: string) =>
-      applyPages(PageListManager.moveById(pagesRef.current, activeId, overId)),
-    [applyPages],
+    (activeId: string, overId: string) => {
+      applyPages(PageListManager.moveById(pagesRef.current, activeId, overId))
+      analytics.track({ name: 'pages-reordered' })
+    },
+    [applyPages, analytics],
   )
 
   const signingPage = useMemo(
@@ -193,8 +210,9 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       }
       applyPages(PageListManager.addSignature(pagesRef.current, pageId, placement))
       setSigningPageId(null)
+      analytics.track({ name: 'signature-added', reused: newSignature === null })
     },
-    [applyPages],
+    [applyPages, analytics],
   )
 
   const removeSignature = useCallback(
@@ -221,9 +239,11 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
   const cancelAnnotate = useCallback(() => setAnnotating(null), [])
 
   const addAnnotation = useCallback(
-    (pageId: string, placement: AnnotationPlacement) =>
-      applyPages(PageListManager.addAnnotation(pagesRef.current, pageId, placement)),
-    [applyPages],
+    (pageId: string, placement: AnnotationPlacement) => {
+      applyPages(PageListManager.addAnnotation(pagesRef.current, pageId, placement))
+      analytics.track({ name: 'annotation-added', kind: placement.kind })
+    },
+    [applyPages, analytics],
   )
 
   const removeAnnotation = useCallback(
@@ -257,14 +277,17 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       setError(null)
       try {
         const bytes = await exporter.export(target, pageSizeMode)
-        downloadPdf(bytes, 'pdf-toolkit-export.pdf')
+        downloadPdf(bytes, 'freepdfmachine-export.pdf')
+        // Tracked only after the bytes exist, so the count means "PDFs produced",
+        // not "export attempted".
+        analytics.track({ name: 'pdf-exported', scope, pageCount: target.length })
       } catch (exportError) {
         setError(exportError instanceof Error ? exportError.message : 'Export failed.')
       } finally {
         setBusyLabel(null)
       }
     },
-    [exporter, pageSizeMode],
+    [exporter, pageSizeMode, analytics],
   )
 
   const resetAll = useCallback(() => {

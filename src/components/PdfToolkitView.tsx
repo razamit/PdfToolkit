@@ -39,8 +39,9 @@ export function PdfToolkitView() {
       <footer className="border-t py-4">
         <div className="mx-auto flex max-w-[1400px] flex-col items-center gap-1.5 px-4 text-center text-xs text-muted-foreground sm:px-6">
           <p>
-            Processed entirely in your browser. JPEGs embed byte-for-byte; PDF pages keep their
-            original content and resolution.
+            <span className="font-medium text-foreground">Free PDF Machine</span> — processed
+            entirely in your browser. JPEGs embed byte-for-byte; PDF pages keep their original
+            content and resolution.
           </p>
           <p>
             Built by{' '}

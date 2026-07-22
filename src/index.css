@@ -84,6 +84,41 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Machine motion — the brand mark's meshed cogs and the counters' header cog.
+   Deliberately slow: at 14s and 10s per revolution the movement reads as alive
+   without competing with the page for attention. Turning in opposite directions
+   is what makes the two cogs look meshed rather than merely adjacent.
+--------------------------------------------------------------------------- */
+@keyframes machine-cog {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes machine-cog-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@layer utilities {
+  .animate-cog-slow {
+    animation: machine-cog 14s linear infinite;
+  }
+
+  .animate-cog-reverse {
+    animation: machine-cog-reverse 10s linear infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-cog-slow,
+  .animate-cog-reverse {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Annotation font — the same file PdfExportManager embeds (WYSIWYG preview).
    The metric overrides pin the CSS line box to the Helvetica AFM values that
    TEXT_FIRST_BASELINE_EM assumes, so preview baselines match the export.
