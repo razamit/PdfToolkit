@@ -82,6 +82,39 @@ root cause and the largest remaining item),
 `faq-markup-has-no-visible-counterpart.md`, `every-url-returns-200-soft-404.md`,
 `pdfjs-bundled-into-entry-chunk.md`.
 
+[**Update, 2026-07-23 — deployed and re-probed live; this entry's status moves
+from 🟡 PARTIAL to ✅ DONE for its stated scope.** The two items that held it at
+PARTIAL are both resolved. (a) The `netlify.toml` headers are confirmed live on
+`https://freepdfmachine.com/`: `link: </sitemap.xml>; rel="sitemap",
+</llms.txt>; rel="describedby"`, `x-frame-options: SAMEORIGIN`,
+`x-content-type-options: nosniff`, `referrer-policy:
+strict-origin-when-cross-origin`, and `/assets/index-BVDIQYJA.js` now returns
+`cache-control: public,max-age=31536000,immutable` (was
+`max-age=0,must-revalidate`), `/fonts/*` returns `max-age=2592000`, and
+`/.well-known/agent-card.json` returns `access-control-allow-origin: *`. (b)
+Google Search Console verification is done by DNS TXT on the apex, confirmed
+resolving on both Google and Cloudflare public resolvers:
+`"google-site-verification=L0IoC4r_aIPVv2meOMQmJoK9mRZUyfTT_MSUzykaT54"`. All six
+discovery files serve with correct types and no longer return the app shell:
+`/robots.txt 200 text/plain 2256`, `/sitemap.xml 200 application/xml 269`,
+`/llms.txt 200 text/plain 3809`, `/llms-full.txt 200 text/plain 13340`,
+`/index.md 200 text/markdown 5907`, `/.well-known/agent-card.json 200
+application/json 4926`, plus `/og-image.png 200 image/png 53927`. GPTBot,
+ClaudeBot and PerplexityBot each confirmed getting 200 on `/llms.txt`,
+`/robots.txt` and the agent card. The JSON-LD parses **from the live response**
+with 4 nodes, 0 orphan `@id` references, `Offer` `0 USD`, and both parent entity
+`@id`s intact. Decision row 7's redirect re-confirmed: `www` and
+`pdfedittoolkit.netlify.app` both 301 to the apex. **Re-audit score: 33.5/41
+(82%), up from 11/40 (27.5%).** What is still open is unchanged and remains the
+four tickets: the served body is still `<div id="root"></div>` with 0 visible
+text characters (`served-html-has-no-crawlable-content.md`, worth ~5.5 of the
+remaining 7.5 points because five other rows are downstream of it), every URL
+still returns 200 (`every-url-returns-200-soft-404.md`), the FAQ markup still has
+no visible counterpart (`faq-markup-has-no-visible-counterpart.md`), and the
+Google Fonts stylesheet plus the 1.38 MB entry chunk still block first paint
+(`pdfjs-bundled-into-entry-chunk.md`). Remaining manual step for the user:
+submit `sitemap.xml` in Search Console once the property finishes verifying.]
+
 ---
 
 **2026-07-23 — Bulk-action bar moved from the bottom of the viewport into the
