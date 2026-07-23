@@ -6,6 +6,122 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-07-23 — Free-hand / straight-line highlighter (`'freehand-highlight'`),
+a second highlight tool drawn directly on the page. ✅ DONE.** The per-page
+annotate menu's single "Highlight" split into **"Highlight text"** (today's
+text-aware tool, unchanged, PDF-only) and a new **"Highlight"** — a free-hand
+highlighter you draw over the page, with a **Free / Line** mode toggle, an
+**S / M / L** thickness selector, and the existing colour swatches. It is a new
+annotation *kind* assembled from parts that already existed: a pure-state
+capture hook modelled on `useSignatureStrokes` (`useFreehandStrokes`, with a
+`line` mode that keeps the stroke a two-point `[start, current]` segment), one
+`<svg>` of round-joined paths in a single `mix-blend-multiply` layer
+(`HighlightInkSvg`, shared by the modal preview and the placed overlay), and a
+raster export that rasterizes the same `strokes` to a flat-colour transparent
+PNG stamped with `BlendMode.Multiply` — so preview and export multiply over the
+page exactly once and stay pixel-faithful. Screen and export curves are
+guaranteed identical by a shared `strokeControlPoints` (extracted from
+`traceStroke`) that both the canvas tracer and the SVG-path builder consume.
+Drawn highlights are **fixed, remove-only** (like text-highlights) and are
+**available on image pages too**, making scanned/image pages highlightable for
+the first time. No coordinator/context changes were needed — the pipelines are
+generic over `AnnotationPlacement`. `ColorSwatches` was extracted from the
+text-highlight modal into a shared component so both dialogs use it.
+**Proof:** `npx tsc -b` clean; `npm run lint` unchanged at 4 pre-existing
+warnings (`button.tsx`, `ThumbnailGrid.tsx` ×3 — all predating this change);
+`npm run build` green, **394 modules** (up from 388: 4 new files + the shared
+`ColorSwatches`). The discriminated-union exhaustiveness check confirmed every
+`switch` gained its `'freehand-highlight'` branch. Verified live via
+`agent-browser` against the dev server with a generated 2-page text PDF and a
+striped PNG: (1) the PDF annotate menu shows **both** "Highlight text" and
+"Highlight"; (2) a free-hand squiggle drew as a smooth translucent stroke with
+the text legible underneath (multiply), and Line mode drew a straight rounded
+bar; (3) S→L thickness and colour changes applied; (4) both marks appeared on
+the **grid thumbnail**; (5) in **Move & resize** the drawn highlights showed a
+remove button and **no** resize handle (measured 2 remove / 0 resize) and a
+remove click dropped a mark (2→1); (6) rotating the page 90° rotated the
+highlight **with** the content, and the exported PDF confirmed it stayed aligned
+under rotation; (7) an **export** rendered via `pdftoppm` showed a smooth
+free-hand squiggle and a straight bar both multiply-blended over legible text,
+visually matching the on-screen preview (parity); (8) on an **image** page only
+"Highlight" was offered (not "Highlight text"), drawing worked (squiggle showed
+olive where it crossed the image's darker bars = multiply), and its export kept
+the mark. Note: under `agent-browser` the `PreviewSurface` overlay
+occasionally needed a screenshot-forced reflow before its `ResizeObserver`
+measured — reproduced identically on the *existing* text-highlight modal, so it
+is a pre-existing automation-timing quirk, not introduced here.
+**Files:** added `src/components/freehand/useFreehandStrokes.ts`,
+`src/components/freehand/HighlightInkSvg.tsx`,
+`src/components/freehand/FreehandHighlightModal.tsx`,
+`src/components/annotations/ColorSwatches.tsx`,
+`src/managers/annotation/FreehandHighlightStamper.ts`; edited
+`src/domain/types.ts`, `src/lib/annotationStyles.ts`,
+`src/lib/signatureGeometry.ts`, `src/lib/strokeRendering.ts`,
+`src/components/annotations/AnnotationOverlay.tsx`,
+`src/components/highlight/HighlightAnnotateModal.tsx`,
+`src/managers/annotation/AnnotationStamper.ts`,
+`src/managers/PageListManager.ts`,
+`src/components/annotations/AnnotateMenu.tsx`,
+`src/components/PdfToolkitView.tsx`.
+**Cross-refs:** decision row 11 (new kind, raster+single-multiply export,
+fixed/remove-only, image-page availability); builds on the signature ink
+pipeline and the frozen-rotation `computePdfPlacement` convention.
+
+---
+
+**2026-07-23 — Dropped the indigo selection ring on page thumbnails; the
+checkbox tick is the sole selection cue. ✅ DONE.** Follow-up to the entry below
+at the user's request ("remove the second selection border, the V is enough").
+The ring (`ring-2 ring-primary ring-offset-2`) that decision row 10 added so
+selection and source colour could coexist read as a competing second border next
+to the source-coloured `border-2`; the persistent top-left checkmark already
+marks a selected page unambiguously, so the ring was redundant. Now a selected
+page keeps only its source-colour border + the tick. This refines the
+selection-treatment detail of row 10 (the palette decision itself is unchanged;
+the concern row 10 solved — selection not hiding the source colour — still holds,
+now via the tick rather than a ring).
+**Proof:** `npx tsc -b` clean; `npm run lint` unchanged at 4 pre-existing
+warnings. Verified live via `agent-browser`: with 4 contract pages selected, each
+showed the indigo checkmark and its blue source border only — no ring — while the
+bulk bar read "4 selected".
+**Files:** `src/components/PageThumbnail.tsx`.
+**Cross-refs:** the entry below; decision row 10.
+
+---
+
+**2026-07-23 — Per-source file legend + colour-coded page borders. ✅ DONE.**
+When several PDFs/images are merged the grid was one undifferentiated list of
+pages; now each uploaded file gets a distinct colour, shown as a side legend
+(dot + filename + page count, one row per file) and as the tint of every page
+thumbnail's border, so the merge composition is legible at a glance. The legend
+is interactive: clicking a file selects exactly its pages (toggles off when they
+are already the whole selection), and a per-row trash button removes all of that
+file's pages. Colour is assigned by a new `SourceColorRegistry` (lowest-free
+palette slot, idempotent per `sourceId`, slot freed on source garbage-collection)
+so a file's colour is stable across page reordering and unrelated add/remove.
+Selection moved from a `border-primary` swap to an indigo **ring**, so a selected
+page shows its source colour *and* the selection simultaneously (chosen with the
+user in planning, along with the select+remove legend behaviour).
+**Proof:** `npx tsc -b` clean; `npm run build` green (388 modules); `npm run lint`
+unchanged at 4 pre-existing warnings (`button.tsx`, `ThumbnailGrid.tsx` — the two
+new deps-array warnings in `ThumbnailGrid` predate this change). Verified live via
+`agent-browser` against the dev server with 2 generated PDFs (4 + 3 pages) + 1
+PNG: header read `8 pages · 3 files loaded`; legend listed all three with matching
+dots; page borders were blue (contract, 4), red (report, 3), green (image, 1);
+clicking the report row selected exactly pages 5–7 with the indigo ring drawn
+*around* the still-visible red border; clicking it again cleared; the trash button
+on contract removed its 4 pages and its legend row, and the survivors kept red/
+green (blue was released, not reassigned) — confirming stable assignment.
+**Files:** added `src/lib/sourceColors.ts`, `src/managers/SourceColorRegistry.ts`,
+`src/components/SourceLegend.tsx`; edited `src/coordinator/PdfToolkitCoordinator.tsx`,
+`src/coordinator/toolkitContext.ts`, `src/hooks/useSelection.ts`,
+`src/components/ThumbnailGrid.tsx`, `src/components/PageThumbnail.tsx`,
+`src/components/PdfToolkitView.tsx`.
+**Cross-refs:** decision row 10 (categorical palette as a scoped exception to
+the single-accent brand of row 5).
+
+---
+
 **2026-07-23 — Self-hosted counters verified live and seeded to the dashboard
 numbers. ✅ DONE.** Closes the two 🟡 PARTIAL entries below (the Umami→`/api/track`
 re-plumb and the strong-consistency fix), both now confirmed in production on

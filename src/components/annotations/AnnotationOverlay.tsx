@@ -1,18 +1,27 @@
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { normalizeRotation } from '@/managers/PageListManager'
-import { inverseRotation, rectToCssPercent, rotateRect } from '@/lib/signatureGeometry'
+import {
+  inverseRotation,
+  rectToCssPercent,
+  rotatePoint,
+  rotateRect,
+} from '@/lib/signatureGeometry'
 import { displayedPageSizePt, TEXT_LINE_HEIGHT_EM } from '@/lib/annotationGeometry'
 import { annotationFontFamilyFor } from '@/lib/annotationFont'
 import { useElementSize } from '@/hooks/useElementSize'
 import { useMarkTransform } from '@/hooks/useMarkTransform'
 import { cn } from '@/lib/utils'
+import { HighlightInkSvg } from '@/components/freehand/HighlightInkSvg'
 import { RemoveMarkButton, ResizeMarkHandle } from './MarkControls'
 import type {
   AnnotationPlacement,
   AnnotationPlacementPatch,
+  FreehandHighlightPlacement,
   HighlightPlacement,
   ImagePlacement,
+  NormalizedRect,
   Rotation,
+  SignatureStroke,
   TextPlacement,
 } from '@/domain/types'
 
@@ -88,6 +97,8 @@ function PlacedAnnotation(props: PlacedProps<AnnotationPlacement>) {
       return <PlacedImage {...props} annotation={annotation} />
     case 'highlight':
       return <PlacedHighlight {...props} annotation={annotation} />
+    case 'freehand-highlight':
+      return <PlacedFreehandHighlight {...props} annotation={annotation} />
   }
 }
 
@@ -191,6 +202,58 @@ function PlacedHighlight({ annotation, delta, onRemove }: PlacedProps<HighlightP
       })}
     </>
   )
+}
+
+/**
+ * A free-hand highlighter mark: strokes rotated into the current frame by
+ * `delta` and drawn via the shared ink SVG (single mix-blend-multiply layer).
+ * Fixed — it ignores `onTransform`; a remove button sits at the strokes'
+ * bounding-box top when removal is offered (e.g. in Move & resize).
+ */
+function PlacedFreehandHighlight({
+  annotation,
+  delta,
+  overlaySize,
+  onRemove,
+}: PlacedProps<FreehandHighlightPlacement>) {
+  const rotated = useMemo(
+    () => annotation.strokes.map((stroke) => stroke.map((point) => rotatePoint(point, delta))),
+    [annotation.strokes, delta],
+  )
+  const bbox = useMemo(() => strokesBoundingBox(rotated), [rotated])
+  return (
+    <>
+      <HighlightInkSvg
+        strokes={rotated}
+        colorHex={annotation.colorHex}
+        thickness={annotation.thickness}
+        surface={overlaySize}
+      />
+      {onRemove && bbox && (
+        <div className="absolute" style={rectToCssPercent(bbox)}>
+          <RemoveMarkButton label="Remove highlight" onClick={() => onRemove(annotation.id)} />
+        </div>
+      )}
+    </>
+  )
+}
+
+/** Tight [0,1] bounding box over every stroke point, or null when there is none. */
+function strokesBoundingBox(strokes: SignatureStroke[]): NormalizedRect | null {
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
+  for (const stroke of strokes) {
+    for (const point of stroke) {
+      minX = Math.min(minX, point.x)
+      minY = Math.min(minY, point.y)
+      maxX = Math.max(maxX, point.x)
+      maxY = Math.max(maxY, point.y)
+    }
+  }
+  if (!Number.isFinite(minX)) return null
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }
 
 /**

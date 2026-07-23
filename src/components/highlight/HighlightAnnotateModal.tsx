@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { AnnotationModalShell } from '@/components/annotations/AnnotationModalShell'
 import { PreviewSurface } from '@/components/annotations/PreviewSurface'
 import { ExistingMarksOverlay } from '@/components/annotations/ExistingMarksOverlay'
+import { ColorSwatches } from '@/components/annotations/ColorSwatches'
 import { cn } from '@/lib/utils'
 import type { PageDescriptor } from '@/domain/types'
 import { DEFAULT_HIGHLIGHT_COLOR, HIGHLIGHT_COLORS } from '@/lib/annotationStyles'
@@ -93,7 +94,11 @@ function HighlightModalContent({ page }: { page: PageDescriptor }) {
 
         <footer className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-4">
           <div className="flex items-center gap-4">
-            <ColorSwatches colorHex={colorHex} onChange={setColorHex} />
+            <ColorSwatches
+              colors={HIGHLIGHT_COLORS}
+              colorHex={colorHex}
+              onChange={setColorHex}
+            />
             <p className="text-xs text-muted-foreground">
               {pendingLineRects.length > 0
                 ? 'Selection ready — add it, or drag again to change.'
@@ -131,34 +136,5 @@ function SelectionPreview({
         />
       ))}
     </>
-  )
-}
-
-function ColorSwatches({
-  colorHex,
-  onChange,
-}: {
-  colorHex: string
-  onChange: (color: string) => void
-}) {
-  return (
-    <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Highlight color">
-      {HIGHLIGHT_COLORS.map((color) => (
-        <button
-          key={color}
-          type="button"
-          role="radio"
-          aria-checked={color === colorHex}
-          aria-label={`Highlight color ${color}`}
-          title={color}
-          onClick={() => onChange(color)}
-          className={cn(
-            'size-6 rounded-full border transition-shadow',
-            color === colorHex && 'ring-2 ring-primary ring-offset-2',
-          )}
-          style={{ backgroundColor: color }}
-        />
-      ))}
-    </div>
   )
 }

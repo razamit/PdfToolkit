@@ -5,6 +5,7 @@ import { ThumbnailRenderManager } from '@/managers/ThumbnailRenderManager'
 import { TextContentManager } from '@/managers/TextContentManager'
 import { PdfExportManager } from '@/managers/PdfExportManager'
 import { PageListManager } from '@/managers/PageListManager'
+import { SourceColorRegistry } from '@/managers/SourceColorRegistry'
 import { createAnalyticsTracker } from '@/analytics/createAnalyticsTracker'
 import { SourceLoadError } from '@/domain/errors'
 import { downloadPdf } from '@/lib/download'
@@ -36,8 +37,17 @@ function createManagers() {
   const thumbnailRenderer = new ThumbnailRenderManager(pdfSources)
   const textContent = new TextContentManager(pdfSources)
   const exporter = new PdfExportManager(pdfSources, imageManager)
+  const colorRegistry = new SourceColorRegistry()
   const analytics = createAnalyticsTracker()
-  return { pdfSources, imageManager, thumbnailRenderer, textContent, exporter, analytics }
+  return {
+    pdfSources,
+    imageManager,
+    thumbnailRenderer,
+    textContent,
+    exporter,
+    colorRegistry,
+    analytics,
+  }
 }
 
 interface AnnotatingState {
@@ -68,8 +78,15 @@ function toErrorMessage(file: File, error: unknown): string {
 export function PdfToolkitProvider({ children }: { children: ReactNode }) {
   const managersRef = useRef<ReturnType<typeof createManagers> | null>(null)
   if (!managersRef.current) managersRef.current = createManagers()
-  const { pdfSources, imageManager, thumbnailRenderer, textContent, exporter, analytics } =
-    managersRef.current
+  const {
+    pdfSources,
+    imageManager,
+    thumbnailRenderer,
+    textContent,
+    exporter,
+    colorRegistry,
+    analytics,
+  } = managersRef.current
 
   const [pages, setPages] = useState<PageDescriptor[]>([])
   const [gridColumns, setGridColumns] = useState<GridColumns>(4)
@@ -108,12 +125,13 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
         if (!usedSourceIds.has(sourceId)) {
           releaseSource(meta)
           sourcesRef.current.delete(sourceId)
+          colorRegistry.release(sourceId)
         }
       }
       pagesRef.current = next
       setPages(next)
     },
-    [releaseSource],
+    [releaseSource, colorRegistry],
   )
 
   const loadFile = useCallback(
@@ -144,6 +162,7 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
         try {
           const result = await loadFile(file)
           sourcesRef.current.set(result.meta.id, result.meta)
+          colorRegistry.assign(result.meta.id)
           added.push(...result.pages)
           analytics.track({
             name: 'file-added',
@@ -158,13 +177,23 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       setBusyLabel(null)
       if (failures.length > 0) setError(failures.join('\n'))
     },
-    [loadFile, applyPages, analytics],
+    [loadFile, applyPages, analytics, colorRegistry],
   )
 
   const removePages = useCallback(
     (ids: string[]) => {
       applyPages(PageListManager.remove(pagesRef.current, new Set(ids)))
       analytics.track({ name: 'pages-removed', count: ids.length })
+    },
+    [applyPages, analytics],
+  )
+
+  const removeSource = useCallback(
+    (sourceId: string) => {
+      const count = pagesRef.current.filter((page) => page.sourceId === sourceId).length
+      if (count === 0) return
+      applyPages(PageListManager.removeBySource(pagesRef.current, sourceId))
+      analytics.track({ name: 'pages-removed', count })
     },
     [applyPages, analytics],
   )
@@ -296,15 +325,20 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
     pdfSources.destroyAll()
     imageManager.destroyAll()
     sourcesRef.current.clear()
+    colorRegistry.clear()
     pagesRef.current = []
     setPages([])
     selectionRef.current.clear()
     setSigningPageId(null)
     setAnnotating(null)
     setError(null)
-  }, [thumbnailRenderer, textContent, pdfSources, imageManager])
+  }, [thumbnailRenderer, textContent, pdfSources, imageManager, colorRegistry])
 
   const getSourceName = useCallback((sourceId: string) => sourcesRef.current.get(sourceId)?.name, [])
+  const getSourceColor = useCallback(
+    (sourceId: string) => colorRegistry.colorFor(sourceId),
+    [colorRegistry],
+  )
   const dismissError = useCallback(() => setError(null), [])
 
   const value = useMemo<ToolkitContextValue>(
@@ -319,10 +353,12 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       imageManager,
       textContent,
       getSourceName,
+      getSourceColor,
       pageSizeMode,
       setPageSizeMode,
       addFiles,
       removePages,
+      removeSource,
       rotatePages,
       resizePages,
       reorder,
@@ -355,9 +391,11 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       imageManager,
       textContent,
       getSourceName,
+      getSourceColor,
       pageSizeMode,
       addFiles,
       removePages,
+      removeSource,
       rotatePages,
       resizePages,
       reorder,

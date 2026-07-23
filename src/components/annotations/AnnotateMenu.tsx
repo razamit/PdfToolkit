@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { Highlighter, ImagePlus, Move, PenLine, SquarePen, Type, type LucideIcon } from 'lucide-react'
+import {
+  Baseline,
+  Highlighter,
+  ImagePlus,
+  Move,
+  PenLine,
+  SquarePen,
+  Type,
+  type LucideIcon,
+} from 'lucide-react'
 import type { AnnotationTool, PageDescriptor } from '@/domain/types'
 
 interface AnnotateMenuProps {
@@ -9,8 +18,10 @@ interface AnnotateMenuProps {
 }
 
 /**
- * Hover-bar popover listing the per-page annotation actions. Highlighting is
- * text-aware, so it is offered only for PDF pages — image pages have no text.
+ * Hover-bar popover listing the per-page annotation actions. There are two
+ * highlighters: "Highlight text" is text-aware and offered only for PDF pages
+ * (image pages have no text), while the free-hand "Highlight" is drawn directly
+ * on the page and works on both PDF and image pages.
  */
 export function AnnotateMenu({ page, onSign, onAnnotate }: AnnotateMenuProps) {
   const [open, setOpen] = useState(false)
@@ -57,11 +68,16 @@ export function AnnotateMenu({ page, onSign, onAnnotate }: AnnotateMenuProps) {
           />
           {page.kind === 'pdf' && (
             <MenuItem
-              icon={Highlighter}
-              label="Highlight"
+              icon={Baseline}
+              label="Highlight text"
               onClick={() => choose(() => onAnnotate(page.id, 'highlight'))}
             />
           )}
+          <MenuItem
+            icon={Highlighter}
+            label="Highlight"
+            onClick={() => choose(() => onAnnotate(page.id, 'freehand-highlight'))}
+          />
           {hasPlacedMarks(page) && (
             <MenuItem
               icon={Move}

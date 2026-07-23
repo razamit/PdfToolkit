@@ -32,6 +32,8 @@ export interface ToolkitContextValue {
   imageManager: ImageImportManager
   textContent: TextContentManager
   getSourceName: (sourceId: string) => string | undefined
+  /** Categorical color identifying a source (undefined if never assigned). */
+  getSourceColor: (sourceId: string) => string | undefined
 
   /** Page size applied to the whole document at export ('original' = keep sizes). */
   pageSizeMode: PageSizeMode
@@ -39,6 +41,8 @@ export interface ToolkitContextValue {
 
   addFiles: (files: FileList | File[]) => Promise<void>
   removePages: (ids: string[]) => void
+  /** Remove every page belonging to one source (the whole uploaded file). */
+  removeSource: (sourceId: string) => void
   rotatePages: (ids: string[], delta: number) => void
   /** Set the export size of the given pages to a preset ('original' restores full size). */
   resizePages: (ids: string[], preset: PageSizeMode) => void

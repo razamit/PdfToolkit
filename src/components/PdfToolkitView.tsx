@@ -3,11 +3,13 @@ import { useFileUpload } from '@/hooks/useFileUpload'
 import { AppHeader } from './AppHeader'
 import { BulkActionBar } from './BulkActionBar'
 import { EmptyState } from './EmptyState'
+import { SourceLegend } from './SourceLegend'
 import { ThumbnailGrid } from './ThumbnailGrid'
 import { SignatureModal } from './signature/SignatureModal'
 import { TextAnnotateModal } from './text/TextAnnotateModal'
 import { ImageAnnotateModal } from './image/ImageAnnotateModal'
 import { HighlightAnnotateModal } from './highlight/HighlightAnnotateModal'
+import { FreehandHighlightModal } from './freehand/FreehandHighlightModal'
 import { ArrangeMarksModal } from './annotations/ArrangeMarksModal'
 import { BusyOverlay, DragOverlay, ErrorBanner } from './StatusOverlays'
 
@@ -33,7 +35,18 @@ export function PdfToolkitView() {
 
       <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6">
         {error && <ErrorBanner message={error} onDismiss={dismissError} />}
-        {hasPages ? <ThumbnailGrid /> : <EmptyState />}
+        {hasPages ? (
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+            <aside className="lg:sticky lg:top-[112px] lg:w-56 lg:shrink-0">
+              <SourceLegend />
+            </aside>
+            <div className="min-w-0 flex-1">
+              <ThumbnailGrid />
+            </div>
+          </div>
+        ) : (
+          <EmptyState />
+        )}
       </main>
 
       <footer className="border-t py-4">
@@ -67,6 +80,9 @@ export function PdfToolkitView() {
       )}
       {annotatingPage && annotatingTool === 'highlight' && (
         <HighlightAnnotateModal key={annotatingPage.id} />
+      )}
+      {annotatingPage && annotatingTool === 'freehand-highlight' && (
+        <FreehandHighlightModal key={annotatingPage.id} />
       )}
       {annotatingPage && annotatingTool === 'arrange' && (
         <ArrangeMarksModal key={annotatingPage.id} />

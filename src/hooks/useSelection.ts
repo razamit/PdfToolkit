@@ -7,6 +7,8 @@ export interface Selection {
   toggle: (id: string) => void
   /** Select the contiguous range between the last anchor and `id` (shift-click). */
   selectRange: (id: string) => void
+  /** Replace the whole selection with exactly `ids` (e.g. all of one file's pages). */
+  setSelection: (ids: string[]) => void
   selectAll: () => void
   clear: () => void
 }
@@ -64,6 +66,11 @@ export function useSelection(orderedIds: string[]): Selection {
     [orderedIds],
   )
 
+  const setSelection = useCallback((ids: string[]) => {
+    anchorRef.current = ids.length > 0 ? ids[ids.length - 1] : null
+    setSelectedIds(new Set(ids))
+  }, [])
+
   const selectAll = useCallback(() => setSelectedIds(new Set(orderedIds)), [orderedIds])
   const clear = useCallback(() => setSelectedIds(new Set()), [])
 
@@ -73,6 +80,7 @@ export function useSelection(orderedIds: string[]): Selection {
     count: selectedIds.size,
     toggle,
     selectRange,
+    setSelection,
     selectAll,
     clear,
   }

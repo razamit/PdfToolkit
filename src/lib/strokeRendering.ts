@@ -1,4 +1,9 @@
-import type { NormalizedRect, RememberedSignature, SignatureStroke } from '@/domain/types'
+import type {
+  NormalizedRect,
+  RememberedSignature,
+  SignatureStroke,
+  StrokePoint,
+} from '@/domain/types'
 
 const INK_COLOR = '#111827'
 /** Long side of the offscreen render, so mobile-drawn signatures export crisp. */
@@ -18,8 +23,49 @@ export interface StrokeRenderResult {
   inkAspectRatio: number
 }
 
+/** Colour + line width overrides for a stroke render (defaults: signature ink). */
+export interface StrokeStyle {
+  /** Stroke colour; defaults to the signature ink colour. */
+  color?: string
+  /** Explicit line width in surface pixels; defaults to `strokeLineWidth`. */
+  lineWidth?: number
+}
+
+/**
+ * A stroke reduced to its draw operations, shared by the canvas tracer and the
+ * SVG path builder so screen and export curves are byte-for-byte identical:
+ * a moveto to `start`, a run of midpoint quadratics, then a lineto to `end`.
+ * A single-point stroke is a `dot` rendered as a round cap at `start`.
+ */
+export interface StrokePath {
+  start: StrokePoint
+  quads: Array<{ control: StrokePoint; end: StrokePoint }>
+  /** Final straight segment endpoint, or null for a dot. */
+  end: StrokePoint | null
+  isDot: boolean
+}
+
 export function strokeLineWidth(width: number, height: number): number {
   return Math.max(1.5, Math.min(width, height) * STROKE_WIDTH_FRACTION)
+}
+
+/**
+ * Midpoint-quadratic control sequence for one stroke, in whatever coordinate
+ * space the points arrive in. Midpoints are linear, so pre- or post-scaling the
+ * points yields the same curve — the canvas tracer and the SVG builder both
+ * scale to their surface first, then call this. Returns null for an empty stroke.
+ */
+export function strokeControlPoints(points: StrokePoint[]): StrokePath | null {
+  if (points.length === 0) return null
+  if (points.length === 1) return { start: points[0], quads: [], end: null, isDot: true }
+  const quads: StrokePath['quads'] = []
+  for (let i = 1; i < points.length - 1; i += 1) {
+    quads.push({
+      control: points[i],
+      end: { x: (points[i].x + points[i + 1].x) / 2, y: (points[i].y + points[i + 1].y) / 2 },
+    })
+  }
+  return { start: points[0], quads, end: points[points.length - 1], isDot: false }
 }
 
 /** Paint normalized strokes onto a context of the given pixel size. */
@@ -28,12 +74,14 @@ export function drawStrokes(
   strokes: SignatureStroke[],
   width: number,
   height: number,
+  style?: StrokeStyle,
 ): void {
-  context.strokeStyle = INK_COLOR
-  context.fillStyle = INK_COLOR
+  const color = style?.color ?? INK_COLOR
+  context.strokeStyle = color
+  context.fillStyle = color
   context.lineCap = 'round'
   context.lineJoin = 'round'
-  context.lineWidth = strokeLineWidth(width, height)
+  context.lineWidth = style?.lineWidth ?? strokeLineWidth(width, height)
   for (const stroke of strokes) traceStroke(context, stroke, width, height)
 }
 
@@ -44,33 +92,33 @@ function traceStroke(
   width: number,
   height: number,
 ): void {
-  if (stroke.length === 0) return
   const points = stroke.map((point) => ({ x: point.x * width, y: point.y * height }))
-  if (points.length === 1) {
+  const path = strokeControlPoints(points)
+  if (!path) return
+  if (path.isDot) {
     context.beginPath()
-    context.arc(points[0].x, points[0].y, context.lineWidth / 2, 0, Math.PI * 2)
+    context.arc(path.start.x, path.start.y, context.lineWidth / 2, 0, Math.PI * 2)
     context.fill()
     return
   }
   context.beginPath()
-  context.moveTo(points[0].x, points[0].y)
-  for (let i = 1; i < points.length - 1; i += 1) {
-    const midX = (points[i].x + points[i + 1].x) / 2
-    const midY = (points[i].y + points[i + 1].y) / 2
-    context.quadraticCurveTo(points[i].x, points[i].y, midX, midY)
+  context.moveTo(path.start.x, path.start.y)
+  for (const quad of path.quads) {
+    context.quadraticCurveTo(quad.control.x, quad.control.y, quad.end.x, quad.end.y)
   }
-  const last = points[points.length - 1]
-  context.lineTo(last.x, last.y)
+  if (path.end) context.lineTo(path.end.x, path.end.y)
   context.stroke()
 }
 
 /**
  * Re-render strokes at high resolution and crop to the ink bounding box.
- * Returns null when there is no ink.
+ * Returns null when there is no ink. `style` overrides colour and line width
+ * (default: signature ink at `strokeLineWidth`).
  */
 export function renderStrokesToPng(
   strokes: SignatureStroke[],
   surfaceAspectRatio: number,
+  style?: StrokeStyle,
 ): StrokeRenderResult | null {
   const inked = strokes.filter((stroke) => stroke.length > 0)
   if (inked.length === 0) return null
@@ -81,9 +129,10 @@ export function renderStrokesToPng(
   surface.height = height
   const context = surface.getContext('2d')
   if (!context) return null
-  drawStrokes(context, inked, width, height)
+  const lineWidth = style?.lineWidth ?? strokeLineWidth(width, height)
+  drawStrokes(context, inked, width, height, { color: style?.color, lineWidth })
 
-  const bboxPx = inkBoundingBoxPx(inked, width, height)
+  const bboxPx = inkBoundingBoxPx(inked, width, height, lineWidth)
   const cropped = cropCanvas(surface, bboxPx)
   return {
     dataUrl: cropped.toDataURL('image/png'),
@@ -134,7 +183,8 @@ export function fitStrokesIntoSurface(
   )
 }
 
-function exportSurfaceSize(aspectRatio: number): { width: number; height: number } {
+/** Offscreen render size for a surface of the given aspect (long side fixed). */
+export function exportSurfaceSize(aspectRatio: number): { width: number; height: number } {
   if (aspectRatio >= 1) {
     return {
       width: EXPORT_LONG_SIDE_PX,
@@ -152,6 +202,7 @@ function inkBoundingBoxPx(
   strokes: SignatureStroke[],
   width: number,
   height: number,
+  lineWidth: number = strokeLineWidth(width, height),
 ): { x: number; y: number; width: number; height: number } {
   let minX = Infinity
   let minY = Infinity
@@ -165,7 +216,7 @@ function inkBoundingBoxPx(
       maxY = Math.max(maxY, point.y * height)
     }
   }
-  const padding = strokeLineWidth(width, height) / 2 + BBOX_PADDING_PX
+  const padding = lineWidth / 2 + BBOX_PADDING_PX
   const left = Math.max(0, Math.floor(minX - padding))
   const top = Math.max(0, Math.floor(minY - padding))
   const right = Math.min(width, Math.ceil(maxX + padding))

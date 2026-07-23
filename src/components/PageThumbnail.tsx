@@ -17,6 +17,8 @@ interface PageThumbnailProps {
   index: number
   targetWidthPx: number
   isSelected: boolean
+  /** Color of the source file this page came from; tints the thumbnail border. */
+  sourceColor?: string
   onSelect: (id: string, withShift: boolean) => void
   onRotate: (id: string, delta: number) => void
   onRemove: (id: string) => void
@@ -29,6 +31,7 @@ function PageThumbnailComponent({
   index,
   targetWidthPx,
   isSelected,
+  sourceColor,
   onSelect,
   onRotate,
   onRemove,
@@ -38,15 +41,18 @@ function PageThumbnailComponent({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: page.id,
   })
-  const style = { transform: CSS.Transform.toString(transform), transition }
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    ...(sourceColor ? { borderColor: sourceColor } : {}),
+  }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group relative flex flex-col rounded-xl border bg-card transition-shadow',
-        isSelected ? 'border-primary ring-2 ring-primary' : 'hover:shadow-md',
+        'group relative flex flex-col rounded-xl border-2 bg-card transition-shadow hover:shadow-md',
         isDragging && 'z-10 opacity-60 shadow-lg',
       )}
     >

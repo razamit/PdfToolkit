@@ -46,6 +46,19 @@ export function rotateRect(rect: NormalizedRect, delta: Rotation): NormalizedRec
   return rotated
 }
 
+/** Rotate a normalized point 90° clockwise within its unit frame (the point
+ *  analogue of `rotateRectCW90`: a zero-size rect maps `{x,y} → {1-y, x}`). */
+export function rotatePointCW90(point: StrokePoint): StrokePoint {
+  return { x: 1 - point.y, y: point.x }
+}
+
+/** Rotate a normalized point clockwise by a multiple of 90°. */
+export function rotatePoint(point: StrokePoint, delta: Rotation): StrokePoint {
+  let rotated = point
+  for (let step = 0; step < delta / 90; step += 1) rotated = rotatePointCW90(rotated)
+  return rotated
+}
+
 /** The rotation that undoes a clockwise `delta` within the unit frame. */
 export function inverseRotation(delta: Rotation): Rotation {
   return ((360 - delta) % 360) as Rotation

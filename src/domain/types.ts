@@ -90,9 +90,26 @@ export interface HighlightPlacement extends AnnotationBase {
   colorHex: string
 }
 
-export type AnnotationPlacement = TextPlacement | ImagePlacement | HighlightPlacement
+/** A free-hand / straight-line highlighter mark stamped onto one page. */
+export interface FreehandHighlightPlacement extends AnnotationBase {
+  kind: 'freehand-highlight'
+  /** Ink strokes; each a path of normalized points in the creation-time
+   *  displayed frame. A straight line is simply a 2-point stroke. */
+  strokes: SignatureStroke[]
+  /** Highlight color as #rrggbb, drawn with a Multiply blend. */
+  colorHex: string
+  /** Line thickness as a fraction of the smaller displayed page dimension
+   *  (rotation-invariant), so it scales with page size. */
+  thickness: number
+}
 
-export type AnnotationTool = 'text' | 'image' | 'highlight' | 'arrange'
+export type AnnotationPlacement =
+  | TextPlacement
+  | ImagePlacement
+  | HighlightPlacement
+  | FreehandHighlightPlacement
+
+export type AnnotationTool = 'text' | 'image' | 'highlight' | 'freehand-highlight' | 'arrange'
 
 /** Geometry patch produced by moving or resizing a placed text/image annotation. */
 export interface AnnotationPlacementPatch {
@@ -141,7 +158,8 @@ export interface PageDescriptor {
   exportScale?: number
   /** Hand-drawn signatures stamped onto this page (absent when none). */
   signatures?: SignaturePlacement[]
-  /** Text, image, and highlight annotations stamped onto this page (absent when none). */
+  /** Text, image, and highlight annotations stamped onto this page (absent when none).
+   *  Includes both text-anchored and free-hand highlights. */
   annotations?: AnnotationPlacement[]
 }
 

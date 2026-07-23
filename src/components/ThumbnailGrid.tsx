@@ -23,6 +23,7 @@ export function ThumbnailGrid() {
     pages,
     gridColumns,
     selection,
+    getSourceColor,
     reorder,
     rotatePages,
     removePages,
@@ -71,6 +72,7 @@ export function ThumbnailGrid() {
               index={index}
               targetWidthPx={targetWidthPx}
               isSelected={selection.isSelected(page.id)}
+              sourceColor={getSourceColor(page.sourceId)}
               onSelect={handleSelect}
               onRotate={handleRotate}
               onRemove={handleRemove}

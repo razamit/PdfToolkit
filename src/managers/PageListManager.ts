@@ -149,7 +149,14 @@ function applyPlacementPatch(
   annotationId: string,
   patch: AnnotationPlacementPatch,
 ): AnnotationPlacement {
-  if (annotation.id !== annotationId || annotation.kind === 'highlight') return annotation
+  // Highlights (text-anchored and free-hand) are fixed, remove-only — never patched.
+  if (
+    annotation.id !== annotationId ||
+    annotation.kind === 'highlight' ||
+    annotation.kind === 'freehand-highlight'
+  ) {
+    return annotation
+  }
   if (annotation.kind === 'text') {
     return { ...annotation, rect: patch.rect, fontSizePt: patch.fontSizePt ?? annotation.fontSizePt }
   }
