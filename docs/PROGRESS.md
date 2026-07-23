@@ -6,6 +6,26 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-07-23 — Self-hosted counters verified live and seeded to the dashboard
+numbers. ✅ DONE.** Closes the two 🟡 PARTIAL entries below (the Umami→`/api/track`
+re-plumb and the strong-consistency fix), both now confirmed in production on
+deploy `b093343`. The strong-consistency CAS accumulates correctly: a delta-seed
+reading current totals and POSTing only the shortfall reached the target on the
+first iteration — `posted=16`, and the two counts already present (a `pages-removed`
+and a stray `file-added` from earlier diagnostics) were absorbed by the delta logic
+rather than double-counted.
+**Proof:** public `GET /api/usage` (the exact unbusted path the browser fetches)
+returns `{"annotation-added":5,"file-added":5,"signature-added":3,"pages-rotated":2,
+"pdf-exported":2,"pages-removed":1}` — grandTotal 18, so `UsageCounters` clears its
+`MINIMUM_TOTAL_TO_SHOW = 5` gate and the panel renders. CDN observed refreshed
+(`age: 0`, `cache-status: … stored`). `pages-resized` and `pages-reordered` remain
+0 (not in the dashboard snapshot), matching intent.
+**Files:** `docs/PROGRESS.md` (this entry).
+**Cross-refs:** decision rows 8 and 9; verifies the "to be re-verified on this
+redeploy" note left in row 9.
+
+---
+
 **2026-07-23 — Counter increment was lossy in production: CAS over eventual
 consistency; fixed with `consistency: 'strong'` (one-line store change). 🟡 PARTIAL.**
 Found while seeding the new counters (previous entry) with the live dashboard
