@@ -31,7 +31,83 @@
   status = 200
 
 # Single-page app: serve index.html for any path.
+#
+# Deliberately NOT `force`d. An unforced rewrite loses to a matching static file,
+# which is the only reason /robots.txt, /sitemap.xml, /llms.txt, /llms-full.txt,
+# /index.md and /.well-known/agent-card.json reach a crawler at all instead of
+# being swallowed and answered with the app shell. Adding `force = true` here
+# would silently make every discovery file return HTML again.
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# ---------------------------------------------------------------------------
+# Headers
+# ---------------------------------------------------------------------------
+
+# Applies to every response. The Link header is the agent-discovery entry point:
+# a crawler that fetches any URL learns where the sitemap and the plain-text
+# briefing live without having to guess at conventional paths.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Link = '</sitemap.xml>; rel="sitemap", </llms.txt>; rel="describedby"'
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Vite content-hashes every filename under /assets, so the bytes behind a given
+# URL can never change. Serving them with the default max-age=0 revalidated a
+# 1.4 MB bundle on every visit for no benefit.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The bundled annotation font is NOT content-hashed, so it cannot be immutable:
+# a future font swap at the same path has to be able to propagate. Thirty days
+# is long enough to stop the repeat fetches and short enough to recover.
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+# Plain-text agent surfaces. Netlify already infers text/plain for .txt, but the
+# charset is declared explicitly so a non-UTF-8 default can never mangle them.
+[[headers]]
+  for = "/llms.txt"
+  [headers.values]
+    Content-Type = "text/plain; charset=utf-8"
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/llms-full.txt"
+  [headers.values]
+    Content-Type = "text/plain; charset=utf-8"
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/robots.txt"
+  [headers.values]
+    Content-Type = "text/plain; charset=utf-8"
+
+[[headers]]
+  for = "/index.md"
+  [headers.values]
+    Content-Type = "text/markdown; charset=utf-8"
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/sitemap.xml"
+  [headers.values]
+    Content-Type = "application/xml; charset=utf-8"
+
+# The agent card has to be readable cross-origin, otherwise an agent running in
+# a browser context is blocked from the one file that identifies this site.
+[[headers]]
+  for = "/.well-known/*"
+  [headers.values]
+    Content-Type = "application/json; charset=utf-8"
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=3600"

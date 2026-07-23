@@ -1,0 +1,88 @@
+# robots.txt for Free PDF Machine
+# https://freepdfmachine.com/
+#
+# Free PDF Machine is a free, in-browser PDF editor. Every file the user opens is
+# processed locally in their own browser and is never uploaded, so nothing on this
+# site is private and nothing needs to be withheld from an index. Everything here
+# is open to search crawlers and to AI agents alike.
+
+# --- Content signals ------------------------------------------------------
+# Expressed in the content-signal.org format. As of 2026-07-23, the operator of
+# freepdfmachine.com grants the following signals for the content on this site:
+#
+#   search:   yes  - building a search index and linking to this site is allowed.
+#   ai-input: yes  - using this content as input to an AI answer, including
+#                    retrieval-augmented generation, is allowed.
+#   ai-train: yes  - using this content to train a generative AI model is allowed.
+#
+# These are permissions, not restrictions. Reproducing the content verbatim as a
+# substitute for the site is still governed by copyright.
+
+User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+Allow: /
+
+# --- AI crawlers and agents, named explicitly -----------------------------
+# Listed one stanza per agent so the permission is unambiguous even for crawlers
+# that do not merge the wildcard group.
+
+# OpenAI
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+# Google (Gemini, AI Overviews, Vertex grounding)
+User-agent: Google-Extended
+Allow: /
+
+# Anthropic
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+# Common Crawl
+User-agent: CCBot
+Allow: /
+
+# ByteDance
+User-agent: Bytespider
+Allow: /
+
+# Apple
+User-agent: Applebot-Extended
+Allow: /
+
+# Meta
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# Cohere
+User-agent: cohere-ai
+Allow: /
+
+# Mistral
+User-agent: MistralAI-User
+Allow: /
+
+# --- Discovery ------------------------------------------------------------
+# Agents looking for a plain-text briefing should read /llms.txt first, or
+# /llms-full.txt for the whole site in a single fetch.
+
+Sitemap: https://freepdfmachine.com/sitemap.xml

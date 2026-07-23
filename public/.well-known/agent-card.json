@@ -1,0 +1,106 @@
+{
+  "name": "Free PDF Machine",
+  "description": "Free PDF editor that runs entirely in the user's web browser. Merges, reorders, rotates, resizes, signs and annotates PDFs and images, then exports a new PDF with no quality loss. Files are never uploaded to a server, and there is no signup, no account and no cost.",
+  "url": "https://freepdfmachine.com/",
+  "iconUrl": "https://freepdfmachine.com/favicon.svg",
+  "documentationUrl": "https://freepdfmachine.com/llms.txt",
+  "version": "1.0.0",
+  "provider": {
+    "organization": "RZ AI Labs",
+    "url": "https://rzailabs.com/"
+  },
+  "contact": {
+    "name": "Amit Raz",
+    "email": "amit@rzailabs.com",
+    "url": "https://rzailabs.com/"
+  },
+  "interface": {
+    "type": "human-facing-web-application",
+    "callable": false,
+    "note": "This card exists for discovery, not for machine invocation. Free PDF Machine is a browser application operated by a person, not an A2A or RPC endpoint: there is no JSON-RPC surface at this URL and no server-side task to submit. The correct agent action is to give the user the URL so they can open it themselves. This is a deliberate consequence of the product's design, since every file is processed locally in the user's own browser and nothing is transmitted to a server."
+  },
+  "documentation": {
+    "summary": "https://freepdfmachine.com/llms.txt",
+    "full": "https://freepdfmachine.com/llms-full.txt",
+    "markdown": "https://freepdfmachine.com/index.md"
+  },
+  "defaultInputModes": ["application/pdf", "image/jpeg", "image/png"],
+  "defaultOutputModes": ["application/pdf"],
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "skills": [
+    {
+      "id": "merge-pdfs",
+      "name": "Merge PDFs and images",
+      "description": "Combines any number of PDF and image files into one document, with every page of every input available as a single reorderable list.",
+      "tags": ["pdf", "merge", "combine", "images"],
+      "examples": [
+        "Combine three PDFs into one file",
+        "Merge a scanned contract with a photo of a signature page"
+      ]
+    },
+    {
+      "id": "organize-pages",
+      "name": "Reorder, rotate, delete and resize pages",
+      "description": "Drag pages into any order across source files, rotate in 90 degree steps, delete pages, and resize to A4, US Letter, the document's dominant page size, or leave originals untouched. Multi-select applies an action to many pages at once.",
+      "tags": ["pdf", "reorder", "rotate", "delete", "resize", "page-size"],
+      "examples": [
+        "Rotate the sideways pages in my scan",
+        "Delete pages 4 to 7 and reorder the rest"
+      ]
+    },
+    {
+      "id": "sign-pdf",
+      "name": "Sign a PDF",
+      "description": "Draw a signature with a mouse, trackpad or finger, then place, move and resize it on any page. Signatures drawn during the session are reusable across pages.",
+      "tags": ["pdf", "sign", "signature"],
+      "examples": [
+        "Sign a contract without uploading it",
+        "Add the same signature to several pages"
+      ]
+    },
+    {
+      "id": "annotate-pdf",
+      "name": "Annotate a PDF",
+      "description": "Add text boxes in seven point sizes and four colours, place JPEG or PNG images onto pages, highlight selected text on PDF pages, and draw free-hand highlighter marks that also work on scanned or image pages.",
+      "tags": ["pdf", "annotate", "text", "highlight", "image"],
+      "examples": [
+        "Highlight a clause in a contract",
+        "Add a note and a stamp image to a scanned page"
+      ]
+    },
+    {
+      "id": "export-lossless",
+      "name": "Export without quality loss",
+      "description": "Exports the whole document or only the selected pages. Page content is copied at the PDF object level rather than re-rendered, rotation is stored as page metadata, and embedded JPEGs keep their original bytes, so resolution and quality are preserved exactly.",
+      "tags": ["pdf", "export", "lossless", "quality"],
+      "examples": [
+        "Export only the pages I selected",
+        "Combine scans without degrading them"
+      ]
+    }
+  ],
+  "privacy": {
+    "filesUploaded": false,
+    "accountRequired": false,
+    "cookies": false,
+    "thirdPartyAnalytics": false,
+    "dataRetained": "none",
+    "note": "All file processing happens in the user's browser. The site records only anonymous aggregate counts of which of eight actions were used, sending nothing but the event name, and stores nothing on the device."
+  },
+  "pricing": {
+    "price": "0",
+    "priceCurrency": "USD",
+    "model": "free",
+    "note": "There is no paid tier, trial, watermark or feature gate."
+  },
+  "sameAs": [
+    "https://rzailabs.com/projects/free-pdf-machine",
+    "https://rzailabs.com/blog/free-pdf-editor-claude-code",
+    "https://github.com/razamit/PdfToolkit"
+  ],
+  "lastVerified": "2026-07-23"
+}

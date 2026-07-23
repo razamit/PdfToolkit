@@ -27,3 +27,39 @@ The `devlog` plugin skills (`progress-log`, `decision-log`, `tickets`,
 `session-wrap`) hold the full conventions — read the relevant one before
 writing to these files.
 <!-- devlog:end -->
+
+## Discovery surfaces must move together
+
+The product is described in six places at once. Answer engines cross-check them
+and downrank a site whose surfaces disagree, so they are maintained as one unit,
+never one at a time.
+
+**When any user-facing claim changes** — a feature added or removed, a supported
+file type, the privacy posture, the price, the product name — update all of
+these in the *same commit* as the code:
+
+| Surface | Path | What to change |
+|---|---|---|
+| Head metadata | `index.html` | `<title>`, meta description, `og:*`, `twitter:*` |
+| Structured data | `index.html` | The `application/ld+json` `@graph`: `featureList`, `description`, and the `FAQPage` answers |
+| Agent summary | `public/llms.txt` | Tagline, "What it does", "What it does not do", `Last verified` |
+| Agent briefing | `public/llms-full.txt` | The affected section, the FAQ, `Last verified` |
+| Markdown twin | `public/index.md` | The mirrored section, `Last verified` |
+| Agent card | `public/.well-known/agent-card.json` | `description`, `skills`, `lastVerified` |
+| Sitemap | `public/sitemap.xml` | Bump `<lastmod>` to today |
+
+Two hard rules:
+
+- **The `FAQPage` answers in `index.html` and the visible on-page FAQ must be
+  word-for-word identical.** Structured data that has no visible counterpart is a
+  Google policy violation, currently tracked in
+  `docs/tickets/faq-markup-has-no-visible-counterpart.md`.
+- **The SPA catch-all in `netlify.toml` must never gain `force = true`.** It is
+  unforced on purpose: an unforced rewrite loses to a matching static file, which
+  is the only reason `/robots.txt`, `/sitemap.xml`, `/llms.txt`,
+  `/llms-full.txt`, `/index.md` and `/.well-known/agent-card.json` reach a
+  crawler instead of being answered with the app shell.
+
+A change is not verified by reading the repo. These files are only real once
+deployed, so re-probe the live URL (`curl -sI https://freepdfmachine.com/llms.txt`)
+and check the status and `Content-Type`, not just that the file exists in `dist/`.

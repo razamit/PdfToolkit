@@ -6,6 +6,84 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-07-23 — SEO/AEO discovery layer built from an audit that scored the live
+site 11/40 (static files + `netlify.toml` headers + JSON-LD; no application
+code touched; nothing deployed yet). 🟡 PARTIAL.** A full SEO and AEO audit was
+run against production first, by live HTTP probe rather than source reading. It
+found two root causes behind almost every failure. **One:** the served body is
+`<div id="root"></div>` and nothing else, so every crawler and every non-rendering
+AI agent received 1,508 bytes whose entire textual content was the `<title>` and
+the meta description. All agent user agents were confirmed to get byte-identical
+content to a browser (md5 `304177ad850ff56829ffe9b4bfb59316` for GPTBot,
+ChatGPT-User, ClaudeBot, PerplexityBot, Googlebot and Mozilla alike, so no bot
+challenge and no cloaking) — the bytes are simply empty. **Two:** none of the
+discovery layer existed, and the SPA catch-all answered *every* path with the app
+shell at status 200, so `/robots.txt`, `/sitemap.xml`, `/llms.txt` and
+`/.well-known/agent-card.json` all returned `200 text/html 1508` and every
+mistyped URL was an indexable soft-404. Nothing declared in machine-readable form
+that the product is free; the word "free" appeared only inside the brand name.
+**Shipped in this session** (the "quick wins" tier of the audit's action plan, ~23
+of the 29 missing points): `public/robots.txt` with a `Sitemap:` line, a
+`Content-Signal: search=yes, ai-input=yes, ai-train=yes` block and explicit
+`Allow: /` stanzas for all 15 named AI crawlers; `public/sitemap.xml`;
+`public/llms.txt` (blockquote value prop, key pages, an explicit **For agents**
+section including when *not* to recommend the tool, `Last verified` footer);
+`public/llms-full.txt` (11-section single-fetch briefing: what it is, every
+feature, the lossless-export mechanism, the privacy posture, a 7-question FAQ, a
+fair comparison against upload-based editors with the trade-offs stated, and
+contact); `public/index.md` as the markdown twin; `public/.well-known/agent-card.json`
+(explicitly flagged `"callable": false` so it cannot be mistaken for an A2A
+endpoint that does not exist); `public/og-image.png`, a purpose-built 1200×630
+card rendered headless via `agent-browser` in the app's own palette; a JSON-LD
+`@graph` in `index.html` with `WebApplication` (+ `Offer` `price: "0"` USD,
+`isAccessibleForFree`, 9-item `featureList`), `WebSite`, `WebPage` (+`speakable`)
+and a 7-question `FAQPage`, with `author`/`creator` → `https://rzailabs.com/#amitraz`
+and `publisher`/`provider` → `https://rzailabs.com/#organization`; rewritten
+`<title>` and description leading with the head term; `robots`, `author`,
+`og:image`, `og:site_name`, `og:locale` and the full Twitter `summary_large_image`
+set; and `[[headers]]` in `netlify.toml` for the `Link` header
+(`rel="sitemap"` + `rel="describedby"`), `X-Frame-Options` / `X-Content-Type-Options`
+/ `Referrer-Policy`, `immutable` caching on the content-hashed `/assets/*`,
+30-day caching on the un-hashed `/fonts/*`, explicit `Content-Type`s on the
+plain-text surfaces, and `Access-Control-Allow-Origin: *` on `/.well-known/*`.
+`CLAUDE.md` gained a "Discovery surfaces must move together" section listing all
+seven surfaces that must change in the same commit as any user-facing claim.
+**Why PARTIAL, stated plainly:** (a) the `netlify.toml` headers, the served
+`Content-Type`s and the `Link` header are **not verified live** — they take effect
+only on the next deploy and must be re-probed then, exactly as decision row 7
+required of its redirect; nothing in this entry has been deployed. (b) Google
+Search Console verification is not done, pending a token from the user; it is one
+line. (c) The `FAQPage` markup deliberately ships ahead of a visible on-page FAQ.
+(d) The audit's structural tier was scoped out by agreement and is on the record
+as four tickets, not as TODOs. **Proof:** `npm run build` green (395 modules);
+`npx tsc -b` clean; `npm run lint` unchanged at 4 pre-existing warnings
+(`button.tsx`, `ThumbnailGrid.tsx` ×3); JSON-LD validated by script — 1 block, 4
+nodes, parses, **0 orphan `@id` references**, both parent entity `@id`s present
+verbatim, 7 FAQ questions with answers of 334–521 chars; `sitemap.xml` parses with
+the correct `http://www.sitemaps.org/schemas/sitemap/0.9` namespace (an earlier
+draft had `sitemap.org` singular and was caught and fixed); `agent-card.json`
+parses, 5 skills; all seven new files confirmed in `dist/` after build, including
+`dist/.well-known/agent-card.json`, so Vite does copy dot-directories from
+`publicDir`. Product claims were checked against the code rather than assumed:
+a draft line claiming the tool "does not remove or apply password protection" was
+corrected after finding `src/managers/PdfSourceManager.ts:98-116` opens
+owner-encrypted PDFs with an empty user password and rejects only view-password
+files; `grep` confirmed there is no service worker, no `localStorage`,
+`sessionStorage` or `IndexedDB`, no OCR and no form-filling, which is what makes
+the "nothing is kept between sessions" and offline answers accurate. **Score:**
+11/40 (27.5%) measured before; projected ≈33/41 (80%) once deployed, ≈34/41 once
+the GSC tag lands, and ≈41/41 after the four tickets. **Files:** added
+`public/robots.txt`, `public/sitemap.xml`, `public/llms.txt`,
+`public/llms-full.txt`, `public/index.md`, `public/.well-known/agent-card.json`,
+`public/og-image.png`; edited `index.html`, `netlify.toml`, `CLAUDE.md`.
+**Decisions:** row 13, and open question 1 (whether the SPA catch-all is needed at
+all). **Tickets opened:** `served-html-has-no-crawlable-content.md` (HIGH, the
+root cause and the largest remaining item),
+`faq-markup-has-no-visible-counterpart.md`, `every-url-returns-200-soft-404.md`,
+`pdfjs-bundled-into-entry-chunk.md`.
+
+---
+
 **2026-07-23 — Bulk-action bar moved from the bottom of the viewport into the
 sticky header. ✅ DONE.** The user reported the multi-select bar was "barely
 visible" at `bottom-6`. It is now a row inside the sticky header, rendered by
