@@ -11,8 +11,18 @@ const TOTALS_KEY = 'totals'
  */
 const MAX_INCREMENT_ATTEMPTS = 6
 
+/**
+ * Strong consistency is load-bearing, not a tuning knob. `incrementEvent` is a
+ * read-modify-write compare-and-swap, and CAS is only sound against a read that
+ * reflects the latest write: under the default *eventual* consistency a stale
+ * replica makes the conditional check pass against an old value, so overlapping
+ * — or even rapid sequential — increments clobber each other instead of adding.
+ * Observed in production before this line existed: 18 seed writes collapsed to a
+ * single surviving count. Do not drop back to eventual to "speed up" the reads;
+ * the public read is CDN-cached anyway, so its latency never reaches a user.
+ */
 function store() {
-  return getStore('usage')
+  return getStore('usage', { consistency: 'strong' })
 }
 
 /** Precomputed lifetime totals, or null before the first event is recorded. */

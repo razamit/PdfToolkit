@@ -6,6 +6,31 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-07-23 — Counter increment was lossy in production: CAS over eventual
+consistency; fixed with `consistency: 'strong'` (one-line store change). 🟡 PARTIAL.**
+Found while seeding the new counters (previous entry) with the live dashboard
+numbers: after POSTing 18 events to `/api/track`, `/api/usage` read back `{}` and
+the raw function (cache-busted with `?x=`, honoured per the `netlify-vary: query`
+response header) showed **only `{"pages-removed":1}`** — the 18 writes had
+collapsed to the single last one. Root cause: `incrementEvent` is a read-modify-write
+compare-and-swap, but `getStore('usage')` defaults to *eventual* consistency, so
+each increment read a stale (often empty) replica and its `onlyIfMatch`/`onlyIfNew`
+condition passed against that stale view — writes clobbered instead of accumulating.
+CAS is only sound against strongly-consistent reads. Fix: open the store with
+`{ consistency: 'strong' }`; the retry loop is otherwise unchanged. Read latency is
+irrelevant because `/api/usage` is CDN-cached 15 min.
+**Proof:** production collapse captured — `curl .../.netlify/functions/usage-counters?x=<rand>`
+→ `{"pages-removed":1}` after an 18-event seed. Post-fix `npm run build` green,
+`npx tsc -p tsconfig.netlify.json` green, `npm run lint` unchanged at 4 pre-existing
+warnings.
+**What remains:** deploy, then re-seed to the dashboard target by reading current
+totals and POSTing the *delta* per event (robust to whatever residue the broken run
+left), and confirm the raw function shows totals accumulating, not collapsing.
+**Files:** `netlify/lib/usageStore.ts`, `docs/DECISIONS.md`.
+**Cross-refs:** decision row 9 (corrects the concurrency claim in row 8).
+
+---
+
 **2026-07-23 — Umami removed; public counters re-plumbed onto a self-hosted
 `/api/track` → Netlify Blob increment (code + docs; no deploy yet). 🟡 PARTIAL.**
 The trigger was the counters showing nothing on the live site despite 18 events in
