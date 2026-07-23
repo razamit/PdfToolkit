@@ -6,6 +6,54 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-07-23 — Umami removed; public counters re-plumbed onto a self-hosted
+`/api/track` → Netlify Blob increment (code + docs; no deploy yet). 🟡 PARTIAL.**
+The trigger was the counters showing nothing on the live site despite 18 events in
+the Umami dashboard. Root cause found and confirmed live, not assumed: the counters
+never read Umami directly — they read a `totals` blob written by an hourly job that
+pulls counts *back* from Umami's API, and that API needs a key Umami Cloud only
+issues on a **paid** plan. So `/.netlify/functions/snapshot-usage` was 500-ing every
+run (`Missing required environment variable: UMAMI_WEBSITE_ID`) and `/api/usage` was
+returning `{}`. The `MINIMUM_TOTAL_TO_SHOW = 5` threshold the user asked about was a
+red herring — `UsageCounters` bails on `if (!totals) return null` *before* the
+threshold is ever compared, so an empty backend hides the panel regardless of count.
+Fix, per the user's call to drop Umami rather than pay: deleted the whole
+Umami→snapshot pipeline and added a public `POST /api/track` that increments the same
+`totals` blob directly, via a compare-and-swap loop (ETag + conditional `setJSON`) so
+concurrent writes don't lose counts. The read path (`usage-counters.ts`, `/api/usage`,
+`useUsageCounters`, `UsageCounters.tsx`) is unchanged — it already read that blob.
+Browser side, `UmamiAnalyticsManager` is replaced by `NetlifyCountersAnalyticsManager`
+(posts only the event *name*, fire-and-forget with `keepalive`); the Umami `<script>`
+and its `window.umami` typing are gone. Preview/dev isolation is preserved two ways:
+the dev no-op tracker, plus a canonical-`Host` guard in the function so previews and
+the `.netlify.app` subdomain can't write production counts.
+**Proof:** `npm run build` green; `npx tsc -p tsconfig.netlify.json` green;
+`npm run lint` unchanged at 4 pre-existing warnings (`button.tsx`,
+`ThumbnailGrid.tsx` — none in touched files); post-change grep for
+`umami|snapshot|UMAMI_|lib/days|window.umami` across `src/ netlify/ index.html
+netlify.toml tsconfig*` returns only intentional historical comments. Pre-change
+live state captured above (`/api/usage` → `{}`, snapshot fn → 500).
+**What remains:** unverified live — function and `netlify.toml` changes are inert
+until deployed. After deploy: confirm a tracked action makes `/api/track` return 204
+and `/api/usage` climb, the panel appears once total ≥ 5, and a preview host is
+rejected. Not committed; no commit was requested.
+**Files:** added `netlify/functions/track-usage.ts`,
+`src/analytics/NetlifyCountersAnalyticsManager.ts`,
+`docs/tickets/track-endpoint-is-publicly-inflatable.md`; deleted
+`netlify/functions/snapshot-usage.ts`, `netlify/lib/umamiClient.ts`,
+`netlify/lib/days.ts`, `src/analytics/UmamiAnalyticsManager.ts`,
+`src/types/umami.d.ts`; edited `netlify/lib/usageStore.ts`,
+`netlify/functions/usage-counters.ts`, `src/analytics/createAnalyticsTracker.ts`,
+`src/analytics/eventNames.ts`, `src/analytics/AnalyticsTracker.ts`,
+`src/components/usage/UsageCounters.tsx`, `index.html`, `netlify.toml`, `README.md`,
+`docs/DECISIONS.md`, and the two retired tickets.
+**Cross-refs:** decision row 8 (supersedes rows 2, 4, 6). Closed tickets
+`snapshot-usage-endpoint-is-publicly-triggerable.md` and
+`umami-free-tier-overage-behaviour-unknown.md`; opened
+`track-endpoint-is-publicly-inflatable.md`.
+
+---
+
 **2026-07-22 — Netlify subdomain redirected to the canonical domain (config only;
 requires a deploy to take effect). 🟡 PARTIAL.**
 The trigger was noticing `pdfedittoolkit.netlify.app` still served the app rather

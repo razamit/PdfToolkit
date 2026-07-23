@@ -6,9 +6,9 @@ const CACHE_SECONDS = 900
 /**
  * Public, unauthenticated read of the lifetime usage totals.
  *
- * This exists because Umami's API key must stay server-side — the browser can
- * send events to Umami but can never read them back. Only aggregate counts cross
- * this boundary; no per-visitor data is stored or served.
+ * The lifetime totals live in server-side Blob storage, written one increment at
+ * a time by `/api/track`. This endpoint only reads them back. Only aggregate
+ * counts cross this boundary; no per-visitor data is ever stored or served.
  *
  * Failures return an empty object rather than an error status: the counters are
  * decoration, and a broken analytics backend must never surface on the page.

@@ -1,6 +1,11 @@
 # The nightly snapshot function can be triggered by anyone over HTTP
 
-Status: OPEN · Priority: LOW · Type: security-hardening · Cost: none
+Status: CLOSED (resolved by removal, 2026-07-23) · Priority: LOW · Type: security-hardening · Cost: none
+
+> **Resolution:** moot. `netlify/functions/snapshot-usage.ts` was deleted when the
+> counters moved off Umami to a direct `/api/track` increment (decision row 8).
+> There is no snapshot endpoint left to trigger. The *new* public-write exposure
+> that replaces it is tracked in `track-endpoint-is-publicly-inflatable.md`.
 
 > Distinct from `umami-free-tier-overage-behaviour-unknown.md`, which is about the
 > upstream plan's limits rather than abuse of our own endpoint.

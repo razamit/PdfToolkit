@@ -15,7 +15,7 @@ const MINIMUM_TOTAL_TO_SHOW = 5
  * Public readout of what the machine has done so far.
  *
  * Renders nothing until the backend answers with real numbers — before the first
- * nightly snapshot, in development, and whenever the endpoint is unreachable.
+ * tracked event, in development, and whenever the endpoint is unreachable.
  * A counters panel showing eight zeros is worse than no panel at all.
  */
 export function UsageCounters() {

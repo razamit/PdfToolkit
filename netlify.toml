@@ -15,12 +15,19 @@
   status = 301
   force = true
 
-# Public usage counters. Must be declared BEFORE the SPA catch-all below —
+# Public usage counters. Both must be declared BEFORE the SPA catch-all below —
 # Netlify applies redirects in order, so a catch-all placed first would swallow
-# this path and serve index.html instead of the JSON.
+# these paths and serve index.html instead of reaching the functions.
 [[redirects]]
   from = "/api/usage"
   to = "/.netlify/functions/usage-counters"
+  status = 200
+
+# The browser posts one event name here on each tracked action; the function
+# increments the shared totals blob that /api/usage reads back.
+[[redirects]]
+  from = "/api/track"
+  to = "/.netlify/functions/track-usage"
   status = 200
 
 # Single-page app: serve index.html for any path.

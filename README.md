@@ -49,60 +49,45 @@ npm run lint     # oxlint
 
 ## Analytics and the privacy promise
 
-The site reports anonymous usage counts to [Umami](https://umami.is) — cookieless,
-no persistent identifier, and therefore no consent banner.
+The site records anonymous usage counts to its own backend — no third-party
+script, no cookies, no persistent identifier, and therefore no consent banner.
 
-**Only counts and fixed enum values are ever sent.** No filenames, no annotation
-text, no image data, no page dimensions. This is enforced by the type system, not
-by convention: `AnalyticsEventShape` restricts event properties to
+**Only counts are ever sent.** Each tracked action posts a single event *name* to
+`/api/track` and nothing else — no filenames, annotation text, image data, or even
+the event's own properties. The stronger guarantee is still enforced by the type
+system: `AnalyticsEventShape` restricts event properties to
 `string | number | boolean`, so passing a filename to `track` is a compile error.
 `src/analytics/privacyGuarantee.typetest.ts` pins that guarantee with
 `@ts-expect-error` assertions that fail the build if it is ever weakened.
 
-Tracking is disabled in development, and the `data-domains` attribute on the
-script tag stops Netlify deploy previews from reporting into production data.
+Tracking is disabled in development (the no-op tracker), and `/api/track` itself
+only accepts writes from the canonical host, so Netlify deploy previews cannot
+reach production counts even while running the same code.
 
 ## Public usage counters
 
-The landing page shows lifetime totals ("The machine so far"). Umami's API key
-must stay server-side, so the browser never queries it directly:
+The landing page shows lifetime totals ("The machine so far"):
 
-1. `netlify/functions/snapshot-usage.ts` runs hourly, reads the recent days'
-   event counts from Umami, and stores them in Netlify Blobs keyed by UTC date.
-2. `netlify/functions/usage-counters.ts` serves the summed totals at `/api/usage`.
+1. Each tracked action posts its event name to `netlify/functions/track-usage.ts`
+   (`/api/track`), which increments that event's count in a single Netlify Blob.
+   The increment is a compare-and-swap retry loop, so two overlapping requests
+   never lose a count.
+2. `netlify/functions/usage-counters.ts` serves the totals at `/api/usage`, cached
+   at the CDN for 15 minutes.
 
-The page never queries Umami directly, so the counters are only as fresh as that
-job: expect up to an hour of lag, plus 15 minutes of CDN cache.
-
-Snapshots — not Umami — are the source of truth, because Umami's free tier retains
-only six months and an all-time query would eventually make the counters *fall*.
-Storing by date also makes the job idempotent, so re-running it never double-counts.
+The totals blob is the source of truth and only ever grows — there is no external
+analytics dependency and nothing to reconcile.
 
 Counters stay hidden until there are at least 5 events in total (summed across all
-eight, not per counter).
+eight, not per counter), so a fresh deployment does not advertise single digits.
 
 ## Deploying to Netlify
 
 `netlify.toml` is included. Build command `npm run build`, publish directory `dist`,
 functions directory `netlify/functions`.
 
-Set these environment variables in the Netlify UI (Site configuration → Environment
-variables) for the counters to work:
-
-| Variable | Required | Notes |
-|---|---|---|
-| `UMAMI_WEBSITE_ID` | yes | From the Umami dashboard. |
-| `UMAMI_API_KEY` | yes | Umami Cloud → Settings → API keys. **Server-side only.** |
-| `UMAMI_API_BASE` | no | Defaults to `https://api.umami.is/v1`. |
-
-The app itself needs none of these — without them the counters simply stay hidden
-and everything else works.
-
-To populate history immediately rather than waiting for the first scheduled run:
-
-```bash
-curl "https://freepdfmachine.com/.netlify/functions/snapshot-usage?backfill=30"
-```
+No environment variables are required. The counters run entirely on Netlify's free
+tier (Functions + Blobs); the `usage` store is created on the first write.
 
 ## Architecture
 
@@ -113,7 +98,8 @@ curl "https://freepdfmachine.com/.netlify/functions/snapshot-usage?backfill=30"
   imports a vendor SDK, so swapping backends is a one-file change.
 - `src/hooks/` — UI logic (selection, lazy thumbnails, drag-and-drop, uploads).
 - `src/components/` — presentation only.
-- `netlify/functions/` — the scheduled snapshot job and the public counters endpoint.
+- `netlify/functions/` — the public counter endpoints: `/api/track` (increment)
+  and `/api/usage` (read).
 - `netlify/lib/` — shared function code, kept out of `functions/` so Netlify does
   not deploy it as endpoints.
 

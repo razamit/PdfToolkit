@@ -1,6 +1,10 @@
 # Umami Cloud's behaviour when a free account exceeds 100k events/month is undocumented
 
-Status: OPEN · Priority: MEDIUM · Type: external-dependency-risk · Cost: none
+Status: CLOSED (moot, 2026-07-23) · Priority: MEDIUM · Type: external-dependency-risk · Cost: none
+
+> **Resolution:** no longer applicable. Umami was dropped entirely (decision row
+> 8); the counters are now fed by a local Netlify Blob, so no Umami plan limit
+> feeds anything on the site. There is no upstream free-tier cap to reason about.
 
 > Prerequisite for trusting the public counters at scale. Distinct from
 > `snapshot-usage-endpoint-is-publicly-triggerable.md`, which concerns abuse of our

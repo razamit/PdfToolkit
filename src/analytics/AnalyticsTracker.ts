@@ -1,8 +1,8 @@
 /**
  * Provider-agnostic analytics protocol.
  *
- * Nothing outside `src/analytics/` may import a vendor SDK, so swapping Umami
- * for another backend stays a one-file change.
+ * Nothing outside `src/analytics/` may import a vendor SDK, so swapping the
+ * analytics backend stays a one-file change.
  *
  * Property values are constrained to primitives deliberately. This app promises
  * that files never leave the browser, and the narrowest way to keep that promise
