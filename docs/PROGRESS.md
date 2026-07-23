@@ -6,6 +6,64 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-07-23 — Static landing content added below the editor, taking the served
+body from 0 to 7,375 visible characters (index.html + one new CSS file; two
+small React edits; not yet deployed). ✅ DONE.** This closes the root finding of
+the morning's audit. The served `<body>` was one empty `<div id="root">`, so
+Googlebot needed a render pass to see anything and GPTBot, ClaudeBot,
+PerplexityBot and CCBot saw literally nothing; it capped five separate audit rows
+at once. `index.html` now carries a full landing section (h1, lede, an 8-item
+feature grid, how the privacy claim works, how the quality guarantee works, a
+"Compared with online PDF editors that upload your files" section with an honest
+trade-offs card, the 7-question FAQ, and a "Who built it" block linking both
+rzailabs.com pages and GitHub), followed by the site footer. **The placement is
+the load-bearing decision and it changed from what the ticket proposed:** the
+ticket's Option A put the block *inside* `#root`, but `createRoot(...).render()`
+clears its own container's children, so that version is deleted on mount and a
+person only ever sees it for one pre-hydration frame. Putting it *after* `#root`
+instead means React never touches it, so the identical bytes serve crawlers and
+people, it stays on the page permanently, and Google's FAQ "visible counterpart"
+requirement is genuinely met rather than argued. Two consequential side effects,
+both deliberate: the site `<footer>` moved out of `PdfToolkitView` into static
+HTML (otherwise it would have rendered *above* the landing content in document
+order; it had no props or state, so nothing was lost), and `AppHeader`'s `<h1>`
+became a `<p>` (the landing block now supplies the page's real `<h1>`, and
+leaving the header's would have produced two). The header subtitle also changed
+from "Edit & merge PDFs in your browser" to "Free PDF editor · nothing is
+uploaded" so the visible chrome carries the same free + privacy claim as every
+other surface. Styles live in a new `src/landing.css` written as plain CSS
+against the existing design tokens rather than Tailwind utilities, because the
+markup sits outside `src/` and depending on Tailwind v4's automatic content
+detection to reach `index.html` would make the whole landing page's appearance
+hinge on an implicit scan path. **Proof:** `npm run build` green (`dist/index.html`
+12.94 kB → 26.31 kB); `npx tsc -b` exits 0; `npm run lint` unchanged at 4
+pre-existing warnings. Script diff against the built `dist/index.html` confirms
+**all 7 FAQ answers are word-for-word identical** to their `acceptedAnswer.text`
+strings in the JSON-LD (334/417/356/521/397/437/337 chars, 7 of 7 question and
+answer matches); served body measures **7,375 visible text characters, up from
+0**, with **exactly one `<h1>`** ("Free PDF editor that runs entirely in your
+browser"), 6 `<h2>` and 8 `<h3>`, 4 outbound rzailabs.com links and the GitHub
+link. `speakable.cssSelector` extended from `["h1"]` to
+`["#about-heading", ".landing-lede"]` now that a summary element exists. Rendered
+and inspected via `agent-browser` against `npm run preview` at 1280×900 (hero,
+feature grid, comparison, trade-offs card, FAQ dividers, footer links all
+correct; hero lede margin bumped 1.25rem → 1.5rem after the first screenshot read
+tight under a 48px heading) and at 390×780 (heading wraps to three lines, claim
+pills wrap to two rows, features collapse to one column). **Not deployed** — as
+with the previous entry, the numbers above are from the built output, and the
+live re-probe happens after the next deploy. **Projected score: 39/41 (95%), up
+from 33.5/41 (82%)**, since this single change resolves A6, D1, D2, D4, D5, C4,
+C2 and H1. The only two rows left open are `every-url-returns-200-soft-404.md`
+and `pdfjs-bundled-into-entry-chunk.md`. **Files:** added `src/landing.css`;
+edited `index.html`, `src/index.css`, `src/components/PdfToolkitView.tsx`,
+`src/components/AppHeader.tsx`, `CLAUDE.md`. **Decisions:** row 14. **Tickets
+closed:** `served-html-has-no-crawlable-content.md`,
+`faq-markup-has-no-visible-counterpart.md`. **Note:** an untracked stray file
+named `--full-page` (a blank 1280×900 PNG, an `agent-browser` flag parsed as an
+output path) is sitting in the repo root and should not be committed.
+
+---
+
 **2026-07-23 — SEO/AEO discovery layer built from an audit that scored the live
 site 11/40 (static files + `netlify.toml` headers + JSON-LD; no application
 code touched; nothing deployed yet). 🟡 PARTIAL.** A full SEO and AEO audit was

@@ -22,15 +22,20 @@ export function AppHeader() {
           <div className="flex items-center gap-2.5">
             <MachineMark />
             <div>
-              <h1 className="text-base font-semibold leading-none tracking-tight">
+              {/* A brand label, not the document heading. The page's single <h1>
+                  is in the static landing content at the end of index.html, so
+                  that it exists in the served HTML rather than only after
+                  hydration; promoting this back to an <h1> would give the
+                  rendered page two. */}
+              <p className="text-base font-semibold leading-none tracking-tight">
                 Free PDF Machine
-              </h1>
+              </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {hasPages
                   ? `${pages.length} ${pages.length === 1 ? 'page' : 'pages'} · ${sourceCount} ${
                       sourceCount === 1 ? 'file' : 'files'
                     } loaded`
-                  : 'Edit & merge PDFs in your browser'}
+                  : 'Free PDF editor · nothing is uploaded'}
               </p>
             </div>
           </div>

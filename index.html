@@ -64,9 +64,9 @@
       Keep this in sync with /llms.txt, /llms-full.txt and /index.md whenever the
       product changes, and bump <lastmod> in /sitemap.xml, in the same commit.
 
-      The FAQ answers below must stay word-for-word identical to the visible
-      on-page FAQ. Until that on-page FAQ ships, this block is ahead of the
-      rendered page; see docs/tickets/faq-markup-has-no-visible-counterpart.md.
+      The FAQ answers below are word-for-word identical to the visible on-page
+      FAQ in the <section class="landing"> block further down this file. Editing
+      one without the other breaks that match; change both together.
     -->
     <script type="application/ld+json">
       {
@@ -144,7 +144,7 @@
             "author": { "@id": "https://rzailabs.com/#amitraz" },
             "speakable": {
               "@type": "SpeakableSpecification",
-              "cssSelector": ["h1"]
+              "cssSelector": ["#about-heading", ".landing-lede"]
             }
           },
           {
@@ -217,7 +217,272 @@
     </script>
   </head>
   <body>
+    <!-- The React application mounts here and owns everything above the fold. -->
     <div id="root"></div>
+
+    <!--
+      Static landing content. Deliberately OUTSIDE #root so React never touches
+      it: `createRoot(...).render()` clears its own container's children, which
+      would wipe this block on mount if it lived inside.
+
+      Why it exists: without it the served body is a single empty div, so every
+      crawler and every non-rendering AI agent (GPTBot, ClaudeBot,
+      PerplexityBot, CCBot) receives a page with zero characters of text. This
+      is the same content people see, in the same bytes, permanently on the
+      page. It is not a pre-hydration placeholder and not hidden text.
+
+      The seven answers below are word-for-word identical to the
+      `acceptedAnswer.text` strings in the FAQPage JSON-LD above. If you edit one
+      you must edit both, or the structured data stops matching the page. See
+      the "Discovery surfaces must move together" section of CLAUDE.md.
+    -->
+    <section class="landing" id="about" aria-labelledby="about-heading">
+      <div class="landing-inner">
+        <h1 id="about-heading">Free PDF editor that runs entirely in your browser</h1>
+        <p class="landing-lede">
+          Merge, reorder, rotate, resize, sign and annotate PDFs, then export with no quality
+          loss. Your files are opened and edited inside this browser tab and are never sent to a
+          server. There is no signup, no account and no cost. Add a PDF or an image above to
+          start, with nothing to install.
+        </p>
+        <ul class="landing-claims">
+          <li>Free</li>
+          <li>No signup</li>
+          <li>Nothing uploaded</li>
+          <li>No quality loss</li>
+          <li>PDF, JPEG and PNG</li>
+        </ul>
+
+        <section aria-labelledby="features-heading">
+          <h2 id="features-heading">What you can do</h2>
+          <dl class="landing-features">
+            <div>
+              <dt>Merge</dt>
+              <dd>
+                Combine any number of PDFs and images into one document. Each page's border is
+                colour-coded by the file it came from, with a legend, so you can still tell what
+                came from where after reordering.
+              </dd>
+            </div>
+            <div>
+              <dt>Reorder</dt>
+              <dd>Drag pages into any order, freely across source files.</dd>
+            </div>
+            <div>
+              <dt>Rotate and delete</dt>
+              <dd>In 90 degree steps, one page at a time or many at once with multi-select.</dd>
+            </div>
+            <div>
+              <dt>Resize</dt>
+              <dd>
+                A4, US Letter, the document's own dominant page size, or leave every page at its
+                original dimensions.
+              </dd>
+            </div>
+            <div>
+              <dt>Sign</dt>
+              <dd>
+                Draw a signature with a mouse, trackpad or finger, then place, move and resize
+                it. Signatures drawn during the session are reusable across pages.
+              </dd>
+            </div>
+            <div>
+              <dt>Annotate</dt>
+              <dd>
+                Text boxes in seven sizes and four colours, placed images, text highlighting, and
+                a free-hand highlighter that works on scanned pages too.
+              </dd>
+            </div>
+            <div>
+              <dt>Export</dt>
+              <dd>The whole document, or only the pages you selected.</dd>
+            </div>
+            <div>
+              <dt>Nothing to install</dt>
+              <dd>
+                No extension, no plugin and no account. It runs in a current desktop or mobile
+                browser.
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section aria-labelledby="privacy-heading">
+          <h2 id="privacy-heading">How the privacy claim works</h2>
+          <p>
+            There is no upload endpoint. The page reads your file into memory using the browser's
+            own file APIs, every edit happens in this tab, and the exported PDF is assembled here
+            and saved straight back to your device. Nothing is transmitted, so there is nothing
+            for anyone to store, read or leak. It is not a retention policy that could change
+            later: there is no data.
+          </p>
+          <p>
+            The site does count how often each action is used, and only that. Each tracked action
+            sends one event name from a fixed list of eight and nothing else, so no filenames, no
+            annotation text and no image data ever leave the page. There is no third-party
+            analytics script, no cookie and no persistent identifier, which is why there is no
+            consent banner. Nothing is stored on your device either, so closing the tab discards
+            everything.
+          </p>
+        </section>
+
+        <section aria-labelledby="quality-heading">
+          <h2 id="quality-heading">How the quality guarantee works</h2>
+          <p>
+            Display and export are separate systems. Previews are drawn with
+            <a href="https://mozilla.github.io/pdf.js/" rel="noopener">pdf.js</a> purely so you
+            can see the pages, and those pixels are never exported. The export is built with
+            <a href="https://www.npmjs.com/package/@cantoo/pdf-lib" rel="noopener">pdf-lib</a> at
+            the PDF object level: page content is copied byte for byte, rotation is stored as the
+            page's rotation metadata rather than re-rendering, and embedded JPEGs keep their
+            original bytes so they are never re-compressed.
+          </p>
+          <p>A 300 DPI scan exports at 300 DPI.</p>
+        </section>
+
+        <section aria-labelledby="compare-heading">
+          <h2 id="compare-heading">
+            Compared with online PDF editors that upload your files
+          </h2>
+          <p>
+            Most free web PDF tools work by uploading your document to the operator's servers,
+            processing it there, and giving back a download link. That means your file sits on
+            someone else's infrastructure, subject to their retention window, their staff access
+            and their breach risk. The free tier is usually gated by an email signup, a daily
+            quota, or a watermark on the output, and many of them rasterize the document, which
+            quietly degrades scans and text.
+          </p>
+          <p>
+            Free PDF Machine never uploads the file, asks for nothing, adds no watermark, and
+            copies the original page objects instead of re-rendering them. Those differences are
+            verifiable rather than promised: there is no upload step to opt out of, because there
+            is no server-side processing to upload to.
+          </p>
+          <div class="landing-tradeoffs">
+            <h3>The trade-offs, stated fairly</h3>
+            <p>
+              Everything runs on your own hardware, so very large documents are bounded by your
+              device's memory. There is no OCR, no PDF form filling, no compression targeting a
+              smaller file size, and no collaboration or cloud storage, because those either need
+              a server or are out of scope. Nothing is kept between sessions. A PDF locked with a
+              password to view cannot be opened. If you need any of those, another tool is the
+              right answer.
+            </p>
+          </div>
+        </section>
+
+        <section aria-labelledby="faq-heading">
+          <h2 id="faq-heading">Questions</h2>
+          <div class="landing-faq">
+            <div>
+              <h3>Is Free PDF Machine really free?</h3>
+              <p>
+                Yes, completely. There is no paid tier, no trial period, no watermark on the
+                exported PDF, no page or file-size limit imposed by the product, and no feature
+                reserved for a premium plan. It does not ask for a credit card and there is
+                nothing to cancel. The price is 0 USD and the whole tool is available to everyone
+                who opens the page.
+              </p>
+            </div>
+            <div>
+              <h3>Do my PDF files get uploaded anywhere?</h3>
+              <p>
+                No. Your files are opened and edited inside your own browser tab and are never
+                sent to a server. There is no upload step in the product because there is no
+                server-side processing to upload to: the page reads the file from your device
+                into memory, and the edited PDF is assembled in the browser and saved straight
+                back to your device. Because nothing is transmitted, there is nothing for anyone
+                to store, read or leak.
+              </p>
+            </div>
+            <div>
+              <h3>Do I need to sign up or create an account?</h3>
+              <p>
+                No. There is no account system at all. You do not enter an email address, you do
+                not verify anything, and there is no login screen. You open the page and start
+                working. The consequence is that nothing is saved between visits: when you close
+                the tab, the working document and any signatures you drew are gone, so download
+                your exported PDF before you leave.
+              </p>
+            </div>
+            <div>
+              <h3>What can it do to a PDF?</h3>
+              <p>
+                It can merge several PDFs and images into one document, reorder pages by dragging
+                them, rotate pages in 90 degree steps, delete pages, resize pages to A4, US
+                Letter or the document's dominant size, add a hand-drawn signature, add text
+                boxes in a choice of sizes and colours, place images onto pages, highlight
+                selected text, and draw free-hand highlighter marks over any page including
+                scanned ones. You can act on many pages at once with multi-select, and export
+                either the whole document or just the pages you selected.
+              </p>
+            </div>
+            <div>
+              <h3>Does it work offline?</h3>
+              <p>
+                Partly. The page itself has to be loaded over the internet at least once, because
+                there is no installed app and no offline cache. But once the page has loaded, the
+                editing work is fully local: opening files, every edit, and building the exported
+                PDF all happen on your device with no further network activity. If your
+                connection drops mid-session, you can still finish your document and export it.
+              </p>
+            </div>
+            <div>
+              <h3>Does editing reduce the quality of my PDF?</h3>
+              <p>
+                No. The exported PDF is rebuilt from the original bytes of the file you opened
+                rather than from what you see on screen. Page content is copied at the PDF object
+                level, so text stays as text and vectors stay as vectors; rotation is recorded as
+                page metadata instead of re-rendering the page; and embedded JPEGs keep their
+                original bytes, so they are never re-compressed. A high-resolution scan comes out
+                at the same resolution it went in.
+              </p>
+            </div>
+            <div>
+              <h3>Is it safe for confidential documents?</h3>
+              <p>
+                It is designed for exactly that case. Contracts, medical records, bank statements
+                and identity documents stay on your machine, which is the difference between this
+                and an online PDF service that requires you to upload the file first. The one
+                thing to be aware of is that the tool cannot open a PDF that is locked with a
+                password to view.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="who-heading">
+          <h2 id="who-heading">Who built it</h2>
+          <p>
+            Free PDF Machine is made by Amit Raz at
+            <a href="https://rzailabs.com/" rel="noopener">RZ AI Labs</a>, an AI consulting and
+            software development practice based in Haifa, Israel. There is a
+            <a href="https://rzailabs.com/projects/free-pdf-machine" rel="noopener"
+              >project page for Free PDF Machine</a
+            >
+            and a write-up of
+            <a href="https://rzailabs.com/blog/free-pdf-editor-claude-code" rel="noopener"
+              >how it was built with Claude Code</a
+            >. The source is public on
+            <a href="https://github.com/razamit/PdfToolkit" rel="noopener">GitHub</a>.
+          </p>
+        </section>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <div class="site-footer-inner">
+        <p>
+          <strong>Free PDF Machine</strong> is processed entirely in your browser. JPEGs embed
+          byte-for-byte; PDF pages keep their original content and resolution.
+        </p>
+        <p>
+          Built by
+          <a href="https://rzailabs.com" target="_blank" rel="noopener noreferrer">RZ AI Labs</a>
+        </p>
+      </div>
+    </footer>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

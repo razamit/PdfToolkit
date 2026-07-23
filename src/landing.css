@@ -1,0 +1,218 @@
+/* ---------------------------------------------------------------------------
+   Landing content — styles for the STATIC section in index.html.
+
+   This markup lives outside `#root` and is never rendered by React, which is the
+   whole point: it is present in the bytes the server sends, so crawlers and
+   non-rendering AI agents (GPTBot, ClaudeBot, PerplexityBot, CCBot) can read the
+   product description without executing the 1.4 MB bundle, and it stays on the
+   page permanently for people.
+
+   Written as plain CSS against the design tokens in index.css rather than as
+   Tailwind utilities, so it does not depend on Tailwind's content detection
+   reaching a file outside `src/`. Same palette, same radii, same type scale.
+--------------------------------------------------------------------------- */
+
+.landing {
+  border-top: 1px solid var(--border);
+}
+
+.landing-inner {
+  max-width: 54rem;
+  margin-inline: auto;
+  padding: 4.5rem 1rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .landing-inner {
+    padding-inline: 1.5rem;
+  }
+}
+
+/* --- hero ---------------------------------------------------------------- */
+
+.landing h1 {
+  font-size: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.landing-lede {
+  margin: 1.5rem 0 0;
+  max-width: 42rem;
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: var(--muted-foreground);
+}
+
+.landing-claims {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-claims li {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  padding: 0.4375rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+/* --- sections ------------------------------------------------------------ */
+
+.landing section {
+  margin-top: 4rem;
+}
+
+.landing h2 {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+}
+
+.landing p {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+}
+
+.landing p:last-child {
+  margin-bottom: 0;
+}
+
+.landing strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.landing a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  transition: opacity 150ms ease;
+}
+
+.landing a:hover {
+  opacity: 0.75;
+}
+
+/* --- feature list -------------------------------------------------------- */
+
+.landing-features {
+  display: grid;
+  gap: 1.5rem 2rem;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .landing-features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.landing-features dt {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.landing-features dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+
+/* --- trade-offs card ----------------------------------------------------- */
+
+.landing-tradeoffs {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--muted);
+}
+
+.landing-tradeoffs h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+.landing-tradeoffs p:last-child {
+  margin-bottom: 0;
+}
+
+/* --- FAQ ----------------------------------------------------------------- */
+
+.landing-faq {
+  display: grid;
+  gap: 0;
+}
+
+.landing-faq > div {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.landing-faq > div:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.landing-faq h3 {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0 0 0.625rem;
+}
+
+/* --- site footer (static; moved out of the React tree) ------------------- */
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  margin-top: 4.5rem;
+  padding: 1.5rem 1rem;
+}
+
+.site-footer-inner {
+  max-width: 54rem;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.site-footer strong {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.site-footer a {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 150ms ease;
+}
+
+.site-footer a:hover {
+  color: var(--primary);
+}

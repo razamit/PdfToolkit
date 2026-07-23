@@ -1,6 +1,10 @@
 # The HTML served to crawlers and AI agents contains no body content, only an empty `<div id="root">`
 
-Status: OPEN · Priority: HIGH · Type: SEO/AEO — crawlability · Cost: none
+Status: CLOSED (2026-07-23) · Priority: HIGH · Type: SEO/AEO — crawlability · Cost: none
+
+> **Closed by a variant of Option A, see the "Resolution" section at the bottom.**
+> Recorded in decision row 14 and in the 2026-07-23 progress entry. Also closes
+> `faq-markup-has-no-visible-counterpart.md`, whose fix was the same work.
 
 > This is the root cause behind three other findings and should be fixed before
 > them: `faq-markup-has-no-visible-counterpart.md` (which cannot be closed until
@@ -108,3 +112,48 @@ guarantee, and they do nothing for search.
   across two pages for no benefit an in-page block does not already give.
 
 No code change made by this ticket — it is an observation on the record.
+
+## Resolution (2026-07-23)
+
+Fixed with a variant of Option A that is strictly better than the version
+proposed above, and the difference matters enough to record.
+
+Option A as written put the static block *inside* `#root`, where
+`createRoot(...).render()` wipes it on mount. That gets the crawler benefit but
+means a person sees the content for one pre-hydration frame and then never
+again, which satisfies the FAQ "visible counterpart" rule only on a technicality
+and leaves the block's styling unverifiable in practice.
+
+**What shipped instead: the block sits *after* `#root`, as a permanent section.**
+
+```html
+<body>
+  <div id="root"></div>            <!-- React mounts here, owns the first screen -->
+  <section class="landing">…</section>  <!-- static, React never touches it -->
+  <footer class="site-footer">…</footer>
+</body>
+```
+
+Because it is outside the container React owns, nothing clears it. Crawlers and
+non-rendering agents read it from the raw HTML; people scroll to it below the
+editor and it stays there. There is no pre-hydration flash and no
+visible-versus-crawlable distinction at all, which removes the compliance
+question rather than arguing it.
+
+Two consequential side effects, both deliberate:
+
+- The site `<footer>` moved out of `PdfToolkitView` into static HTML, because
+  with landing content below the app the React-rendered footer would have sat
+  *above* it in document order. It was pure static markup with no props or
+  state, so nothing was lost.
+- `AppHeader`'s `<h1>` became a `<p>`. It is a brand label in sticky chrome, not
+  the document heading, and leaving it would have given the rendered page two
+  `<h1>`s once the landing block added the real one.
+
+Verified: served body went from **0 to 7,375 visible text characters**; exactly
+one `<h1>` ("Free PDF editor that runs entirely in your browser"), 6 `<h2>`, 8
+`<h3>`; all **7 FAQ answers confirmed word-for-word identical** to the
+`acceptedAnswer.text` strings in the JSON-LD by script diff; 4 outbound
+rzailabs.com links and the GitHub link now present in the body. `npm run build`
+green, `npx tsc -b` clean, `npm run lint` unchanged at 4 pre-existing warnings.
+Rendered and checked at 1280×900 and 390×780.

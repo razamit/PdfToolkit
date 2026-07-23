@@ -51,9 +51,16 @@ these in the *same commit* as the code:
 Two hard rules:
 
 - **The `FAQPage` answers in `index.html` and the visible on-page FAQ must be
-  word-for-word identical.** Structured data that has no visible counterpart is a
-  Google policy violation, currently tracked in
-  `docs/tickets/faq-markup-has-no-visible-counterpart.md`.
+  word-for-word identical.** Both live in `index.html`: the answers in the
+  `application/ld+json` block and the same text in the
+  `<section class="landing">` block below `#root`. Structured data with no
+  visible counterpart is a Google policy violation, so editing one without the
+  other reintroduces `docs/tickets/faq-markup-has-no-visible-counterpart.md`.
+- **The landing content must stay OUTSIDE `<div id="root">`.** React's
+  `createRoot(...).render()` clears its own container's children, so moving that
+  block inside `#root` would delete it on mount and silently return the served
+  body to zero visible text. It is also the page's only `<h1>`; `AppHeader`
+  deliberately uses a `<p>` so the rendered page does not have two.
 - **The SPA catch-all in `netlify.toml` must never gain `force = true`.** It is
   unforced on purpose: an unforced rewrite loses to a matching static file, which
   is the only reason `/robots.txt`, `/sitemap.xml`, `/llms.txt`,

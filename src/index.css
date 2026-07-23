@@ -1,5 +1,10 @@
 @import 'tailwindcss';
 
+/* Styles for the static landing markup in index.html, which React never
+   renders and Tailwind therefore never scans. Kept in its own file so the
+   crawler-facing content has one obvious place to live. */
+@import './landing.css';
+
 /* ---------------------------------------------------------------------------
    Design tokens — shadcn-style, neutral palette + a single indigo accent.
    Light theme only (no dark mode). Max radius kept at rounded-2xl.

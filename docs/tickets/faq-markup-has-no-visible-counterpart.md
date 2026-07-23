@@ -1,6 +1,13 @@
 # The `FAQPage` JSON-LD describes seven questions that appear nowhere on the rendered page
 
-Status: OPEN · Priority: MEDIUM · Type: SEO/AEO — structured-data compliance · Cost: none
+Status: CLOSED (2026-07-23) · Priority: MEDIUM · Type: SEO/AEO — structured-data compliance · Cost: none
+
+> Closed by the same work that closed `served-html-has-no-crawlable-content.md`.
+> All seven Q&As now exist as visible HTML in the static landing section of
+> `index.html`, and a script diff confirms each answer is word-for-word identical
+> to its `acceptedAnswer.text` in the JSON-LD. `WebPage.speakable` was extended
+> at the same time from `["h1"]` to `["#about-heading", ".landing-lede"]`, now
+> that a real summary element exists to point at. See decision row 14.
 
 > Cannot be closed independently: it is closed by whatever fixes
 > `served-html-has-no-crawlable-content.md`, because the fix is literally "put

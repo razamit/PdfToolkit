@@ -48,26 +48,10 @@ export function PdfToolkitView() {
         )}
       </main>
 
-      <footer className="border-t py-4">
-        <div className="mx-auto flex max-w-[1400px] flex-col items-center gap-1.5 px-4 text-center text-xs text-muted-foreground sm:px-6">
-          <p>
-            <span className="font-medium text-foreground">Free PDF Machine</span> — processed
-            entirely in your browser. JPEGs embed byte-for-byte; PDF pages keep their original
-            content and resolution.
-          </p>
-          <p>
-            Built by{' '}
-            <a
-              href="https://rzailabs.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-foreground transition-colors hover:text-primary"
-            >
-              RZAiLabs
-            </a>
-          </p>
-        </div>
-      </footer>
+      {/* The site footer is deliberately NOT rendered here. It is static markup
+          at the end of index.html, below the landing content, so that it sits
+          after that content in document order and is readable without
+          JavaScript. See `.site-footer` in src/landing.css. */}
 
       {isDragging && <DragOverlay />}
       {isBusy && <BusyOverlay label={busyLabel} />}
