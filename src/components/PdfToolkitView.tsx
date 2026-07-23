@@ -29,7 +29,12 @@ export function PdfToolkitView() {
   const hasPages = pages.length > 0
 
   return (
-    <div {...dropzoneProps} className="relative flex min-h-screen flex-col">
+    // 80vh, not min-h-screen: the static landing content below #root has to peek
+    // above the fold or nobody discovers it. The value is paired with the
+    // `#root { min-height: 80vh }` reservation in src/landing.css that stops the
+    // page shifting on mount; changing one without the other brings the shift
+    // back. See decision row 15.
+    <div {...dropzoneProps} className="relative flex min-h-[80vh] flex-col">
       <AppHeader />
 
       <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6">

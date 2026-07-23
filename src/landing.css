@@ -12,6 +12,105 @@
    reaching a file outside `src/`. Same palette, same radii, same type scale.
 --------------------------------------------------------------------------- */
 
+/* Reserve the app's space before React mounts.
+
+   #root would otherwise be zero-height until the bundle parses, so the landing
+   content below it painted at the top of the viewport and was then shoved down
+   a full screen when the app appeared: a visible jump and a Cumulative Layout
+   Shift penalty. Claiming the height up front means the landing content never
+   moves.
+
+   80vh, not 100vh, and this number is load-bearing in two directions. It has to
+   be TALLER than the app's natural empty-state height (header + padding + the
+   60vh dropzone box measures ~70-76vh across viewport sizes) or the app would
+   grow past the reservation on mount and shift the page anyway. And it has to
+   be SHORTER than the viewport so the top of the landing section is visible
+   without scrolling, which is the only reason anyone discovers it is there.
+
+   It must stay in step with `min-h-[80vh]` on the app's own root element in
+   PdfToolkitView. If the two disagree, the shift comes back. */
+#root {
+  min-height: 80vh;
+}
+
+/* --- boot state ---------------------------------------------------------- */
+/* Styles the placeholder inside #root that React replaces on mount. Mirrors the
+   real empty state's dashed card so the swap changes the contents of the box
+   rather than the shape of the page. */
+
+.app-boot {
+  min-height: 80vh;
+  display: flex;
+  align-items: stretch;
+  padding: 1.5rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .app-boot {
+    padding-inline: 1.5rem;
+  }
+}
+
+.app-boot-box {
+  flex: 1;
+  min-height: 60vh;
+  max-width: 1400px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 2px dashed var(--border);
+  border-radius: 1rem;
+  padding: 4rem 1.5rem;
+}
+
+.app-boot-mark {
+  position: relative;
+  display: flex;
+  width: 3.5rem;
+  height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.app-boot-cog-lg,
+.app-boot-cog-sm {
+  position: absolute;
+}
+
+.app-boot-cog-lg {
+  left: 11%;
+  top: 11%;
+  width: 56%;
+  height: 56%;
+}
+
+.app-boot-cog-sm {
+  right: 11%;
+  bottom: 11%;
+  width: 33%;
+  height: 33%;
+  opacity: 0.7;
+}
+
+.app-boot-title {
+  margin: 1.25rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.app-boot-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
 .landing {
   border-top: 1px solid var(--border);
 }

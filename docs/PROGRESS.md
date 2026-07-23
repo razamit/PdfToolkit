@@ -62,6 +62,93 @@ closed:** `served-html-has-no-crawlable-content.md`,
 named `--full-page` (a blank 1280×900 PNG, an `agent-browser` flag parsed as an
 output path) is sitting in the repo root and should not be committed.
 
+[**Update, 2026-07-23 — deployed and re-probed live; the projection above is
+confirmed.** `https://freepdfmachine.com/` now serves 26,315 bytes with **7,375
+visible text characters** in the body (was 0), **exactly one `<h1>`** reading
+"Free PDF editor that runs entirely in your browser", 6 `<h2>` and 8 `<h3>`, 4
+outbound rzailabs.com links and the GitHub link. Every non-rendering agent
+measured identical: GPTBot, ClaudeBot, PerplexityBot and Googlebot each receive
+**7,375 visible characters** with no JavaScript executed. The live JSON-LD parses
+with 4 nodes, `speakable.cssSelector` is `["#about-heading", ".landing-lede"]`
+and **both selectors resolve against the served markup**, and all **7 FAQ answers
+are word-for-word identical** between the `FAQPage` node and the visible page,
+verified against the live response rather than the build. The discovery layer and
+headers from the previous entry are unaffected: all six files still serve with
+correct types, and `link`, `x-frame-options`, `x-content-type-options` and
+`referrer-policy` are all still present. **Final re-audit score: 39/41 (95%)**, up
+from 33.5/41 (82%) this morning and 11/40 (27.5%) at the start of the day. The two
+remaining points are both open tickets and both known:
+`every-url-returns-200-soft-404.md` (re-confirmed: `/nope-404-test` → `200`) and
+`pdfjs-bundled-into-entry-chunk.md`. **Correction to the note above:** the stray
+`--full-page` file was not caught in time and rode into commit `5854653`. It has
+since been removed from the working tree, and that deletion needs its own commit
+to leave the repository. This is exactly the failure the session-wrap
+evidence-summary step exists to prevent, and it happened because the file was
+named after a CLI flag and read as noise in `git status`.]
+
+[**Update, 2026-07-23 — layout-shift defect in the above, reported by the user
+and fixed; not yet deployed.** The user observed the landing text appearing
+briefly on load and then being replaced by the app. Cause: `#root` has **zero
+height** until React mounts, so on first paint the static landing section
+rendered at the top of the viewport, and when the bundle finished parsing the
+app claimed a full screen and shoved the landing content down by exactly one
+viewport height. A visible jump and a Cumulative Layout Shift penalty, both
+introduced by the previous change. Fix: `#root { min-height: 100vh }` in
+`src/landing.css`, which reserves the app's space up front so the landing
+content starts below the fold from the first paint and never moves. `100vh` is
+used rather than `100dvh` deliberately, to match the `min-h-screen` on the app's
+own root element in `PdfToolkitView`; a mismatch between the two would
+reintroduce a smaller shift on mobile. **Proof:** with the bundle blocked via
+`agent-browser network route "**/assets/*.js" --abort` (which reproduces the
+first-paint state exactly), the first screen is now the empty reserved area and
+no text appears above the fold. With the app loaded, measured
+`{rootHeight: 900, landingTop: 900, viewport: 900}` at 1280×900, so the landing
+section begins precisely one viewport down and nothing moves on mount. `npm run
+build` green. **Related, not fixed:** the first screen is blank until the bundle
+executes, measured on production at TTFB 181 ms, entry chunk 457 kB gzipped
+downloading in 316 ms, DOMContentLoaded 538 ms on a fast desktop connection, and
+proportionally worse on mobile. That is the pre-existing condition tracked in
+`docs/tickets/pdfjs-bundled-into-entry-chunk.md`, not a regression: the site
+showed a blank first screen before the landing content existed too. This change
+only stops the blank period from being filled with the wrong content.]
+
+[**Update 2, 2026-07-23 — app capped at 80vh so the landing section is
+discoverable, and a static boot state added; not yet deployed.** Two further
+issues the user raised after the shift fix above. **(a) "No one sees that there
+is a section below."** True: with the app at `min-h-screen` the landing content
+began exactly at the fold and was invisible. Both the `#root` reservation and
+the app's own root element are now `80vh`, so the top of the landing block is
+always on screen. Measured peek: **156px at 390×780, 140px at 1280×700, 240px at
+1440×1200**. The value is bounded on both sides, and the reasoning is in decision
+row 15 so a future session does not "tidy" it back to `min-h-screen`. Confirmed
+no shift at all three sizes: `#root`, the app element and the landing offset are
+exactly equal in every case (624/624/624, 560/560/560, 960/960/960), so the app
+never outgrows its reservation. **(b) Blank first screen while the bundle
+loads.** `#root` now ships a static boot state: the brand mark with its two
+turning cogs, "Starting the machine", and "Loading the editor. Your files stay on
+this device.", inside a dashed card that mirrors the real empty state at the same
+position and size, so mounting swaps the contents of the box rather than
+reshaping the page. This is the one place where markup inside `#root` is correct
+rather than a bug, because `createRoot(...).render()` clearing it is exactly the
+desired behaviour for a boot state. Kept dependency-free: the lucide `cog`
+geometry is inlined and the rotation classes are the ones `MachineMark` already
+uses, so `prefers-reduced-motion` handling is inherited. **Proof:** `npx tsc -b`
+clean; `npm run build` green (`dist/index.html` 26.31 kB → 29.14 kB); `npm run
+lint` unchanged at 4 pre-existing warnings. Boot state verified by blocking the
+bundle with `agent-browser network route "**/assets/*.js" --abort`, which
+reproduces first paint exactly: the dashed card renders with the mark and both
+lines of text, and the landing heading is already visible below the divider.
+Loaded state screenshotted at 1280×900 and 390×780, both correct. **Rejected the
+user's suggestion of moving the text to a separate page**, with reasons in
+decision row 15: the homepage is the URL that ranks, and moving the content
+returns it to near-zero crawlable text. **Files:** `index.html`,
+`src/landing.css`, `src/components/PdfToolkitView.tsx`. **Decisions:** row 15.
+**Housekeeping:** removed the committed `--full-page` artifact (deletion still
+needs a commit) and two more of the same kind, `--selector` and `-s`, both
+untracked `agent-browser` screenshot artifacts from this session's flag
+misparses. Three in one day means the pattern is worth watching, not just the
+individual files.]
+
 ---
 
 **2026-07-23 — SEO/AEO discovery layer built from an audit that scored the live
