@@ -20,17 +20,24 @@
    Shift penalty. Claiming the height up front means the landing content never
    moves.
 
-   80vh, not 100vh, and this number is load-bearing in two directions. It has to
-   be TALLER than the app's natural empty-state height (header + padding + the
-   60vh dropzone box measures ~70-76vh across viewport sizes) or the app would
-   grow past the reservation on mount and shift the page anyway. And it has to
-   be SHORTER than the viewport so the top of the landing section is visible
-   without scrolling, which is the only reason anyone discovers it is there.
+   100vh, and the full viewport height is the point rather than a rounding
+   choice. An earlier version used 80vh to let the landing section peek above
+   the fold as a discovery cue, and that was wrong: the app's rendered height is
+   content-driven (the empty state with the usage counters measures ~856px on
+   desktop and ~1133px on mobile, largely independent of viewport height), so no
+   vh fraction tracks it, and pulling the landing up INTO the viewport is
+   precisely what made its movement visible. Measured on production at 80vh: a
+   136px shift at 1280x900, 296px at 1280x700 and 509px at 390x780.
 
-   It must stay in step with `min-h-[80vh]` on the app's own root element in
-   PdfToolkitView. If the two disagree, the shift comes back. */
+   At 100vh the landing sits at or below the fold both before and after mount,
+   so whatever the app's real height turns out to be, nothing visible moves.
+   Discovery is handled by the explicit "How it works" link at the bottom of the
+   app section instead of by geometry.
+
+   It must stay in step with `min-h-screen` on the app's own root element in
+   PdfToolkitView. See decision rows 15 and 16. */
 #root {
-  min-height: 80vh;
+  min-height: 100vh;
 }
 
 /* --- boot state ---------------------------------------------------------- */
@@ -39,10 +46,10 @@
    rather than the shape of the page. */
 
 .app-boot {
-  min-height: 80vh;
+  min-height: 100vh;
   display: flex;
-  align-items: stretch;
-  padding: 1.5rem 1rem;
+  flex-direction: column;
+  padding: 1.5rem 1rem 0;
 }
 
 @media (min-width: 640px) {
@@ -54,6 +61,10 @@
 .app-boot-box {
   flex: 1;
   min-height: 60vh;
+  /* `width: 100%` is required, not redundant: `margin-inline: auto` centres the
+     box but also opts it out of the column flex container's cross-axis stretch,
+     so without this it collapses to its content width. */
+  width: 100%;
   max-width: 1400px;
   margin-inline: auto;
   display: flex;
@@ -109,6 +120,37 @@
   margin: 0.5rem 0 0;
   font-size: 0.875rem;
   color: var(--muted-foreground);
+}
+
+/* --- "How it works" affordance ------------------------------------------- */
+/* The only thing telling anyone the landing section exists, now that it sits
+   below the fold by design. Rendered twice: here for the boot state, and by
+   PdfToolkitView for the mounted app, at the same place in the same layout so
+   the swap does not move it. Keep the two in step. */
+
+.about-link-row {
+  padding: 1.25rem 0 1.5rem;
+  text-align: center;
+}
+
+.about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.about-link:hover {
+  color: var(--primary);
+}
+
+.about-link svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 .landing {

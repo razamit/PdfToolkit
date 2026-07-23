@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { useFileUpload } from '@/hooks/useFileUpload'
 import { AppHeader } from './AppHeader'
@@ -29,12 +30,14 @@ export function PdfToolkitView() {
   const hasPages = pages.length > 0
 
   return (
-    // 80vh, not min-h-screen: the static landing content below #root has to peek
-    // above the fold or nobody discovers it. The value is paired with the
-    // `#root { min-height: 80vh }` reservation in src/landing.css that stops the
-    // page shifting on mount; changing one without the other brings the shift
-    // back. See decision row 15.
-    <div {...dropzoneProps} className="relative flex min-h-[80vh] flex-col">
+    // Paired with the `#root { min-height: 100vh }` reservation in
+    // src/landing.css, which is what stops the static landing content below
+    // #root from painting at the top of the viewport and then being shoved down
+    // on mount. Both must be the full viewport height and must change together:
+    // an 80vh version was tried and measured, and it pulls the landing up into
+    // the viewport where the app outgrowing its reservation becomes a visible
+    // 136-509px shift. See decision rows 15 and 16.
+    <div {...dropzoneProps} className="relative flex min-h-screen flex-col">
       <AppHeader />
 
       <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6">
@@ -52,6 +55,18 @@ export function PdfToolkitView() {
           <EmptyState />
         )}
       </main>
+
+      {/* The landing section sits below the fold by design, so this link is the
+          only thing that tells anyone it is there. The boot state in index.html
+          renders the same row in the same position, so mounting does not move
+          it. Styles are shared (`.about-link-row` in src/landing.css) rather
+          than duplicated as utilities, so the two cannot drift apart. */}
+      <div className="about-link-row">
+        <a className="about-link" href="#about">
+          How it works
+          <ChevronDown aria-hidden />
+        </a>
+      </div>
 
       {/* The site footer is deliberately NOT rendered here. It is static markup
           at the end of index.html, below the landing content, so that it sits

@@ -149,6 +149,45 @@ untracked `agent-browser` screenshot artifacts from this session's flag
 misparses. Three in one day means the pattern is worth watching, not just the
 individual files.]
 
+[**Update 3, 2026-07-23 — Update 2's "zero shift" was wrong on production and is
+corrected here; app reverted to full viewport height and discovery moved to an
+explicit link.** After deploying Update 2 (commit `0c97cc0`) and re-measuring
+against **production** rather than local preview, the 80vh cap turned out to
+shift the page on three of four viewport sizes: **136px at 1280x900, 296px at
+1280x700, 509px at 390x780**, with peek collapsing from the claimed 140-240px to
+44px and then to nothing. Only 1440x1200 behaved as reported. **Why the earlier
+measurement was wrong:** it was taken against `npm run preview`, where
+`/api/usage` does not exist, so `UsageCounters` never rendered and the empty
+state measured 130 to 500px shorter than reality. The layout was validated
+against a page missing a component, and the reported numbers were real
+measurements of the wrong thing. On production the empty-state card is **747px**
+and the app is **856px** desktop / **1133px** mobile, content-driven and largely
+independent of viewport height, so no `vh` fraction can track it. **Fix, chosen
+by the user from three options:** `#root` and the app's root element both back to
+the full viewport height, so the landing sits at or below the fold before and
+after mount and nothing visible moves whatever the app's real height turns out to
+be; discovery handled by an explicit "How it works" link with a chevron at the
+bottom of the app section, rendered identically by the boot state and by
+`PdfToolkitView` from shared `.about-link-row` styles. The peek and the zero
+shift are mutually exclusive, which is the substance of decision row 16. **Proof:**
+boot and loaded states measured geometrically identical, `{root: 900, linkTop:
+854, landingTop: 900}` in both at 1280x900, with the bundle blocked via
+`agent-browser network route "**/assets/*.js" --abort` for the boot case;
+screenshotted at 1280x900 and 390x780; `npx tsc -b` clean, `npm run build` green
+(`dist/index.html` 29.14 kB → 29.60 kB), `npm run lint` unchanged at 4
+pre-existing warnings. A `width: 100%` on `.app-boot-box` was needed and caught
+by screenshot before shipping: `margin-inline: auto` opts an item out of a column
+flex container's cross-axis stretch, so the boot card had collapsed to its
+content width. **Known residual, not hidden:** where the app's content is taller
+than the viewport (mobile), the "How it works" link is visible during boot and
+below the fold once the app renders, so it moves; same class as the counters
+arriving, inside the loading transition. **Verification rule this establishes:**
+layout must be measured against production or with `/api/usage` stubbed, never a
+bare `vite preview`. **Files:** `index.html`, `src/landing.css`,
+`src/components/PdfToolkitView.tsx`. **Decisions:** row 16 (supersedes row 15's
+80vh; the boot state from row 15 stands). **Tickets opened:**
+`usage-counters-arrive-late-and-shift-layout.md`.]
+
 ---
 
 **2026-07-23 — SEO/AEO discovery layer built from an audit that scored the live
