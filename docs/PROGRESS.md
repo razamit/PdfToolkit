@@ -6,6 +6,40 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-07-23 — Bulk-action bar moved from the bottom of the viewport into the
+sticky header. ✅ DONE.** The user reported the multi-select bar was "barely
+visible" at `bottom-6`. It is now a row inside the sticky header, rendered by
+`AppHeader` directly under the toolbar, so it appears beside the other controls
+(Export, Reset, page size) and stays on screen while the grid scrolls. The
+obvious first attempt — the same `fixed` bar re-anchored to the top — was built
+and rejected on evidence: it overlays the first grid row and swallows those
+pages' checkbox and rotate/annotate/delete buttons (`agent-browser` refused the
+click with `covered by <button.inline-flex> ... the input would land on that
+element instead`). Rendering it in the header's normal flow makes overlap
+structurally impossible; the grid shifts down while a selection is active and
+back on Clear. Because the header's height is not a constant (the toolbar row
+only exists once pages load, and both rows wrap on mobile), the new
+`useCssHeightVariable` hook publishes the header's measured border-box height
+on `:root` as `--app-header-height` via `ResizeObserver`; the sticky source
+legend now uses `calc(var(--app-header-height,112px)+1rem)` instead of the
+hardcoded — and already slightly wrong — `lg:top-[112px]`. Within the bar, the
+divider before Select all / Clear gained `ml-auto` so those two push to the
+right edge of the full-width row. **Proof:** `npx tsc -b` clean; `npm run lint`
+unchanged at 4 pre-existing warnings (`button.tsx`, `ThumbnailGrid.tsx` ×3 —
+all pre-existing); `npm run build` green. Verified live via `agent-browser`
+against the dev server with a generated 6-page PDF: at 1280×912 the bar renders
+as a header row reading "2 selected" with Select all / Clear right-aligned,
+pages 1 and 3 show their checkmarks and **no** thumbnail control is covered; at
+1280×700 scrolled 600px the bar and the legend stay pinned while the grid
+scrolls beneath; at 390×780 it wraps to two lines of icon-only buttons (header
++ bar then occupies ~42% of the viewport — accepted, see decision row 12);
+Clear removes the row and the header and legend return to their original
+offsets. **Files:** added `src/hooks/useCssHeightVariable.ts`; edited
+`src/components/BulkActionBar.tsx`, `src/components/AppHeader.tsx`,
+`src/components/PdfToolkitView.tsx`. **Decisions:** row 12.
+
+---
+
 **2026-07-23 — Free-hand / straight-line highlighter (`'freehand-highlight'`),
 a second highlight tool drawn directly on the page. ✅ DONE.** The per-page
 annotate menu's single "Highlight" split into **"Highlight text"** (today's

@@ -1,5 +1,7 @@
 import { ShieldCheck } from 'lucide-react'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
+import { useCssHeightVariable } from '@/hooks/useCssHeightVariable'
+import { BulkActionBar } from './BulkActionBar'
 import { MachineMark } from './MachineMark'
 import { Toolbar } from './Toolbar'
 
@@ -8,9 +10,13 @@ export function AppHeader() {
   const { pages } = usePdfToolkit()
   const hasPages = pages.length > 0
   const sourceCount = new Set(pages.map((page) => page.sourceId)).size
+  const headerRef = useCssHeightVariable<HTMLElement>('--app-header-height')
 
   return (
-    <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur">
+    <header
+      ref={headerRef}
+      className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur"
+    >
       <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -50,6 +56,8 @@ export function AppHeader() {
             <Toolbar />
           </div>
         )}
+
+        <BulkActionBar />
       </div>
     </header>
   )

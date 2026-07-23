@@ -1,7 +1,6 @@
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { useFileUpload } from '@/hooks/useFileUpload'
 import { AppHeader } from './AppHeader'
-import { BulkActionBar } from './BulkActionBar'
 import { EmptyState } from './EmptyState'
 import { SourceLegend } from './SourceLegend'
 import { ThumbnailGrid } from './ThumbnailGrid'
@@ -37,7 +36,7 @@ export function PdfToolkitView() {
         {error && <ErrorBanner message={error} onDismiss={dismissError} />}
         {hasPages ? (
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-            <aside className="lg:sticky lg:top-[112px] lg:w-56 lg:shrink-0">
+            <aside className="lg:sticky lg:top-[calc(var(--app-header-height,112px)+1rem)] lg:w-56 lg:shrink-0">
               <SourceLegend />
             </aside>
             <div className="min-w-0 flex-1">
@@ -70,7 +69,6 @@ export function PdfToolkitView() {
         </div>
       </footer>
 
-      <BulkActionBar />
       {isDragging && <DragOverlay />}
       {isBusy && <BusyOverlay label={busyLabel} />}
       {signingPage && <SignatureModal key={signingPage.id} />}
