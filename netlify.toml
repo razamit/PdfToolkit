@@ -73,6 +73,15 @@
   [headers.values]
     Cache-Control = "public, max-age=2592000"
 
+# pdf.js image decoders (JBIG2 / CCITT G4 / JPEG 2000), fetched on demand the
+# first time a scanned PDF is opened. Like /fonts/ these cannot be immutable —
+# pdf.js addresses them by fixed name, so a pdfjs-dist upgrade rewrites the bytes
+# behind the same URL and needs a way to propagate.
+[[headers]]
+  for = "/pdfjs-wasm/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
 # Plain-text agent surfaces. Netlify already infers text/plain for .txt, but the
 # charset is declared explicitly so a non-UTF-8 default can never mangle them.
 [[headers]]

@@ -1,6 +1,7 @@
 import { PDFDocument, EncryptedPDFError } from '@cantoo/pdf-lib'
 import type { PDFDocumentProxy, PDFDocumentLoadingTask } from 'pdfjs-dist'
 import { pdfjsLib } from '@/lib/pdfjsWorkerSetup'
+import { PDFJS_WASM_BASE } from '@/lib/pdfjsAssetPaths'
 import { createId } from '@/lib/id'
 import { SourceLoadError } from '@/domain/errors'
 import type { PageDescriptor, SourceMeta } from '@/domain/types'
@@ -113,7 +114,14 @@ export class PdfSourceManager {
 
   private openWithPdfjs(bytes: Uint8Array): PDFDocumentLoadingTask {
     // Hand pdf.js its own copy; an empty password also opens owner-encrypted PDFs.
-    return pdfjsLib.getDocument({ data: bytes.slice(), password: '' })
+    // `wasmUrl` is required for scans: JBIG2, CCITT Group 4 and JPEG 2000 images
+    // are decoded by WebAssembly modules fetched from this prefix, and without it
+    // a scanned page renders blank instead of failing loudly.
+    return pdfjsLib.getDocument({
+      data: bytes.slice(),
+      password: '',
+      wasmUrl: PDFJS_WASM_BASE,
+    })
   }
 
   private async awaitPdfjs(

@@ -6,6 +6,61 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-07-28 — Scanned PDFs no longer render as blank pages: pdf.js is now given
+its WebAssembly image decoders (code + build plugin + one Netlify header; not yet
+deployed). ✅ DONE.** Triggered by a user report that a scanned PDF "shows up
+blank". Root cause: pdf.js 5+ decodes JBIG2, CCITT Group 4 and JPEG 2000 in WASM
+modules it fetches at runtime from the `wasmUrl` API option, and
+`PdfSourceManager.openWithPdfjs` never set it — so the three encodings scanners
+actually emit could not be decoded at all. The failure was silent in the worst
+way: `PDFDocument.load` succeeded, the page count was correct, the export was
+already byte-perfect, and pdf.js only `warn()`ed "Dependent image isn't ready
+yet" while drawing nothing. **The fix is display-only; nothing about export
+changed, because nothing about export was broken.** The user's proposed
+workaround — rasterise scanned pages and treat them as images — was rejected in
+decision row 18 for two independent reasons: rasterising in-browser requires
+rendering the page with pdf.js, the very component that was failing, and it
+would turn a lossless `copyPages` into a lossy re-encode, breaking the quality
+guarantee the site advertises. Delivery is a ~40-line Vite plugin
+(`vite/pdfjsWasmPlugin.ts`) that serves `pdfjs-dist/wasm/` out of `node_modules`
+via dev middleware and re-emits it at build under **fixed, unhashed** filenames,
+because pdf.js builds these URLs by string concatenation and cannot be told a
+content hash; the shared path constant lives alone in
+`src/lib/pdfjsAssetPaths.ts` so the build and the runtime import the same string.
+**Proof — four one-page fixtures carrying the same image in four encodings, all
+four first confirmed to render identically under macOS PDFKit so the fixtures
+themselves could not be blamed (`qlmanage`, mean 204.2 / stddev ≈98 for each):**
+before the fix, `scan-ccitt-g4.pdf` and `scan-jpx.pdf` rendered **blank** while
+`scan-jpeg.pdf` and `scan-flate.pdf` rendered correctly, with exactly two
+"Dependent image isn't ready yet" warnings — one per blank page. After the fix,
+**all four render**, the console is **empty**, and the network log shows
+`GET /pdfjs-wasm/jbig2.wasm 200` and `GET /pdfjs-wasm/openjpeg.wasm 200`. Export
+was verified unaffected rather than assumed: a 3-page mixed-encoding deck
+exported from the production build contains the original CCITT, JPX and DCT
+image streams **byte-for-byte verbatim** (2,645 / 140,015 / 78,498 bytes, all
+`True`), and re-importing that export renders all three pages. **Confirmed against the user's real failing
+document** (a 26,610-byte Israeli tax certificate, one `CCITTFaxDecode` image
+XObject) rather than only against synthetic fixtures: A/B'd in the production
+build by aborting `**/pdfjs-wasm/**` with `agent-browser network route` to
+reproduce the pre-fix state — **blank page and one "Dependent image isn't ready
+yet" warning with the decoders blocked; fully rendered form and an empty console
+with them available.** Also checked and
+found **not** broken, so a future session need not chase it: non-embedded
+standard-14 text renders fine without `standardFontDataUrl`. `npx tsc -b` exits
+0; `npm run lint` unchanged at 4 pre-existing warnings; `npm run build` green,
+emitting all 13 decoder files under `dist/pdfjs-wasm/`. All browser verification
+via `agent-browser` against `npm run dev` and then `vite preview`. **Not
+deployed** — the live re-probe of `/pdfjs-wasm/openjpeg.wasm` happens after the
+next deploy. **Files:** added `src/lib/pdfjsAssetPaths.ts`,
+`vite/pdfjsWasmPlugin.ts`, `docs/tickets/pdfjs-cmapurl-unset-for-cjk-documents.md`;
+edited `src/managers/PdfSourceManager.ts`, `vite.config.ts`, `tsconfig.node.json`,
+`netlify.toml`. **Decisions:** row 18. **Tickets opened:**
+`pdfjs-cmapurl-unset-for-cjk-documents.md` (same class of gap — `cMapUrl` is
+still unset — deliberately filed rather than fixed, since unlike `wasmUrl` it is
+not reproduced by any document).
+
+---
+
 **2026-07-23 — Static landing content added below the editor, taking the served
 body from 0 to 7,375 visible characters (index.html + one new CSS file; two
 small React edits; not yet deployed). ✅ DONE.** This closes the root finding of
