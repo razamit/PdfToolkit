@@ -12,14 +12,29 @@ export interface RenderedSize {
 
 const MAX_PREVIEW_WIDTH_PX = 1200
 const MAX_PREVIEW_DPR = 2
+/**
+ * Ceiling on the requested render width, in CSS px. The renderer multiplies by
+ * the device pixel ratio (capped at 2), so this bounds a single page bitmap to
+ * roughly 3200 device px wide — about what the deepest zoom level can actually
+ * show, and the difference between a ~58 MB allocation and a ~130 MB one.
+ */
+const MAX_PREVIEW_RENDER_WIDTH_PX = 1600
 
 /**
- * Renders a large preview of one page onto a canvas for the signature modal.
+ * Renders a large preview of one page onto a canvas for the editing session.
  * PDF pages reuse the thumbnail render pipeline (queue, cache, DPR); image
  * pages are drawn rotated straight from their object URL. Output is uniform:
  * a canvas ref, a ready flag, and the rendered pixel size.
+ *
+ * `targetWidthPx` is the on-screen width the caller intends to display the page
+ * at, zoom included. Passing it makes the bitmap track the pixels it will
+ * actually fill: a zoomed page is re-rendered sharp instead of magnified, and
+ * an unzoomed one stops being rendered several times larger than its box. Pass
+ * null before the layout has been measured and a conservative default is used.
+ * The renderer's cache is keyed by a width bucket, so returning to a zoom level
+ * already visited is a cache hit rather than a re-render.
  */
-export function usePagePreview(page: PageDescriptor) {
+export function usePagePreview(page: PageDescriptor, targetWidthPx?: number | null) {
   const { thumbnailRenderer, imageManager } = usePdfToolkit()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [renderedSize, setRenderedSize] = useState<RenderedSize | null>(null)
@@ -33,7 +48,15 @@ export function usePagePreview(page: PageDescriptor) {
 
     const render =
       kind === 'pdf'
-        ? renderPdfPreview(canvas, thumbnailRenderer, sourceId, sourcePageIndex, rotation, controller.signal)
+        ? renderPdfPreview(
+            canvas,
+            thumbnailRenderer,
+            sourceId,
+            sourcePageIndex,
+            rotation,
+            targetWidthPx,
+            controller.signal,
+          )
         : renderImagePreview(canvas, imageManager, sourceId, rotation, controller.signal)
 
     render
@@ -43,13 +66,15 @@ export function usePagePreview(page: PageDescriptor) {
       .catch(() => {})
 
     return () => controller.abort()
-  }, [kind, sourceId, sourcePageIndex, rotation, thumbnailRenderer, imageManager])
+  }, [kind, sourceId, sourcePageIndex, rotation, targetWidthPx, thumbnailRenderer, imageManager])
 
   return { canvasRef, ready: renderedSize !== null, renderedSize }
 }
 
-function previewTargetWidthPx(): number {
-  return Math.min(MAX_PREVIEW_WIDTH_PX, window.innerWidth * 1.5)
+/** Requested width, or a viewport-derived default until the layout is measured. */
+function previewTargetWidthPx(requested?: number | null): number {
+  const width = requested ?? Math.min(MAX_PREVIEW_WIDTH_PX, window.innerWidth * 1.5)
+  return Math.min(MAX_PREVIEW_RENDER_WIDTH_PX, Math.max(1, width))
 }
 
 async function renderPdfPreview(
@@ -58,10 +83,11 @@ async function renderPdfPreview(
   sourceId: string,
   pageIndex: number,
   rotation: Rotation,
+  requestedWidthPx: number | null | undefined,
   signal: AbortSignal,
 ): Promise<RenderedSize | null> {
   const bitmap = await renderer.render(
-    { sourceId, pageIndex, rotation, targetWidthPx: previewTargetWidthPx() },
+    { sourceId, pageIndex, rotation, targetWidthPx: previewTargetWidthPx(requestedWidthPx) },
     signal,
   )
   if (!bitmap || signal.aborted) return null

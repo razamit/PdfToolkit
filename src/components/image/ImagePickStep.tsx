@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { readAnnotationImage, type AnnotationImage } from '@/lib/readAnnotationImage'
 
 interface ImagePickStepProps {
-  onCancel: () => void
+  /** Ends the whole editing session (the footer's corner button). */
+  onClose: () => void
   onPlace: (image: AnnotationImage) => void
 }
 
@@ -13,7 +14,7 @@ interface ImagePickStepProps {
  * pasting from the clipboard. Upload is the always-reliable path; paste works
  * wherever the browser exposes image clipboard items.
  */
-export function ImagePickStep({ onCancel, onPlace }: ImagePickStepProps) {
+export function ImagePickStep({ onClose, onPlace }: ImagePickStepProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [picked, setPicked] = useState<AnnotationImage | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -81,11 +82,11 @@ export function ImagePickStep({ onCancel, onPlace }: ImagePickStepProps) {
           The image lands centered on the page — move and resize it there.
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
           <Button disabled={!picked} onClick={() => picked && onPlace(picked)}>
-            Place image
+            Save
+          </Button>
+          <Button variant="outline" onClick={onClose}>
+            Close
           </Button>
         </div>
       </footer>

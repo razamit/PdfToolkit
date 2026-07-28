@@ -15,7 +15,7 @@ import { resizePagesToPreset } from '@/lib/pageSizing'
 import type {
   AnnotationPlacement,
   AnnotationPlacementPatch,
-  AnnotationTool,
+  EditorTool,
   GridColumns,
   NormalizedRect,
   PageDescriptor,
@@ -48,11 +48,6 @@ function createManagers() {
     colorRegistry,
     analytics,
   }
-}
-
-interface AnnotatingState {
-  pageId: string
-  tool: AnnotationTool
 }
 
 function isPdf(file: File): boolean {
@@ -93,9 +88,10 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
   const [pageSizeMode, setPageSizeMode] = useState<PageSizeMode>('original')
   const [busyLabel, setBusyLabel] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [signingPageId, setSigningPageId] = useState<string | null>(null)
   const [signatureLibrary, setSignatureLibrary] = useState<StoredSignature[]>([])
-  const [annotating, setAnnotating] = useState<AnnotatingState | null>(null)
+  // One page is edited at a time, in a session that stays open across actions.
+  const [editingPageId, setEditingPageId] = useState<string | null>(null)
+  const [editorTool, setEditorTool] = useState<EditorTool | null>(null)
 
   const pagesRef = useRef<PageDescriptor[]>([])
   const sourcesRef = useRef<Map<string, SourceMeta>>(new Map())
@@ -222,13 +218,21 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
     [applyPages, analytics],
   )
 
-  const signingPage = useMemo(
-    () => pages.find((page) => page.id === signingPageId) ?? null,
-    [pages, signingPageId],
+  const editingPage = useMemo(
+    () => pages.find((page) => page.id === editingPageId) ?? null,
+    [pages, editingPageId],
   )
 
-  const beginSign = useCallback((pageId: string) => setSigningPageId(pageId), [])
-  const cancelSign = useCallback(() => setSigningPageId(null), [])
+  /** Open the editing session on a page, idle — no tool armed. */
+  const openEditor = useCallback((pageId: string) => {
+    setEditingPageId(pageId)
+    setEditorTool(null)
+  }, [])
+
+  const closeEditor = useCallback(() => {
+    setEditingPageId(null)
+    setEditorTool(null)
+  }, [])
 
   const addSignature = useCallback(
     (pageId: string, placement: SignaturePlacement, newSignature: RememberedSignature | null) => {
@@ -237,8 +241,9 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
           [{ ...newSignature, id: createId('sig') }, ...previous].slice(0, SIGNATURE_LIBRARY_LIMIT),
         )
       }
+      // The page updates immediately and the session stays open; the panel
+      // disarms its own tool so the user lands back on the idle page.
       applyPages(PageListManager.addSignature(pagesRef.current, pageId, placement))
-      setSigningPageId(null)
       analytics.track({ name: 'signature-added', reused: newSignature === null })
     },
     [applyPages, analytics],
@@ -255,17 +260,6 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       applyPages(PageListManager.updateSignatureRect(pagesRef.current, pageId, signatureId, rect)),
     [applyPages],
   )
-
-  const annotatingPage = useMemo(
-    () => pages.find((page) => page.id === annotating?.pageId) ?? null,
-    [pages, annotating],
-  )
-
-  const beginAnnotate = useCallback(
-    (pageId: string, tool: AnnotationTool) => setAnnotating({ pageId, tool }),
-    [],
-  )
-  const cancelAnnotate = useCallback(() => setAnnotating(null), [])
 
   const addAnnotation = useCallback(
     (pageId: string, placement: AnnotationPlacement) => {
@@ -329,8 +323,8 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
     pagesRef.current = []
     setPages([])
     selectionRef.current.clear()
-    setSigningPageId(null)
-    setAnnotating(null)
+    setEditingPageId(null)
+    setEditorTool(null)
     setError(null)
   }, [thumbnailRenderer, textContent, pdfSources, imageManager, colorRegistry])
 
@@ -366,17 +360,15 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       resetAll,
       setGridColumns,
       dismissError,
-      signingPage,
+      editingPage,
+      editorTool,
+      openEditor,
+      closeEditor,
+      setEditorTool,
       signatureLibrary,
-      beginSign,
-      cancelSign,
       addSignature,
       removeSignature,
       updateSignatureRect,
-      annotatingPage,
-      annotatingTool: annotating?.tool ?? null,
-      beginAnnotate,
-      cancelAnnotate,
       addAnnotation,
       removeAnnotation,
       updateAnnotationPlacement,
@@ -402,17 +394,14 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       exportPdf,
       resetAll,
       dismissError,
-      signingPage,
+      editingPage,
+      editorTool,
+      openEditor,
+      closeEditor,
       signatureLibrary,
-      beginSign,
-      cancelSign,
       addSignature,
       removeSignature,
       updateSignatureRect,
-      annotatingPage,
-      annotating,
-      beginAnnotate,
-      cancelAnnotate,
       addAnnotation,
       removeAnnotation,
       updateAnnotationPlacement,

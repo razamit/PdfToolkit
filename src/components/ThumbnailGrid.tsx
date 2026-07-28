@@ -27,8 +27,7 @@ export function ThumbnailGrid() {
     reorder,
     rotatePages,
     removePages,
-    beginSign,
-    beginAnnotate,
+    openEditor,
   } = usePdfToolkit()
 
   const sensors = useSensors(
@@ -76,8 +75,7 @@ export function ThumbnailGrid() {
               onSelect={handleSelect}
               onRotate={handleRotate}
               onRemove={handleRemove}
-              onSign={beginSign}
-              onAnnotate={beginAnnotate}
+              onEdit={openEditor}
             />
           ))}
         </div>

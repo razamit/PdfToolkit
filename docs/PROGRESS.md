@@ -6,6 +6,95 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-07-28 — Editing-session controls reworked from user feedback: text boxes
+open focused, the commit moved to a tick on the box, and every button settled on
+Save/Close (UI follow-up to the session below; not yet deployed). ✅ DONE.**
+Four changes, all requested after trying the session: (1) **a placed text box is
+now focused**, so typing starts immediately — it was genuinely broken, and the
+cause is worth knowing: the box mounts during `pointerdown` and the browser's
+*default* pointerdown handling then moved focus to `<body>`, undoing the focus
+call microseconds later. Fixed by `preventDefault()` on the capture surface plus
+a focus effect keyed on the box position, so clicking a new spot re-focuses an
+editor that is repositioned rather than remounted. (2) **The commit is now a ✓
+button against the box**, not a footer button — the report was "it's unclear that
+you need to click it", and a footer control is the furthest thing on screen from
+the box it finishes. ⌘/Ctrl+↵ works too (plain Enter still inserts a line break,
+since text annotations are multi-line). (3) **Every commit button is "Save"**,
+replacing four tool-specific labels (Add text / Add highlight / Save signature /
+Place image) that hid the fact they were the same act. (4) **The corner button is
+"Close" and ends the session**, replacing the ambiguous per-tool "Done"; it is
+safe to make it session-wide because every add already commits immediately, so
+closing can never lose work, and disarming a tool still has two affordances
+(click the armed tool again, or Select). **Proof:** `npx tsc -b` exits 0;
+`npm run lint` unchanged at 4 pre-existing warnings; `npm run build` green;
+console clean. Verified with `agent-browser`: `document.activeElement` on
+placement went from `BODY` to `TEXTAREA`, and raw keystrokes with **no click into
+the box** landed as "Hello"; the ✓ commits and clears the box while the tool
+stays armed; ⌘↵ commits (marks 1 → 2); every footer enumerated to confirm order —
+idle `[Close]`, text `[Close]`, highlight-text `[Save][Close]`, free-hand
+`[…Undo, Clear][Save][Close]`, image `[Save][Close]`, sign-rect
+`[Continue][Close]`, sign-draw `[Back, Undo, Clear][Save][Close]`; Close ends the
+session and both annotations were still present on reopen. **Files:**
+`src/components/text/TextEditLayer.tsx`, `src/hooks/useRectDrag.ts`,
+`src/components/editor/tools/{Text,Highlight,Freehand,Sign,Image,Idle}Tool.tsx`,
+`src/components/editor/PageEditorModal.tsx`,
+`src/components/signature/SignatureDrawStep.tsx`,
+`src/components/image/ImagePickStep.tsx`,
+`src/components/annotations/RectChooseStep.tsx`. **Decisions:** row 20 (refines
+row 19).
+
+---
+
+**2026-07-28 — Annotating a page became one persistent editing session instead
+of one modal per action: tools, zoom, and click-to-place text all live inside a
+dialog that stays open (UI rework, net −866 lines; not yet deployed). ✅ DONE.**
+Triggered by a user report: "I need to reopen the page every time if I want to
+add multiple text fields." They were right about the cause — the tool was picked
+*before* the dialog opened, and each tool's modal closed itself on its one
+successful action. The page's Edit button now opens a session with the tools as
+a strip inside it; picking one arms it, finishing an action returns to the
+session, and only the close button or Escape ends it. **Everything the report
+asked for is in:** multiple items per session, zoom in/out while editing, a
+close button, per-action Done, and click-to-place text (the box used to require
+a *large* drag — a click or small drag was silently swallowed by a minimum-size
+gate, which is why it "wasn't shown"). `useRectDrag` now drops a default-size
+box on press and switches to drag-sizing only past a 1.2% movement threshold, so
+both gestures work. Saving-after-every-action needed no change and is now simply
+visible: the coordinator always applied each add immediately, but the modal
+closing hid that fact. The idle state (no tool armed) has no capture layer over
+the page, so placed marks are directly draggable — which made the separate "Move
+& resize" dialog redundant, and it was deleted rather than ported. **A memory
+hazard was caught mid-build and fixed:** multiplying the render target by zoom
+would have allocated ~130 MB bitmaps at 4×, so `usePagePreview` now takes the
+intended on-screen width rather than a zoom factor, which also cut the *unzoomed*
+preview from ~32 MB to 9.6 MB — the old fixed 1200 px target had been rendering
+about 6× more pixels than it displayed. **Proof:** `npx tsc -b` exits 0;
+`npm run lint` unchanged at 4 pre-existing warnings; `npm run build` green; 19
+files changed, 161 insertions against 1,027 deletions, 10 files deleted, no
+orphaned imports (grep). Driven end-to-end with `agent-browser`: two text boxes
+placed by **plain clicks** plus a free-hand highlight added in **one unbroken
+session** (3 removable marks, dialog never closed), then a drawn signature and a
+placed image in a second session (5 marks), with the session confirmed open and
+Select re-armed after each completing action; marks survived close→reopen (4
+present) and reached the exported PDF, verified by rendering that PDF with macOS
+PDFKit; zoom measured at Fit/150%/400% → 1396/2094/3200 px bitmaps for
+417/625/1620 px boxes, i.e. exactly DPR-crisp at maximum zoom; Escape verified
+two-stage; console clean throughout. One accessibility defect found and fixed in
+the new code during testing: the zoom-level button's visible label ("Fit"/"150%")
+was its accessible name, so its `title` was unreachable — it now carries an
+explicit `aria-label`. **Not deployed.** **Files:** added
+`src/components/editor/` (PageEditorModal, EditorToolbar, EditorPanel,
+useEditorZoom, tools/{Idle,Text,Sign,Image,Highlight,Freehand}) and
+`src/hooks/useRectDrag.ts`; deleted `AnnotateMenu`, `AnnotationModalShell`,
+`ArrangeMarksModal`, `ArrangeMarksStep`, `TextAnnotateModal`,
+`ImageAnnotateModal`, `HighlightAnnotateModal`, `FreehandHighlightModal`,
+`SignatureModal`, `components/signature/useRectDrag.ts`; edited
+`PdfToolkitCoordinator`, `toolkitContext`, `domain/types`, `PageThumbnail`,
+`PdfToolkitView`, `ThumbnailGrid`, `PreviewSurface`, `RectChooseStep`,
+`usePagePreview`. **Decisions:** row 19.
+
+---
+
 **2026-07-28 — Scanned PDFs no longer render as blank pages: pdf.js is now given
 its WebAssembly image decoders (code + build plugin + one Netlify header; not yet
 deployed). ✅ DONE.** Triggered by a user report that a scanned PDF "shows up

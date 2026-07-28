@@ -1,16 +1,15 @@
 import { memo } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Check, GripVertical, RotateCcw, RotateCw, Trash2 } from 'lucide-react'
+import { Check, GripVertical, RotateCcw, RotateCw, SquarePen, Trash2 } from 'lucide-react'
 import { usePageThumbnail } from '@/hooks/usePageThumbnail'
 import { useElementSize } from '@/hooks/useElementSize'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { SignatureOverlay } from '@/components/signature/SignatureOverlay'
-import { AnnotateMenu } from '@/components/annotations/AnnotateMenu'
 import { AnnotationOverlay } from '@/components/annotations/AnnotationOverlay'
 import { fitBoxWithin } from '@/lib/signatureGeometry'
 import { cn } from '@/lib/utils'
-import type { AnnotationTool, PageDescriptor } from '@/domain/types'
+import type { PageDescriptor } from '@/domain/types'
 
 interface PageThumbnailProps {
   page: PageDescriptor
@@ -22,8 +21,8 @@ interface PageThumbnailProps {
   onSelect: (id: string, withShift: boolean) => void
   onRotate: (id: string, delta: number) => void
   onRemove: (id: string) => void
-  onSign: (id: string) => void
-  onAnnotate: (id: string, tool: AnnotationTool) => void
+  /** Opens the page's editing session; tools are chosen inside it, not here. */
+  onEdit: (id: string) => void
 }
 
 function PageThumbnailComponent({
@@ -35,8 +34,7 @@ function PageThumbnailComponent({
   onSelect,
   onRotate,
   onRemove,
-  onSign,
-  onAnnotate,
+  onEdit,
 }: PageThumbnailProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: page.id,
@@ -76,7 +74,9 @@ function PageThumbnailComponent({
         <ActionButton label="Rotate right" onClick={() => onRotate(page.id, 90)}>
           <RotateCw className="size-3.5" />
         </ActionButton>
-        <AnnotateMenu page={page} onSign={onSign} onAnnotate={onAnnotate} />
+        <ActionButton label="Edit page" onClick={() => onEdit(page.id)}>
+          <SquarePen className="size-3.5" />
+        </ActionButton>
         <ActionButton label="Remove page" destructive onClick={() => onRemove(page.id)}>
           <Trash2 className="size-3.5" />
         </ActionButton>

@@ -5,12 +5,7 @@ import { AppHeader } from './AppHeader'
 import { EmptyState } from './EmptyState'
 import { SourceLegend } from './SourceLegend'
 import { ThumbnailGrid } from './ThumbnailGrid'
-import { SignatureModal } from './signature/SignatureModal'
-import { TextAnnotateModal } from './text/TextAnnotateModal'
-import { ImageAnnotateModal } from './image/ImageAnnotateModal'
-import { HighlightAnnotateModal } from './highlight/HighlightAnnotateModal'
-import { FreehandHighlightModal } from './freehand/FreehandHighlightModal'
-import { ArrangeMarksModal } from './annotations/ArrangeMarksModal'
+import { PageEditorModal } from './editor/PageEditorModal'
 import { BusyOverlay, DragOverlay, ErrorBanner } from './StatusOverlays'
 
 /** Top-level layout: header, drop-anywhere upload, grid or empty state, overlays. */
@@ -22,9 +17,7 @@ export function PdfToolkitView() {
     error,
     addFiles,
     dismissError,
-    signingPage,
-    annotatingPage,
-    annotatingTool,
+    editingPage,
   } = usePdfToolkit()
   const { isDragging, dropzoneProps } = useFileUpload(addFiles)
   const hasPages = pages.length > 0
@@ -75,20 +68,7 @@ export function PdfToolkitView() {
 
       {isDragging && <DragOverlay />}
       {isBusy && <BusyOverlay label={busyLabel} />}
-      {signingPage && <SignatureModal key={signingPage.id} />}
-      {annotatingPage && annotatingTool === 'text' && <TextAnnotateModal key={annotatingPage.id} />}
-      {annotatingPage && annotatingTool === 'image' && (
-        <ImageAnnotateModal key={annotatingPage.id} />
-      )}
-      {annotatingPage && annotatingTool === 'highlight' && (
-        <HighlightAnnotateModal key={annotatingPage.id} />
-      )}
-      {annotatingPage && annotatingTool === 'freehand-highlight' && (
-        <FreehandHighlightModal key={annotatingPage.id} />
-      )}
-      {annotatingPage && annotatingTool === 'arrange' && (
-        <ArrangeMarksModal key={annotatingPage.id} />
-      )}
+      {editingPage && <PageEditorModal />}
     </div>
   )
 }

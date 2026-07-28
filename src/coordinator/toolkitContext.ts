@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react'
 import type {
   AnnotationPlacement,
   AnnotationPlacementPatch,
-  AnnotationTool,
+  EditorTool,
   GridColumns,
   NormalizedRect,
   PageDescriptor,
@@ -52,16 +52,25 @@ export interface ToolkitContextValue {
   setGridColumns: (columns: GridColumns) => void
   dismissError: () => void
 
-  /** Page currently being signed (null while the signature modal is closed). */
-  signingPage: PageDescriptor | null
+  /**
+   * The page whose editing session is open, or null when none is. The session
+   * spans many actions: it is opened once from the page's Edit button and
+   * closed only by the user, never by completing an action.
+   */
+  editingPage: PageDescriptor | null
+  /** Tool armed inside the session; null is the idle state (move & resize). */
+  editorTool: EditorTool | null
+  openEditor: (pageId: string) => void
+  closeEditor: () => void
+  setEditorTool: (tool: EditorTool | null) => void
+
   /** Session library of drawn signatures, newest first. */
   signatureLibrary: StoredSignature[]
-  beginSign: (pageId: string) => void
-  cancelSign: () => void
   /**
-   * Add a signature to a page and close the modal. `newSignature` is stored in
-   * the session library; pass null when an unmodified library signature was
-   * reused, so no duplicate entry is created.
+   * Add a signature to a page. The page updates immediately and the editing
+   * session stays open. `newSignature` is stored in the session library; pass
+   * null when an unmodified library signature was reused, so no duplicate
+   * entry is created.
    */
   addSignature: (
     pageId: string,
@@ -72,13 +81,7 @@ export interface ToolkitContextValue {
   /** Move/resize a placed signature; the rect stays in its sign-time frame. */
   updateSignatureRect: (pageId: string, signatureId: string, rect: NormalizedRect) => void
 
-  /** Page currently being annotated (null while no annotation modal is open). */
-  annotatingPage: PageDescriptor | null
-  /** Which annotation tool the open modal belongs to (null when closed). */
-  annotatingTool: AnnotationTool | null
-  beginAnnotate: (pageId: string, tool: AnnotationTool) => void
-  cancelAnnotate: () => void
-  /** Add an annotation. The modal stays open — each modal closes itself via `cancelAnnotate`. */
+  /** Add an annotation. Applies to the page at once; the session stays open. */
   addAnnotation: (pageId: string, placement: AnnotationPlacement) => void
   removeAnnotation: (pageId: string, annotationId: string) => void
   /** Move/resize a text or image annotation; the patch stays in its creation frame. */

@@ -30,6 +30,8 @@ interface SignatureDrawStepProps {
   /** Session library of previously drawn signatures, selectable as a starting point. */
   library: StoredSignature[]
   onBack: () => void
+  /** Ends the whole editing session (the footer's corner button). */
+  onClose: () => void
   onComplete: (
     pngDataUrl: string,
     inkRect: NormalizedRect,
@@ -48,6 +50,7 @@ export function SignatureDrawStep({
   aspectRatio,
   library,
   onBack,
+  onClose,
   onComplete,
 }: SignatureDrawStepProps) {
   const { canvasRef, strokes, hasInk, handlers, undo, clear, loadStrokes } = useSignatureStrokes()
@@ -104,7 +107,10 @@ export function SignatureDrawStep({
             Clear
           </Button>
           <Button disabled={!hasInk} onClick={handleSave}>
-            Save signature
+            Save
+          </Button>
+          <Button variant="outline" onClick={onClose}>
+            Close
           </Button>
         </div>
       </footer>

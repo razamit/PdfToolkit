@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { meetsMinimumSize, rectToCssPercent } from '@/lib/signatureGeometry'
-import { useRectDrag } from '@/components/signature/useRectDrag'
+import { useRectDrag } from '@/hooks/useRectDrag'
 import { PreviewSurface } from './PreviewSurface'
 import { ExistingMarksOverlay } from './ExistingMarksOverlay'
 import type { NormalizedRect, PageDescriptor } from '@/domain/types'
@@ -13,9 +13,12 @@ interface RectChooseStepProps {
   initialRect: NormalizedRect | null
   instruction: string
   confirmedInstruction: string
-  onCancel: () => void
+  /** Ends the whole editing session (the footer's corner button). */
+  onClose: () => void
   /** `rectAspectRatio` is the chosen rect's on-screen width / height. */
   onContinue: (rect: NormalizedRect, rectAspectRatio: number) => void
+  /** Display scale inherited from the editing session. */
+  zoom?: number
 }
 
 /**
@@ -28,8 +31,9 @@ export function RectChooseStep({
   initialRect,
   instruction,
   confirmedInstruction,
-  onCancel,
+  onClose,
   onContinue,
+  zoom = 1,
 }: RectChooseStepProps) {
   const { rect, surfaceProps } = useRectDrag(initialRect)
   const [renderedSize, setRenderedSize] = useState<RenderedSize | null>(null)
@@ -43,7 +47,7 @@ export function RectChooseStep({
 
   return (
     <div className="flex min-h-0 flex-col">
-      <PreviewSurface page={page} onRenderedSizeChange={setRenderedSize}>
+      <PreviewSurface page={page} zoom={zoom} onRenderedSizeChange={setRenderedSize}>
         {() => (
           <>
             <div {...surfaceProps} className="absolute inset-0 cursor-crosshair touch-none" />
@@ -63,11 +67,11 @@ export function RectChooseStep({
           {canContinue ? confirmedInstruction : instruction}
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
           <Button disabled={!canContinue} onClick={handleContinue}>
             Continue
+          </Button>
+          <Button variant="outline" onClick={onClose}>
+            Close
           </Button>
         </div>
       </footer>

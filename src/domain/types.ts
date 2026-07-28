@@ -109,7 +109,15 @@ export type AnnotationPlacement =
   | HighlightPlacement
   | FreehandHighlightPlacement
 
-export type AnnotationTool = 'text' | 'image' | 'highlight' | 'freehand-highlight' | 'arrange'
+/**
+ * Tools selectable inside a page editing session.
+ *
+ * `null` is not absence of a tool but the session's own idle state: with no
+ * tool armed, nothing captures pointer events on the page, so every placed
+ * mark is directly draggable and resizable. That is what the old separate
+ * 'arrange' tool used to be, which is why it is no longer a member here.
+ */
+export type EditorTool = 'text' | 'sign' | 'image' | 'highlight' | 'freehand-highlight'
 
 /** Geometry patch produced by moving or resizing a placed text/image annotation. */
 export interface AnnotationPlacementPatch {
