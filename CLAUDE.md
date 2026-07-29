@@ -61,12 +61,33 @@ Two hard rules:
   block inside `#root` would delete it on mount and silently return the served
   body to zero visible text. It is also the page's only `<h1>`; `AppHeader`
   deliberately uses a `<p>` so the rendered page does not have two.
-- **The SPA catch-all in `netlify.toml` must never gain `force = true`.** It is
-  unforced on purpose: an unforced rewrite loses to a matching static file, which
-  is the only reason `/robots.txt`, `/sitemap.xml`, `/llms.txt`,
-  `/llms-full.txt`, `/index.md` and `/.well-known/agent-card.json` reach a
-  crawler instead of being answered with the app shell.
+- **`netlify.toml` must never regain a `/*` catch-all rewrite.** The site is
+  served as ordinary static files so that unmatched paths reach `public/404.html`
+  with a real 404 status. A `/*` → `/index.html` rule makes every path on the
+  domain answer 200 with the app shell, which is what previously turned scanner
+  probes (`/wp-admin/install.php`, `/xmlrpc.php`) into recorded pageviews and
+  every mistyped URL into an indexable soft-404. See decision row 22.
+
+## Adding a second page means revisiting the routing rules
+
+The no-catch-all rule above assumes what is true today: the app renders one view
+and has no client-side router. **Anything that changes that — a real route, a
+client-side router, a second HTML entry point, a `/blog` or `/tools/*` path —
+requires reopening decision row 22 in the same change**, because without a
+rewrite those paths will 404 in production while working perfectly in dev.
+
+The fix at that point is a rewrite **scoped to the real route paths**
+(`from = "/tools/*"`), never `/*`, and **never with `force = true`**: a forced
+rewrite beats matching static files, which is the only thing keeping
+`/robots.txt`, `/sitemap.xml`, `/llms.txt`, `/llms-full.txt`, `/index.md` and
+`/.well-known/agent-card.json` reachable by a crawler instead of answering all
+six with the app shell. New pages also need their own `<url>` entries in
+`public/sitemap.xml` and a pass over every surface in the table above.
 
 A change is not verified by reading the repo. These files are only real once
 deployed, so re-probe the live URL (`curl -sI https://freepdfmachine.com/llms.txt`)
 and check the status and `Content-Type`, not just that the file exists in `dist/`.
+Routing changes specifically need three live probes: a discovery file
+(`curl -sI https://freepdfmachine.com/llms.txt` → 200 `text/plain`), the root
+(`/` → 200 HTML), and a junk path
+(`curl -sI https://freepdfmachine.com/does-not-exist-404test` → **404**).

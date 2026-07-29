@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page not found | Free PDF Machine</title>
+    <meta name="robots" content="noindex, follow" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!--
+      Self-contained on purpose. Netlify serves this file for any path that
+      matches no static file and no redirect rule, which includes paths served
+      before (or without) a build — so it cannot reference the content-hashed
+      CSS bundle, whose filename changes every build. Everything it needs is
+      inline. The tokens below are copied from src/index.css; the cog geometry
+      is lucide-react's `cog`, the same mark as MachineMark.tsx and the boot
+      state in index.html.
+    -->
+    <style>
+      :root {
+        --background: oklch(1 0 0);
+        --foreground: oklch(0.21 0.006 285.885);
+        --primary: oklch(0.585 0.233 277.117);
+        --primary-foreground: oklch(0.985 0 0);
+        --muted-foreground: oklch(0.552 0.016 285.938);
+        --border: oklch(0.92 0.004 286.32);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: var(--background);
+        color: var(--foreground);
+        font-family:
+          'Inter',
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .not-found {
+        width: 100%;
+        max-width: 34rem;
+        text-align: center;
+      }
+
+      .not-found-mark {
+        position: relative;
+        display: flex;
+        width: 3.5rem;
+        height: 3.5rem;
+        margin: 0 auto;
+        align-items: center;
+        justify-content: center;
+        border-radius: 1rem;
+        background: var(--primary);
+        color: var(--primary-foreground);
+      }
+
+      .not-found-mark svg {
+        position: absolute;
+      }
+
+      .cog-lg {
+        left: 11%;
+        top: 11%;
+        width: 56%;
+        height: 56%;
+        animation: machine-cog 14s linear infinite;
+      }
+
+      .cog-sm {
+        right: 11%;
+        bottom: 11%;
+        width: 33%;
+        height: 33%;
+        opacity: 0.7;
+        animation: machine-cog-reverse 10s linear infinite;
+      }
+
+      @keyframes machine-cog {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes machine-cog-reverse {
+        to {
+          transform: rotate(-360deg);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .cog-lg,
+        .cog-sm {
+          animation: none;
+        }
+      }
+
+      .not-found-code {
+        margin: 1.75rem 0 0;
+        font-size: 0.875rem;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
+      }
+
+      .not-found h1 {
+        margin: 0.5rem 0 0;
+        font-size: clamp(1.75rem, 1.3rem + 1.8vw, 2.25rem);
+        line-height: 1.15;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        text-wrap: balance;
+      }
+
+      .not-found p {
+        margin: 1rem auto 0;
+        max-width: 28rem;
+        font-size: 1rem;
+        line-height: 1.65;
+        color: var(--muted-foreground);
+      }
+
+      .not-found-actions {
+        margin-top: 2rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: center;
+      }
+
+      .button-primary,
+      .button-quiet {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        height: 2.5rem;
+        padding-inline: 1.25rem;
+        border-radius: 0.625rem;
+        font-size: 0.9375rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition:
+          opacity 150ms ease,
+          color 150ms ease;
+      }
+
+      .button-primary {
+        background: var(--primary);
+        color: var(--primary-foreground);
+      }
+
+      .button-primary:hover {
+        opacity: 0.9;
+      }
+
+      .button-quiet {
+        border: 1px solid var(--border);
+        color: var(--foreground);
+      }
+
+      .button-quiet:hover {
+        color: var(--primary);
+      }
+
+      .button-primary svg,
+      .button-quiet svg {
+        width: 1rem;
+        height: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="not-found">
+      <span class="not-found-mark" aria-hidden="true">
+        <svg
+          class="cog-lg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M11 10.27 7 3.34" />
+          <path d="m11 13.73-4 6.93" />
+          <path d="M12 22v-2" />
+          <path d="M12 2v2" />
+          <path d="M14 12h8" />
+          <path d="m17 20.66-1-1.73" />
+          <path d="m17 3.34-1 1.73" />
+          <path d="M2 12h2" />
+          <path d="m20.66 17-1.73-1" />
+          <path d="m20.66 7-1.73 1" />
+          <path d="m3.34 17 1.73-1" />
+          <path d="m3.34 7 1.73 1" />
+          <circle cx="12" cy="12" r="2" />
+          <circle cx="12" cy="12" r="8" />
+        </svg>
+        <svg
+          class="cog-sm"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M11 10.27 7 3.34" />
+          <path d="m11 13.73-4 6.93" />
+          <path d="M12 22v-2" />
+          <path d="M12 2v2" />
+          <path d="M14 12h8" />
+          <path d="m17 20.66-1-1.73" />
+          <path d="m17 3.34-1 1.73" />
+          <path d="M2 12h2" />
+          <path d="m20.66 17-1.73-1" />
+          <path d="m20.66 7-1.73 1" />
+          <path d="m3.34 17 1.73-1" />
+          <path d="m3.34 7 1.73 1" />
+          <circle cx="12" cy="12" r="2" />
+          <circle cx="12" cy="12" r="8" />
+        </svg>
+      </span>
+
+      <p class="not-found-code">Error 404</p>
+      <h1>This page does not exist</h1>
+      <p>
+        Free PDF Machine is a single-page editor, so there is only one page to be on. The address
+        you followed may be mistyped, or it may be pointing at something this site never had.
+      </p>
+
+      <div class="not-found-actions">
+        <a class="button-primary" href="/">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m12 19-7-7 7-7" />
+            <path d="M19 12H5" />
+          </svg>
+          Open the editor
+        </a>
+        <a class="button-quiet" href="/#about">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4" />
+            <path d="M12 8h.01" />
+          </svg>
+          How it works
+        </a>
+      </div>
+    </main>
+  </body>
+</html>

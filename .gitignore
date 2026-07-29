@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Netlify folder
+.netlify
+
+# Written by `netlify serve`/`netlify dev` when it boots its edge-function
+# runtime. This project has no netlify/edge-functions directory, so the file
+# pins nothing and is pure local byproduct.
+deno.lock

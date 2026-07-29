@@ -1,6 +1,28 @@
 # Every URL on the domain returns HTTP 200 with the app shell, so mistyped and dead URLs are indexable soft-404s
 
-Status: OPEN · Priority: MEDIUM · Type: SEO — crawlability · Cost: none
+Status: **CLOSED 2026-07-29** (was OPEN · MEDIUM) · Type: SEO — crawlability · Cost: none
+
+> **Resolution — Option A, in its stronger form: the catch-all was deleted
+> outright rather than scoped, and `public/404.html` added.** See decision row 22
+> and the progress entry of 2026-07-29.
+>
+> What settled it was evidence this ticket did not have when it was written. The
+> Netlify traffic report for Jul 22–29 showed `/wp-admin/install.php` as the
+> site's **#2 page at 502 pageviews**, with `/wp-login.php`, `/xmlrpc.php`, ten
+> `wlwmanifest.xml` probes, `/.env` and `/graphql` behind it — all WordPress and
+> credential scanners, all recorded as *pageviews* because the catch-all answered
+> them 200. The cost was therefore not the "mostly wasted crawl budget" this
+> ticket estimated: about a third of the reported traffic was fictional, which
+> makes the analytics unusable for the traffic-growth decision of row 17.
+>
+> The precondition this ticket asked to verify was checked and held: nothing in
+> `src/` imports `react-router`, calls `useNavigate`, or touches
+> `history.pushState`, so the rewrite was serving no route.
+>
+> Re-probes it asked for, run against `npx netlify serve` over the real build:
+> `/this-page-does-not-exist-404test` → **404**, and all six discovery files →
+> **200** with their correct `Content-Type`s. Full matrix in row 22. Live
+> re-probe is still outstanding until the next deploy.
 
 > Distinct from `served-html-has-no-crawlable-content.md`, which is about what
 > the response body contains. This one is about the status code and which paths

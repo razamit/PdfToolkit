@@ -6,6 +6,88 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-07-29 — Deleted the SPA catch-all from `netlify.toml` and added a
+self-contained `public/404.html`, so scanner probes stop being counted as
+pageviews and dead URLs return a real 404 (not yet deployed). ✅ DONE.** Started
+from a question, not a task: the user read the Netlify report and asked what all
+those pages were in a one-page app. **Answer: none of them are pages and none of
+them are people.** `/wp-admin/install.php` (502 pageviews, the site's #2 "page"),
+`/wp-login.php`, `/xmlrpc.php`, ten `//…/wp-includes/wlwmanifest.xml` probes
+across guessed install directories, `/.env`, `/graphql`, `/netlify.toml` — all
+untargeted WordPress and credential scanners, none of which apply to a static
+site with no server and no PHP. The part that *was* ours: they showed up under
+**Top pages** rather than **Top resources not found** because the `/*` →
+`/index.html` rewrite answered every one of them **200 with the app shell**. So
+roughly a third of the reported traffic was fictional and the true `/` figure was
+unknowable — which matters because row 17 makes traffic the metric the whole
+monetization plan is deferred against. (The handful that *did* land in
+"not found" are most likely the POSTs — Netlify will not rewrite a POST to a
+static file, and those paths, `/wp-login.php` at 194 and `/` at 21, are exactly
+the ones a brute-forcer posts to. Stated as the best available reading of the
+report, not something measured.) **The change.** The catch-all is deleted rather
+than scoped: verified first that nothing in `src/` imports `react-router`, calls
+`useNavigate`, or touches `history.pushState`, so it was routing nothing.
+`public/404.html` is deliberately self-contained — inline CSS, inline cog SVGs,
+no bundle reference — because Netlify serves it for paths that match no build
+output, so it cannot depend on a content-hashed CSS filename that changes every
+build. Its tokens are copied from `src/index.css` and the cog geometry is the
+same lucide `cog` as `MachineMark.tsx`. **Proof:** `npm run build` green,
+`dist/404.html` emitted at 7,658 bytes. Probed against `npx netlify serve` —
+the real redirect engine over the real build, not the Vite dev server, which
+would have answered everything 200 and proved nothing:
+
+```
+must be 200                                    now
+/                                              200  text/html
+/robots.txt                                    200  text/plain; charset=utf-8
+/sitemap.xml                                   200  application/xml
+/llms.txt                                      200  text/plain; charset=utf-8
+/llms-full.txt                                 200  text/plain; charset=utf-8
+/index.md                                      200  text/markdown; charset=utf-8
+/.well-known/agent-card.json                   200  application/json; charset=utf-8
+/favicon.svg, /og-image.png                    200  image/svg+xml, image/png
+
+was 200, must now be 404                       now
+/wp-admin/install.php  /wp-login.php           404  (7,658-byte custom page)
+/xmlrpc.php  //wp/wp-includes/wlwmanifest.xml  404
+/.env  /graphql  /netlify.toml                 404
+/pricing  /this-page-does-not-exist-404test    404
+```
+
+`/api/usage` still rewrites to its function (200 JSON) and `/api/track` still
+takes a POST (204), confirming the two rules above the deleted one are intact.
+Rendered via `agent-browser` at 1280×800 and 390×844 (buttons wrap and stay
+centred at mobile width), and "Open the editor" navigates to `/` where the app
+mounts. One false alarm worth noting so it is not re-investigated: a mid-session
+check appeared to show a *different project* ("The Eye") served at
+`localhost:8899/` — that was the browser replaying a disk-cached response from
+whatever last used that port; `curl` against the same URL returned this site
+correctly, and a cache-busting query confirmed it. **Left deliberately
+unverified:** the live site. This is a deploy-time change, so all three probes
+(a discovery file, `/`, and a junk path) must be re-run against
+`freepdfmachine.com` after the next deploy — the ticket's own instruction, and
+`CLAUDE.md`'s. **Discovery surfaces:** none touched, and that is a judgement, not
+an oversight — `CLAUDE.md`'s table governs user-facing *claims* (features, file
+types, privacy posture, price, name), and a 404 page changes none of them.
+`sitemap.xml` is unchanged for the same reason: it lists `/`, which still exists,
+and a `noindex` 404 page must never be listed. **Files:** `netlify.toml`
+(catch-all removed, replaced by a comment explaining why the absence is
+load-bearing), new `public/404.html`, `CLAUDE.md` (the stale "must never gain
+`force = true`" rule replaced, plus a new "Adding a second page means revisiting
+the routing rules" section as the user asked), `docs/DECISIONS.md`,
+`docs/tickets/every-url-returns-200-soft-404.md`. **Also in this diff, from
+running the Netlify CLI, not from the work:** `.gitignore` gained `.netlify`
+(added by the CLI itself) and `deno.lock` (added by me — `netlify serve` writes
+that file for an edge-function runtime this project does not use; the generated
+file was deleted rather than committed). **Decisions:** row 22, which also
+resolves open question 1. **Tickets:** closed
+`docs/tickets/every-url-returns-200-soft-404.md`. **The trap this creates,**
+recorded in `CLAUDE.md` and row 22: the first client-side route added to this app
+will work in dev and 404 in production, because Vite's dev server still serves
+index.html for any path and Netlify no longer does.
+
+---
+
 **2026-07-29 — The editing session now lists everything on the page down its
 left side: rows select their mark (ring + scroll to it) and delete it in place
 (not yet deployed). ✅ DONE.** Asked for directly: "when opening a page I want to

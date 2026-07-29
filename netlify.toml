@@ -30,17 +30,26 @@
   to = "/.netlify/functions/track-usage"
   status = 200
 
-# Single-page app: serve index.html for any path.
+# NO SPA CATCH-ALL. This is deliberate, and the absence is load-bearing — see
+# decision row 22.
 #
-# Deliberately NOT `force`d. An unforced rewrite loses to a matching static file,
-# which is the only reason /robots.txt, /sitemap.xml, /llms.txt, /llms-full.txt,
-# /index.md and /.well-known/agent-card.json reach a crawler at all instead of
-# being swallowed and answered with the app shell. Adding `force = true` here
-# would silently make every discovery file return HTML again.
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# There used to be a `/*` -> `/index.html` rewrite here. The app has no
+# client-side router (nothing in src/ imports react-router, calls useNavigate, or
+# touches history.pushState), so it bought nothing, while making EVERY path on
+# the domain answer 200 with the app shell. That turned vulnerability scanners
+# probing /wp-admin/install.php and /xmlrpc.php into recorded pageviews and made
+# every mistyped URL an indexable soft-404.
+#
+# Without it, Netlify serves the site the ordinary static way: / gets index.html,
+# real files win on their own paths, and anything else falls through to
+# public/404.html with a genuine 404 status.
+#
+# Restoring a catch-all is what a future session will be tempted to do the first
+# time this app gains client-side routes. Read decision row 22 before doing it:
+# the fix then is a rule scoped to the real route paths, never `/*`, and NEVER
+# with `force = true` — a forced rewrite beats static files, which would swallow
+# /robots.txt, /sitemap.xml, /llms.txt, /llms-full.txt, /index.md and
+# /.well-known/agent-card.json and answer all six with HTML.
 
 # ---------------------------------------------------------------------------
 # Headers
