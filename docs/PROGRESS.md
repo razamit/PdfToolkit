@@ -8,7 +8,8 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 **2026-07-29 — Deleted the SPA catch-all from `netlify.toml` and added a
 self-contained `public/404.html`, so scanner probes stop being counted as
-pageviews and dead URLs return a real 404 (not yet deployed). ✅ DONE.** Started
+pageviews and dead URLs return a real 404. Deployed and verified live in
+commit `a08f002`. ✅ DONE.** Started
 from a question, not a task: the user read the Netlify report and asked what all
 those pages were in a one-page app. **Answer: none of them are pages and none of
 them are people.** `/wp-admin/install.php` (502 pageviews, the site's #2 "page"),
@@ -62,11 +63,21 @@ mounts. One false alarm worth noting so it is not re-investigated: a mid-session
 check appeared to show a *different project* ("The Eye") served at
 `localhost:8899/` — that was the browser replaying a disk-cached response from
 whatever last used that port; `curl` against the same URL returned this site
-correctly, and a cache-busting query confirmed it. **Left deliberately
-unverified:** the live site. This is a deploy-time change, so all three probes
-(a discovery file, `/`, and a junk path) must be re-run against
-`freepdfmachine.com` after the next deploy — the ticket's own instruction, and
-`CLAUDE.md`'s. **Discovery surfaces:** none touched, and that is a judgement, not
+correctly, and a cache-busting query confirmed it. **Live proof, after pushing
+`a08f002`** (the deploy landed in ~30s, and this is the verification
+`CLAUDE.md` requires — the local run above does not count): against
+`freepdfmachine.com`, `/` 200 `text/html`, `/robots.txt` 200
+`text/plain; charset=utf-8`, `/sitemap.xml` 200 `application/xml; charset=utf-8`,
+`/llms.txt` and `/llms-full.txt` 200 `text/plain; charset=utf-8`, `/index.md` 200
+`text/markdown; charset=utf-8`, `/.well-known/agent-card.json` 200
+`application/json; charset=utf-8`, `/favicon.svg` and `/og-image.png` 200 — so
+all six discovery surfaces survived the rule's removal. `/wp-admin/install.php`,
+`/wp-login.php`, `/xmlrpc.php`, `/.env`, `/graphql`, `/netlify.toml`, `/pricing`
+and `/this-page-does-not-exist-404test` all **404**, serving the custom page
+(grep for its `<h1>` matched). `/api/usage` still 200 JSON, and the
+`pdfedittoolkit.netlify.app` → `freepdfmachine.com` 301 of row 7 still fires,
+confirming the deletion did not disturb the rules around it.
+**Discovery surfaces:** none touched, and that is a judgement, not
 an oversight — `CLAUDE.md`'s table governs user-facing *claims* (features, file
 types, privacy posture, price, name), and a 404 page changes none of them.
 `sitemap.xml` is unchanged for the same reason: it lists `/`, which still exists,

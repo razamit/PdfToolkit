@@ -19,10 +19,11 @@ Status: **CLOSED 2026-07-29** (was OPEN · MEDIUM) · Type: SEO — crawlability
 > `src/` imports `react-router`, calls `useNavigate`, or touches
 > `history.pushState`, so the rewrite was serving no route.
 >
-> Re-probes it asked for, run against `npx netlify serve` over the real build:
-> `/this-page-does-not-exist-404test` → **404**, and all six discovery files →
-> **200** with their correct `Content-Type`s. Full matrix in row 22. Live
-> re-probe is still outstanding until the next deploy.
+> Re-probes it asked for, run first against `npx netlify serve` over the real
+> build and then **live against `freepdfmachine.com`** after deploying `a08f002`:
+> `/this-page-does-not-exist-404test` → **404** (as do the seven scanner paths
+> that prompted this), and all six discovery files → **200** with their correct
+> `Content-Type`s. Full matrix in row 22 and the progress entry.
 
 > Distinct from `served-html-has-no-crawlable-content.md`, which is about what
 > the response body contains. This one is about the status code and which paths
