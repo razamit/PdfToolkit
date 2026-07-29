@@ -3,6 +3,7 @@ import {
   Highlighter,
   ImagePlus,
   MousePointer2,
+  PanelLeft,
   PenLine,
   Type,
   ZoomIn,
@@ -34,6 +35,8 @@ interface EditorToolbarProps {
   activeTool: EditorTool | null
   onSelectTool: (tool: EditorTool | null) => void
   zoom: EditorZoom
+  /** Show/hide state of the items list, and how many items it holds. */
+  itemsList: { open: boolean; count: number; toggle: () => void }
 }
 
 /**
@@ -41,12 +44,20 @@ interface EditorToolbarProps {
  * arms it, picking it again disarms back to the idle "Select" state where
  * placed marks are directly movable. Nothing here closes the session.
  */
-export function EditorToolbar({ page, activeTool, onSelectTool, zoom }: EditorToolbarProps) {
+export function EditorToolbar({
+  page,
+  activeTool,
+  onSelectTool,
+  zoom,
+  itemsList,
+}: EditorToolbarProps) {
   const tools = TOOLS.filter((spec) => !spec.pdfOnly || page.kind === 'pdf')
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
       <div className="flex flex-wrap items-center gap-1" role="toolbar" aria-label="Editing tools">
+        <ItemsListToggle {...itemsList} />
+        <span className="mx-1 h-5 w-px bg-border" aria-hidden />
         <ToolButton
           icon={MousePointer2}
           label="Select"
@@ -86,6 +97,39 @@ export function EditorToolbar({ page, activeTool, onSelectTool, zoom }: EditorTo
         </IconButton>
       </div>
     </div>
+  )
+}
+
+/**
+ * Shows and hides the items list. Styled apart from the tool buttons — a muted
+ * toggle rather than an armed-looking one — so an open list never reads as the
+ * currently armed tool.
+ */
+function ItemsListToggle({
+  open,
+  count,
+  toggle,
+}: {
+  open: boolean
+  count: number
+  toggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={open}
+      aria-label={open ? 'Hide the list of items on this page' : 'Show the list of items on this page'}
+      title="Everything already added to this page"
+      onClick={toggle}
+      className={cn(
+        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
+        open ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+      )}
+    >
+      <PanelLeft className="size-3.5" />
+      Items
+      {count > 0 && <span className="tabular-nums text-muted-foreground">{count}</span>}
+    </button>
   )
 }
 

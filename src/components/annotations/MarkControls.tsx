@@ -22,6 +22,21 @@ export function RemoveMarkButton({ label, onClick }: { label: string; onClick: (
   )
 }
 
+/**
+ * Outline drawn around the mark picked out in the items list, so selecting a
+ * row says *which* mark it is. Sized just outside the mark's own box, and
+ * rendered as a sibling of the mark's content rather than around it, so a
+ * highlight's `mix-blend-multiply` never bleeds into the outline.
+ */
+export function MarkSelectionRing() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute -inset-1 rounded-sm border-2 border-primary"
+    />
+  )
+}
+
 /** Bottom-right drag handle wired to `useMarkTransform`'s resize handlers. */
 export function ResizeMarkHandle({ handleProps }: { handleProps: MarkHandleProps }) {
   return (

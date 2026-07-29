@@ -8,7 +8,7 @@ import type { ReactNode } from 'react'
  */
 export function EditorPanel({ children, footer }: { children: ReactNode; footer: ReactNode }) {
   return (
-    <div className="flex min-h-0 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {children}
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3">
         {footer}

@@ -1,8 +1,13 @@
 import { normalizeRotation } from '@/managers/PageListManager'
 import { inverseRotation, rectToCssPercent, rotateRect } from '@/lib/signatureGeometry'
 import { useElementSize } from '@/hooks/useElementSize'
-import { useMarkTransform } from '@/hooks/useMarkTransform'
-import { RemoveMarkButton, ResizeMarkHandle } from '@/components/annotations/MarkControls'
+import { useMarkFocus } from '@/hooks/useMarkFocus'
+import { selectOnPointerDown, useMarkTransform } from '@/hooks/useMarkTransform'
+import {
+  MarkSelectionRing,
+  RemoveMarkButton,
+  ResizeMarkHandle,
+} from '@/components/annotations/MarkControls'
 import { cn } from '@/lib/utils'
 import type { NormalizedRect, Rotation, SignaturePlacement } from '@/domain/types'
 import { useRotatedSignaturePng } from './useRotatedSignaturePng'
@@ -15,6 +20,10 @@ interface SignatureOverlayProps {
   onRemove?: (signatureId: string) => void
   /** When provided, signatures can be dragged and corner-resized; receives the new rect in the sign-time frame. */
   onRectChange?: (signatureId: string, rect: NormalizedRect) => void
+  /** Id picked out in the editor's items list: ringed here and scrolled into view. */
+  selectedId?: string | null
+  /** Called when a signature is grabbed on the page, so the list follows the page. */
+  onSelect?: (signatureId: string) => void
   className?: string
 }
 
@@ -28,6 +37,8 @@ export function SignatureOverlay({
   frameRotation,
   onRemove,
   onRectChange,
+  selectedId,
+  onSelect,
   className,
 }: SignatureOverlayProps) {
   const { ref, size } = useElementSize<HTMLDivElement>()
@@ -39,6 +50,8 @@ export function SignatureOverlay({
           signature={signature}
           frameRotation={frameRotation}
           overlaySize={size}
+          selected={signature.id === selectedId}
+          onSelect={onSelect}
           onRemove={onRemove}
           onRectChange={onRectChange}
         />
@@ -51,18 +64,24 @@ function PlacedSignature({
   signature,
   frameRotation,
   overlaySize,
+  selected,
+  onSelect,
   onRemove,
   onRectChange,
 }: {
   signature: SignaturePlacement
   frameRotation: Rotation
   overlaySize: { width: number; height: number } | null
+  /** True when this is the signature picked out in the items list. */
+  selected: boolean
+  onSelect?: (signatureId: string) => void
   onRemove?: (signatureId: string) => void
   onRectChange?: (signatureId: string, rect: NormalizedRect) => void
 }) {
   const delta = normalizeRotation(frameRotation - signature.rotationAtSign)
   const displayRect = rotateRect(signature.rect, delta)
   const pngUrl = useRotatedSignaturePng(signature.pngDataUrl, delta)
+  const focusRef = useMarkFocus<HTMLDivElement>(selected)
   const { liveRect, moveHandleProps, resizeHandleProps } = useMarkTransform({
     displayRect,
     overlaySize,
@@ -73,10 +92,12 @@ function PlacedSignature({
   const movable = onRectChange !== undefined
   return (
     <div
-      {...(movable ? moveHandleProps : {})}
+      ref={focusRef}
+      {...(movable ? selectOnPointerDown(moveHandleProps, () => onSelect?.(signature.id)) : {})}
       className={cn('absolute', movable && 'pointer-events-auto cursor-move touch-none')}
       style={rectToCssPercent(movable ? liveRect : displayRect)}
     >
+      {selected && <MarkSelectionRing />}
       <img src={pngUrl} alt="" draggable={false} className="size-full select-none" />
       {onRemove && (
         <RemoveMarkButton label="Remove signature" onClick={() => onRemove(signature.id)} />

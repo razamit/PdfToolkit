@@ -99,6 +99,25 @@ export function useMarkTransform({ displayRect, overlaySize, onCommit }: UseMark
   }
 }
 
+/**
+ * Wrap a mark's handle props so grabbing the mark also selects it, keeping the
+ * items list in step with what was last touched on the page. It runs before
+ * the gesture's own handler, which captures the pointer and stops propagation.
+ */
+export function selectOnPointerDown(
+  handleProps: MarkHandleProps,
+  onSelect?: () => void,
+): MarkHandleProps {
+  if (!onSelect) return handleProps
+  return {
+    ...handleProps,
+    onPointerDown: (event) => {
+      onSelect()
+      handleProps.onPointerDown(event)
+    },
+  }
+}
+
 function translateRect(rect: NormalizedRect, dx: number, dy: number): MarkTransformResult {
   return {
     rect: {

@@ -9,10 +9,11 @@ import {
 import { displayedPageSizePt, TEXT_LINE_HEIGHT_EM } from '@/lib/annotationGeometry'
 import { annotationFontFamilyFor } from '@/lib/annotationFont'
 import { useElementSize } from '@/hooks/useElementSize'
-import { useMarkTransform } from '@/hooks/useMarkTransform'
+import { useMarkFocus } from '@/hooks/useMarkFocus'
+import { selectOnPointerDown, useMarkTransform } from '@/hooks/useMarkTransform'
 import { cn } from '@/lib/utils'
 import { HighlightInkSvg } from '@/components/freehand/HighlightInkSvg'
-import { RemoveMarkButton, ResizeMarkHandle } from './MarkControls'
+import { MarkSelectionRing, RemoveMarkButton, ResizeMarkHandle } from './MarkControls'
 import type {
   AnnotationPlacement,
   AnnotationPlacementPatch,
@@ -22,6 +23,7 @@ import type {
   NormalizedRect,
   Rotation,
   SignatureStroke,
+  StrokePoint,
   TextPlacement,
 } from '@/domain/types'
 
@@ -39,6 +41,10 @@ interface AnnotationOverlayProps {
    * Highlights stay fixed — they are anchored to the page's text.
    */
   onTransform?: (annotationId: string, patch: AnnotationPlacementPatch) => void
+  /** Id picked out in the editor's items list: ringed here and scrolled into view. */
+  selectedId?: string | null
+  /** Called when a mark is grabbed on the page, so the list follows the page. */
+  onSelect?: (annotationId: string) => void
   className?: string
 }
 
@@ -55,6 +61,8 @@ export function AnnotationOverlay({
   pageSize,
   onRemove,
   onTransform,
+  selectedId,
+  onSelect,
   className,
 }: AnnotationOverlayProps) {
   const { ref, size } = useElementSize<HTMLDivElement>()
@@ -70,6 +78,8 @@ export function AnnotationOverlay({
             delta={normalizeRotation(frameRotation - annotation.rotationAtCreate)}
             overlaySize={size}
             pageSize={pageSize}
+            selected={annotation.id === selectedId}
+            onSelect={onSelect}
             onRemove={onRemove}
             onTransform={onTransform}
           />
@@ -84,6 +94,9 @@ interface PlacedProps<T extends AnnotationPlacement> {
   delta: Rotation
   overlaySize: { width: number; height: number }
   pageSize: { width: number; height: number }
+  /** True when this is the mark picked out in the items list. */
+  selected: boolean
+  onSelect?: (annotationId: string) => void
   onRemove?: (annotationId: string) => void
   onTransform?: (annotationId: string, patch: AnnotationPlacementPatch) => void
 }
@@ -107,10 +120,13 @@ function PlacedText({
   delta,
   overlaySize,
   pageSize,
+  selected,
+  onSelect,
   onRemove,
   onTransform,
 }: PlacedProps<TextPlacement>) {
   const displayRect = rotateRect(annotation.rect, delta)
+  const focusRef = useMarkFocus<HTMLDivElement>(selected)
   const { liveRect, liveScale, moveHandleProps, resizeHandleProps } = useMarkTransform({
     displayRect,
     overlaySize,
@@ -127,10 +143,12 @@ function PlacedText({
 
   return (
     <div
-      {...(movable ? moveHandleProps : {})}
+      ref={focusRef}
+      {...(movable ? selectOnPointerDown(moveHandleProps, () => onSelect?.(annotation.id)) : {})}
       className={cn('absolute', movable && 'pointer-events-auto cursor-move touch-none')}
       style={rectToCssPercent(rect)}
     >
+      {selected && <MarkSelectionRing />}
       <RotatedContent delta={delta} boxRect={rect} overlaySize={overlaySize}>
         <div
           dir="auto"
@@ -155,10 +173,13 @@ function PlacedImage({
   annotation,
   delta,
   overlaySize,
+  selected,
+  onSelect,
   onRemove,
   onTransform,
 }: PlacedProps<ImagePlacement>) {
   const displayRect = rotateRect(annotation.rect, delta)
+  const focusRef = useMarkFocus<HTMLDivElement>(selected)
   const { liveRect, moveHandleProps, resizeHandleProps } = useMarkTransform({
     displayRect,
     overlaySize,
@@ -170,10 +191,12 @@ function PlacedImage({
 
   return (
     <div
-      {...(movable ? moveHandleProps : {})}
+      ref={focusRef}
+      {...(movable ? selectOnPointerDown(moveHandleProps, () => onSelect?.(annotation.id)) : {})}
       className={cn('absolute', movable && 'pointer-events-auto cursor-move touch-none')}
       style={rectToCssPercent(rect)}
     >
+      {selected && <MarkSelectionRing />}
       <RotatedContent delta={delta} boxRect={rect} overlaySize={overlaySize}>
         <img src={annotation.dataUrl} alt="" draggable={false} className="size-full select-none" />
       </RotatedContent>
@@ -183,23 +206,32 @@ function PlacedImage({
   )
 }
 
-function PlacedHighlight({ annotation, delta, onRemove }: PlacedProps<HighlightPlacement>) {
+function PlacedHighlight({
+  annotation,
+  delta,
+  selected,
+  onRemove,
+}: PlacedProps<HighlightPlacement>) {
+  const displayRects = useMemo(
+    () => annotation.lineRects.map((lineRect) => rotateRect(lineRect, delta)),
+    [annotation.lineRects, delta],
+  )
+
   return (
     <>
-      {annotation.lineRects.map((lineRect, index) => {
-        const displayRect = rotateRect(lineRect, delta)
-        return (
-          <div
-            key={index}
-            className="absolute mix-blend-multiply"
-            style={{ ...rectToCssPercent(displayRect), backgroundColor: annotation.colorHex }}
-          >
-            {onRemove && index === 0 && (
-              <RemoveMarkButton label="Remove highlight" onClick={() => onRemove(annotation.id)} />
-            )}
-          </div>
-        )
-      })}
+      {displayRects.map((displayRect, index) => (
+        <div
+          key={index}
+          className="absolute mix-blend-multiply"
+          style={{ ...rectToCssPercent(displayRect), backgroundColor: annotation.colorHex }}
+        />
+      ))}
+      <FixedMarkAnchor
+        rect={rectsBoundingBox(displayRects)}
+        selected={selected}
+        removeLabel="Remove highlight"
+        onRemove={onRemove && (() => onRemove(annotation.id))}
+      />
     </>
   )
 }
@@ -207,13 +239,14 @@ function PlacedHighlight({ annotation, delta, onRemove }: PlacedProps<HighlightP
 /**
  * A free-hand highlighter mark: strokes rotated into the current frame by
  * `delta` and drawn via the shared ink SVG (single mix-blend-multiply layer).
- * Fixed — it ignores `onTransform`; a remove button sits at the strokes'
- * bounding-box top when removal is offered (e.g. in Move & resize).
+ * Fixed — it ignores `onTransform`; its remove button and selection ring hang
+ * off an anchor box over the strokes' bounding box.
  */
 function PlacedFreehandHighlight({
   annotation,
   delta,
   overlaySize,
+  selected,
   onRemove,
 }: PlacedProps<FreehandHighlightPlacement>) {
   const rotated = useMemo(
@@ -229,28 +262,69 @@ function PlacedFreehandHighlight({
         thickness={annotation.thickness}
         surface={overlaySize}
       />
-      {onRemove && bbox && (
-        <div className="absolute" style={rectToCssPercent(bbox)}>
-          <RemoveMarkButton label="Remove highlight" onClick={() => onRemove(annotation.id)} />
-        </div>
-      )}
+      <FixedMarkAnchor
+        rect={bbox}
+        selected={selected}
+        removeLabel="Remove highlight"
+        onRemove={onRemove && (() => onRemove(annotation.id))}
+      />
     </>
+  )
+}
+
+/**
+ * Invisible box spanning a fixed mark's full extent. Highlights are anchored to
+ * the page and have no box of their own to hang controls on, so this carries
+ * their remove button and selection ring, and is the element scrolled to when
+ * the mark is picked in the items list. It is a sibling of the ink rather than
+ * a parent so that `mix-blend-multiply` cannot bleed into either control.
+ */
+function FixedMarkAnchor({
+  rect,
+  selected,
+  removeLabel,
+  onRemove,
+}: {
+  rect: NormalizedRect | null
+  selected: boolean
+  removeLabel: string
+  onRemove?: () => void
+}) {
+  const focusRef = useMarkFocus<HTMLDivElement>(selected)
+  if (!rect || (!selected && !onRemove)) return null
+  return (
+    <div ref={focusRef} className="absolute" style={rectToCssPercent(rect)}>
+      {selected && <MarkSelectionRing />}
+      {onRemove && <RemoveMarkButton label={removeLabel} onClick={onRemove} />}
+    </div>
   )
 }
 
 /** Tight [0,1] bounding box over every stroke point, or null when there is none. */
 function strokesBoundingBox(strokes: SignatureStroke[]): NormalizedRect | null {
+  return boundingBox(strokes.flat())
+}
+
+/** Tight [0,1] bounding box over every rect, or null when there is none. */
+function rectsBoundingBox(rects: NormalizedRect[]): NormalizedRect | null {
+  return boundingBox(
+    rects.flatMap((rect) => [
+      { x: rect.x, y: rect.y },
+      { x: rect.x + rect.width, y: rect.y + rect.height },
+    ]),
+  )
+}
+
+function boundingBox(points: StrokePoint[]): NormalizedRect | null {
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity
   let maxY = -Infinity
-  for (const stroke of strokes) {
-    for (const point of stroke) {
-      minX = Math.min(minX, point.x)
-      minY = Math.min(minY, point.y)
-      maxX = Math.max(maxX, point.x)
-      maxY = Math.max(maxY, point.y)
-    }
+  for (const point of points) {
+    minX = Math.min(minX, point.x)
+    minY = Math.min(minY, point.y)
+    maxX = Math.max(maxX, point.x)
+    maxY = Math.max(maxY, point.y)
   }
   if (!Number.isFinite(minX)) return null
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }

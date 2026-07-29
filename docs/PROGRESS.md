@@ -6,6 +6,55 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-07-29 — The editing session now lists everything on the page down its
+left side: rows select their mark (ring + scroll to it) and delete it in place
+(not yet deployed). ✅ DONE.** Asked for directly: "when opening a page I want to
+see a list of the items that were added to the page… also I want the option to
+delete the items directly from the [list] and focus on them once selected."
+Three parts. (1) **The list** — `MarksListPanel`, a 14rem column showing every
+signature and annotation with a per-kind icon, the typed text as the row label
+for text marks, and the mark's own colour tinting the icon for highlights. It is
+collapsible from an "Items *n*" toggle at the left of the toolbar, open by
+default above 768px and closed below, where it overlays the page rather than
+squeezing it. (2) **Delete from the row** — a bin on every row, always visible
+(hover-reveal would be invisible on a touch screen), plus Delete/Backspace on the
+focused row. Deleting the selected mark clears the selection, and so does
+removing it from its own corner ✕ on the page — a stale id is swept by an effect
+in `PageEditorModal` rather than left dangling. (3) **Selection both ways** —
+picking a row rings the mark on the page and scrolls it into view; grabbing a
+mark on the page highlights its row. Escape now unwinds one step at a time:
+deselect, then disarm the tool, then close. **Proof:** `npx tsc -b` exits 0;
+`npm run lint` unchanged at 4 pre-existing warnings; `npm run build` green;
+console clean (only Vite HMR lines). Driven end-to-end with `agent-browser` on a
+generated 1-page PDF: added 2 text boxes, a text-anchored highlight, a free-hand
+highlight and a drawn signature → list showed all 5 with correct labels and the
+toolbar chip read "Items 5"; clicking *First note* ringed it on the page and
+tinted its row; at 200% zoom, selecting an off-screen mark scrolled the preview
+to it; deleting the selected *First note* from its bin dropped the count to 4,
+removed it from the page and cleared the ring; clicking *Second note here* on the
+page left exactly one row with `aria-current="true"`, and it was that one; two
+Escapes deselected then closed. At 390×844 the panel overlays the page and starts
+closed on a fresh load. **Two fixes made while building:** a highlight's remove
+button used to live inside the first line rect, so it inherited
+`mix-blend-multiply`; it now hangs off an anchor box over the mark's whole
+bounding box, alongside the selection ring. And the row's accessible name no
+longer announces "Highlight: Highlight" when the title *is* the kind's name.
+**Files:** new `src/components/annotations/markSelectionContext.ts`,
+`src/components/editor/MarksListPanel.tsx`, `src/components/editor/pageMarks.ts`,
+`src/hooks/useMarkFocus.ts`; changed
+`src/components/editor/{PageEditorModal,EditorToolbar,EditorPanel}.tsx`,
+`src/components/annotations/{AnnotationOverlay,ExistingMarksOverlay,MarkControls,RectChooseStep}.tsx`,
+`src/components/signature/{SignatureOverlay,SignatureDrawStep}.tsx`,
+`src/components/image/ImagePickStep.tsx`, `src/hooks/useMarkTransform.ts`. The
+four `flex-1` one-liners in the step components are all the same change: the tool
+column has to fill the dialog row now that a sidebar sits beside it.
+**Decisions:** row 21 (refines rows 19 and 20). **Tickets:** filed
+`docs/tickets/highlights-cannot-be-selected-on-the-page.md` — a highlight can be
+selected from the list but not by clicking it on the page, because making its
+box pointer-interactive would swallow the drag the "Highlight text" tool needs.
+
+---
+
 **2026-07-28 — Editing-session controls reworked from user feedback: text boxes
 open focused, the commit moved to a tick on the box, and every button settled on
 Save/Close (UI follow-up to the session below; not yet deployed). ✅ DONE.**

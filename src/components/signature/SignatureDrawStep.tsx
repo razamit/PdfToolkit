@@ -81,7 +81,7 @@ export function SignatureDrawStep({
   }
 
   return (
-    <div className="flex min-h-0 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-[65dvh] min-h-0 shrink flex-col sm:flex-row">
         <DrawSurface aspectRatio={aspectRatio} canvasRef={canvasRef} handlers={handlers} />
         {library.length > 0 && (
