@@ -6,6 +6,35 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-08-02 — Added completed Daily and Weekly usage views backed by immutable
+UTC snapshots (offline, code + docs). ✅ DONE.** The lifetime `totals` blob and
+compare-and-swap increment path remain unchanged. A new scheduled function runs
+at `0 0 * * *`, reads the cumulative totals, and freezes the first capture under
+`snapshots/YYYY-MM-DD` with `onlyIfNew`; this makes retries idempotent without
+moving a day's boundary. `/api/usage/history` lists the latest 32 captures,
+oldest-first, behind the same 15-minute CDN policy as lifetime totals. The client
+fetches both endpoints together and offers All time / Daily / Weekly controls in
+the existing panel. Daily is the difference between exact adjacent UTC dates;
+Weekly uses an exact seven-day boundary. Missing boundaries disable the period
+instead of silently merging days, and old lifetime totals are explicitly not
+backfilled. The loading skeleton and hidden reservation grew with the selector,
+keeping the panel footprint stable. **Proof:** `npx tsc -p
+tsconfig.netlify.json`, `npm run build`, and `npm run lint` green (lint retains
+the same four pre-existing warnings); standalone compiled arithmetic harness
+verified daily `15−12=3`, weekly `15−2=13`, `Aug 2 UTC` labeling, and a null
+Daily period when Aug 2's boundary was removed; the delayed local preview at
+`127.0.0.1:5173` returned the mocked lifetime payload and three ordered snapshot
+payloads used by all three selector states. **Files:** added
+`netlify/functions/{snapshot-usage.ts,usage-history.ts}` and
+`src/analytics/usagePeriods.ts`; edited `netlify/lib/usageStore.ts`,
+`netlify.toml`, `src/analytics/eventNames.ts`, `src/hooks/useUsageCounters.ts`,
+`src/components/usage/UsageCounters.tsx`, `src/landing.css`, `README.md`,
+`docs/DECISIONS.md`, and closed
+`docs/tickets/usage-counters-arrive-late-and-shift-layout.md`. Cross-ref: decision
+row 26.
+
+---
+
 **2026-08-02 — Made the app shell full-bleed so a bigger window actually gives a
 bigger page: the 1400px cap is gone from `<main>`, the header, and the boot
 state (offline, code + docs). ✅ DONE.** Follow-up to the entry below, from the

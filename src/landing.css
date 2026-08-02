@@ -23,8 +23,8 @@
    100vh, and the full viewport height is the point rather than a rounding
    choice. An earlier version used 80vh to let the landing section peek above
    the fold as a discovery cue, and that was wrong: the app's rendered height is
-   content-driven (the empty state with the usage counters measures ~856px on
-   desktop and ~1133px on mobile, largely independent of viewport height), so no
+   content-driven (the empty state with the usage counters measures ~924px on
+   desktop and ~1201px on mobile, largely independent of viewport height), so no
    vh fraction tracks it, and pulling the landing up INTO the viewport is
    precisely what made its movement visible. Measured on production at 80vh: a
    136px shift at 1280x900, 296px at 1280x700 and 509px at 390x780.

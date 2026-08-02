@@ -23,3 +23,14 @@ export type TrackedEventName = (typeof TRACKED_EVENT_NAMES)[number]
 
 /** Totals keyed by event name, as served by the counters endpoint. */
 export type UsageTotals = Partial<Record<TrackedEventName, number>>
+
+/** One cumulative lifetime-total capture taken at the start of a UTC day. */
+export interface UsageSnapshot {
+  date: string
+  totals: UsageTotals
+}
+
+/** Public history payload, ordered from oldest snapshot to newest. */
+export interface UsageHistory {
+  snapshots: UsageSnapshot[]
+}

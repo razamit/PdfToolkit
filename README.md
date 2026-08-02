@@ -66,17 +66,27 @@ reach production counts even while running the same code.
 
 ## Public usage counters
 
-The landing page shows lifetime totals ("The machine so far"):
+The landing page shows all-time totals plus completed daily and weekly UTC views
+("The machine so far"):
 
 1. Each tracked action posts its event name to `netlify/functions/track-usage.ts`
    (`/api/track`), which increments that event's count in a single Netlify Blob.
    The increment is a compare-and-swap retry loop, so two overlapping requests
    never lose a count.
-2. `netlify/functions/usage-counters.ts` serves the totals at `/api/usage`, cached
-   at the CDN for 15 minutes.
+2. `netlify/functions/snapshot-usage.ts` captures those cumulative totals once a
+   day at 00:00 UTC. The first successful capture for a date is immutable, so a
+   retry cannot move the boundary and undercount the day.
+3. `netlify/functions/usage-counters.ts` serves lifetime totals at `/api/usage`,
+   while `netlify/functions/usage-history.ts` serves the 32 latest snapshots at
+   `/api/usage/history`. Both reads are cached at the CDN for 15 minutes.
 
-The totals blob is the source of truth and only ever grows — there is no external
-analytics dependency and nothing to reconcile.
+Daily and weekly totals are differences between exact snapshot boundaries. A
+missing boundary leaves that period unavailable rather than combining multiple
+days under a misleading label. History begins with the first snapshot after this
+feature is deployed; existing lifetime totals cannot be reconstructed by date.
+
+The lifetime totals blob remains the source of truth and only ever grows — there
+is no external analytics dependency and nothing to reconcile.
 
 Counters stay hidden until there are at least 5 events in total (summed across all
 eight, not per counter), so a fresh deployment does not advertise single digits.
@@ -98,8 +108,8 @@ tier (Functions + Blobs); the `usage` store is created on the first write.
   imports a vendor SDK, so swapping backends is a one-file change.
 - `src/hooks/` — UI logic (selection, lazy thumbnails, drag-and-drop, uploads).
 - `src/components/` — presentation only.
-- `netlify/functions/` — the public counter endpoints: `/api/track` (increment)
-  and `/api/usage` (read).
+- `netlify/functions/` — the public counter endpoints (`/api/track`, `/api/usage`,
+  `/api/usage/history`) and the daily snapshot schedule.
 - `netlify/lib/` — shared function code, kept out of `functions/` so Netlify does
   not deploy it as endpoints.
 

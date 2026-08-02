@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react'
-import type { UsageTotals } from '@/analytics/eventNames'
+import type { UsageHistory, UsageSnapshot, UsageTotals } from '@/analytics/eventNames'
 
-const ENDPOINT = '/api/usage'
+const TOTALS_ENDPOINT = '/api/usage'
+const HISTORY_ENDPOINT = '/api/usage/history'
 
 export interface UsageCountersState {
   totals: UsageTotals | null
+  snapshots: UsageSnapshot[]
   isLoading: boolean
 }
 
+async function readJson<T>(endpoint: string, signal: AbortSignal): Promise<T | null> {
+  const response = await fetch(endpoint, { signal })
+  return response.ok ? (response.json() as Promise<T>) : null
+}
+
 /**
- * Loading state and lifetime usage totals for the public counters.
+ * Loading state, lifetime totals, and dated history for the public counters.
  *
  * Every failure path resolves to null rather than an error state. In dev the
  * endpoint does not exist and Vite's SPA fallback answers with HTML, which fails
@@ -18,19 +25,23 @@ export interface UsageCountersState {
  */
 export function useUsageCounters(): UsageCountersState {
   const [totals, setTotals] = useState<UsageTotals | null>(null)
+  const [snapshots, setSnapshots] = useState<UsageSnapshot[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const controller = new AbortController()
     let active = true
 
-    fetch(ENDPOINT, { signal: controller.signal })
-      .then((response) => (response.ok ? (response.json() as Promise<UsageTotals>) : null))
-      .then((data) => {
-        if (active && data && Object.keys(data).length > 0) setTotals(data)
-      })
-      .catch(() => {
-        // Offline, blocked, or no backend — the counters simply stay hidden.
+    Promise.all([
+      readJson<UsageTotals>(TOTALS_ENDPOINT, controller.signal).catch(() => null),
+      readJson<UsageHistory>(HISTORY_ENDPOINT, controller.signal).catch(() => null),
+    ])
+      .then(([totalsData, historyData]) => {
+        if (!active) return
+        if (totalsData && Object.keys(totalsData).length > 0) setTotals(totalsData)
+        if (historyData && Array.isArray(historyData.snapshots)) {
+          setSnapshots(historyData.snapshots)
+        }
       })
       .finally(() => {
         if (active) setIsLoading(false)
@@ -42,5 +53,5 @@ export function useUsageCounters(): UsageCountersState {
     }
   }, [])
 
-  return { totals, isLoading }
+  return { totals, snapshots, isLoading }
 }

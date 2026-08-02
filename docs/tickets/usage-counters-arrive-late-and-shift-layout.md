@@ -1,6 +1,12 @@
 # The usage counters render only after `/api/usage` resolves, so they pop in and push everything below them down
 
-Status: OPEN · Priority: LOW · Type: performance — layout stability · Cost: none
+Status: CLOSED · Priority: LOW · Type: performance — layout stability · Cost: none
+
+> **Resolution (2026-08-02):** implemented Option A. The panel now renders a
+> same-footprint loading skeleton and reserves responsive height in every state,
+> so loading lifetime totals and switching to daily/weekly totals do not move the
+> content below it. The local delayed mock used for verification remains outside
+> the repository and is not a production dependency.
 
 > Pre-existing, not introduced by the landing-content work, but that work made it
 > matter more: there is now content below the counters for them to displace.

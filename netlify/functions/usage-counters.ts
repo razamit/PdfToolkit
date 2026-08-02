@@ -1,6 +1,6 @@
 import { readTotals } from '../lib/usageStore'
 
-/** Counters change once a night, so serving a stale copy costs nothing. */
+/** Decorative totals tolerate a short stale window and benefit from one shared read. */
 const CACHE_SECONDS = 900
 
 /**

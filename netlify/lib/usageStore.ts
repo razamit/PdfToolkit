@@ -1,7 +1,13 @@
 import { getStore } from '@netlify/blobs'
-import type { TrackedEventName, UsageTotals } from '../../src/analytics/eventNames'
+import type {
+  TrackedEventName,
+  UsageSnapshot,
+  UsageTotals,
+} from '../../src/analytics/eventNames'
 
 const TOTALS_KEY = 'totals'
+const SNAPSHOT_PREFIX = 'snapshots/'
+const SNAPSHOT_DATE_PATTERN = /^snapshots\/\d{4}-\d{2}-\d{2}$/
 
 /**
  * A single increment races against any other in-flight one, and Netlify Blobs
@@ -28,6 +34,46 @@ function store() {
 /** Precomputed lifetime totals, or null before the first event is recorded. */
 export async function readTotals(): Promise<UsageTotals | null> {
   return (await store().get(TOTALS_KEY, { type: 'json' })) as UsageTotals | null
+}
+
+function utcDate(date: Date): string {
+  return date.toISOString().slice(0, 10)
+}
+
+/**
+ * Capture the current cumulative totals under an idempotent UTC-date key.
+ * The first successful invocation wins: a retry later that day must not move the
+ * boundary forward and silently remove events from that day's eventual delta.
+ */
+export async function writeDailySnapshot(now = new Date()): Promise<boolean> {
+  const totals = await readTotals()
+  if (!totals) return false
+
+  const date = utcDate(now)
+  const snapshot: UsageSnapshot = { date, totals }
+  const result = await store().setJSON(`${SNAPSHOT_PREFIX}${date}`, snapshot, { onlyIfNew: true })
+  return result.modified
+}
+
+/** Most recent dated captures, ordered oldest to newest. */
+export async function readDailySnapshots(limit = 32): Promise<UsageSnapshot[]> {
+  const keys: string[] = []
+
+  for await (const page of store().list({ prefix: SNAPSHOT_PREFIX, paginate: true })) {
+    for (const blob of page.blobs) {
+      if (SNAPSHOT_DATE_PATTERN.test(blob.key)) keys.push(blob.key)
+    }
+  }
+
+  const safeLimit = Math.max(0, Math.trunc(limit))
+  if (safeLimit === 0) return []
+
+  const recentKeys = keys.sort().slice(-safeLimit)
+  const snapshots = await Promise.all(
+    recentKeys.map((key) => store().get(key, { type: 'json' }) as Promise<UsageSnapshot | null>),
+  )
+
+  return snapshots.filter((snapshot): snapshot is UsageSnapshot => snapshot !== null)
 }
 
 /**
