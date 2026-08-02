@@ -33,7 +33,12 @@ export function PdfToolkitView() {
     <div {...dropzoneProps} className="relative flex min-h-screen flex-col">
       <AppHeader />
 
-      <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6">
+      {/* Full-bleed on purpose: the app area uses the whole window so a large
+          screen gets larger thumbnails and a larger page, with only the
+          gutter padding inset. The header and the `.app-boot-box` boot state
+          in src/landing.css carry the same width and must change with it —
+          a mismatch shows as the box resizing at the moment React mounts. */}
+      <main className="mx-auto w-full flex-1 px-4 py-6 sm:px-6">
         {error && <ErrorBanner message={error} onDismiss={dismissError} />}
         {hasPages ? (
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">

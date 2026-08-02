@@ -2,6 +2,7 @@ import {
   Baseline,
   Highlighter,
   ImagePlus,
+  Pencil,
   PenLine,
   Trash2,
   Type,
@@ -29,11 +30,11 @@ const KIND_ICONS: Record<PageMarkKind, LucideIcon> = {
  * It exists because the page itself is a poor index of its own contents — a
  * small text box or a highlight behind a signature is easy to lose track of,
  * and until now the only way to remove one was to find it and hit its corner
- * button.
+ * button. Text rows also carry a pencil that reopens the text for editing.
  */
 export function MarksListPanel({ page, className }: { page: PageDescriptor; className?: string }) {
   const { removeSignature, removeAnnotation } = usePdfToolkit()
-  const { selectedMarkId, selectMark } = useMarkSelection()
+  const { selectedMarkId, selectMark, editTextMark } = useMarkSelection()
   const marks = describePageMarks(page)
 
   const remove = (mark: PageMark) => {
@@ -64,6 +65,9 @@ export function MarksListPanel({ page, className }: { page: PageDescriptor; clas
               selected={mark.id === selectedMarkId}
               onSelect={() => selectMark(mark.id)}
               onRemove={() => remove(mark)}
+              onEdit={
+                mark.kind === 'text' && editTextMark ? () => editTextMark(mark.id) : undefined
+              }
             />
           ))}
         </ul>
@@ -77,11 +81,14 @@ function MarkRow({
   selected,
   onSelect,
   onRemove,
+  onEdit,
 }: {
   mark: PageMark
   selected: boolean
   onSelect: () => void
   onRemove: () => void
+  /** Present only on text rows inside a session that can re-edit text. */
+  onEdit?: () => void
 }) {
   const Icon = KIND_ICONS[mark.kind]
   const kindLabel = markKindLabel(mark.kind)
@@ -118,6 +125,17 @@ function MarkRow({
           />
           <span className="min-w-0 flex-1 truncate text-xs">{mark.title}</span>
         </button>
+        {onEdit && (
+          <button
+            type="button"
+            aria-label="Edit text"
+            title="Edit text"
+            onClick={onEdit}
+            className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        )}
         <button
           type="button"
           aria-label={`Delete ${kindLabel.toLowerCase()}`}

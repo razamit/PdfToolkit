@@ -9,17 +9,14 @@ import { ExistingMarksOverlay } from '@/components/annotations/ExistingMarksOver
 import { useRectDrag } from '@/hooks/useRectDrag'
 import { cn } from '@/lib/utils'
 import type { NormalizedRect, PageDescriptor } from '@/domain/types'
-import { DEFAULT_TEXT_COLOR, DEFAULT_TEXT_FONT_SIZE_PT } from '@/lib/annotationStyles'
+import {
+  DEFAULT_TEXT_COLOR,
+  DEFAULT_TEXT_FONT_SIZE_PT,
+  TEXT_CLICK_BOX,
+} from '@/lib/annotationStyles'
 import { TextStyleControls } from '@/components/text/TextStyleControls'
 import { TextEditLayer } from '@/components/text/TextEditLayer'
 import { EditorPanel } from '../EditorPanel'
-
-/**
- * Size of the box a plain click drops, in fractions of the displayed page.
- * It only has to be big enough to type into — `TextEditLayer` grows it to the
- * content on every keystroke, so this is a starting point, not a limit.
- */
-const CLICK_BOX = { width: 0.24, height: 0.045 }
 
 interface TextToolProps {
   page: PageDescriptor
@@ -35,7 +32,7 @@ interface TextToolProps {
  */
 export function TextTool({ page, zoom }: TextToolProps) {
   const { addAnnotation, closeEditor } = usePdfToolkit()
-  const { rect, reset, surfaceProps } = useRectDrag(null, { clickRect: CLICK_BOX })
+  const { rect, reset, surfaceProps } = useRectDrag(null, { clickRect: TEXT_CLICK_BOX })
   const [text, setText] = useState('')
   const [fontSizePt, setFontSizePt] = useState(DEFAULT_TEXT_FONT_SIZE_PT)
   const [colorHex, setColorHex] = useState(DEFAULT_TEXT_COLOR)

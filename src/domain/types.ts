@@ -127,6 +127,17 @@ export interface AnnotationPlacementPatch {
   fontSizePt?: number
 }
 
+/** Full rewrite of a placed text annotation, produced by re-editing it in place. */
+export interface TextAnnotationPatch {
+  text: string
+  /** New rect, expressed in the frame the edit happened in. */
+  rect: NormalizedRect
+  fontSizePt: number
+  colorHex: string
+  /** The page rotation at edit time — the mark is re-based to that frame. */
+  rotationAtCreate: Rotation
+}
+
 /** A drawn signature remembered for reuse, kept as vectors for crisp re-rendering. */
 export interface RememberedSignature {
   /** Strokes normalized to the ink bounding box. */

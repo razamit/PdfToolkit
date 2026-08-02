@@ -24,6 +24,7 @@ import type {
   SignaturePlacement,
   SourceMeta,
   StoredSignature,
+  TextAnnotationPatch,
 } from '@/domain/types'
 import {
   ToolkitContext,
@@ -283,6 +284,14 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
     [applyPages],
   )
 
+  const updateTextAnnotation = useCallback(
+    (pageId: string, annotationId: string, patch: TextAnnotationPatch) =>
+      applyPages(
+        PageListManager.updateTextAnnotation(pagesRef.current, pageId, annotationId, patch),
+      ),
+    [applyPages],
+  )
+
   const exportPdf = useCallback(
     async (scope: ExportScope) => {
       const selectedIds = selectionRef.current.selectedIds
@@ -372,6 +381,7 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       addAnnotation,
       removeAnnotation,
       updateAnnotationPlacement,
+      updateTextAnnotation,
     }),
     [
       pages,
@@ -405,6 +415,7 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
       addAnnotation,
       removeAnnotation,
       updateAnnotationPlacement,
+      updateTextAnnotation,
     ],
   )
 

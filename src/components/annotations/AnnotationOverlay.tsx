@@ -13,7 +13,7 @@ import { useMarkFocus } from '@/hooks/useMarkFocus'
 import { selectOnPointerDown, useMarkTransform } from '@/hooks/useMarkTransform'
 import { cn } from '@/lib/utils'
 import { HighlightInkSvg } from '@/components/freehand/HighlightInkSvg'
-import { MarkSelectionRing, RemoveMarkButton, ResizeMarkHandle } from './MarkControls'
+import { EditMarkButton, MarkSelectionRing, RemoveMarkButton, ResizeMarkHandle } from './MarkControls'
 import type {
   AnnotationPlacement,
   AnnotationPlacementPatch,
@@ -41,6 +41,8 @@ interface AnnotationOverlayProps {
    * Highlights stay fixed — they are anchored to the page's text.
    */
   onTransform?: (annotationId: string, patch: AnnotationPlacementPatch) => void
+  /** When provided, text annotations show an edit button opening their content. */
+  onEditText?: (annotationId: string) => void
   /** Id picked out in the editor's items list: ringed here and scrolled into view. */
   selectedId?: string | null
   /** Called when a mark is grabbed on the page, so the list follows the page. */
@@ -61,6 +63,7 @@ export function AnnotationOverlay({
   pageSize,
   onRemove,
   onTransform,
+  onEditText,
   selectedId,
   onSelect,
   className,
@@ -82,6 +85,7 @@ export function AnnotationOverlay({
             onSelect={onSelect}
             onRemove={onRemove}
             onTransform={onTransform}
+            onEditText={onEditText}
           />
         ))}
     </div>
@@ -99,6 +103,7 @@ interface PlacedProps<T extends AnnotationPlacement> {
   onSelect?: (annotationId: string) => void
   onRemove?: (annotationId: string) => void
   onTransform?: (annotationId: string, patch: AnnotationPlacementPatch) => void
+  onEditText?: (annotationId: string) => void
 }
 
 function PlacedAnnotation(props: PlacedProps<AnnotationPlacement>) {
@@ -124,6 +129,7 @@ function PlacedText({
   onSelect,
   onRemove,
   onTransform,
+  onEditText,
 }: PlacedProps<TextPlacement>) {
   const displayRect = rotateRect(annotation.rect, delta)
   const focusRef = useMarkFocus<HTMLDivElement>(selected)
@@ -163,6 +169,9 @@ function PlacedText({
           {annotation.text}
         </div>
       </RotatedContent>
+      {onEditText && (
+        <EditMarkButton label="Edit text" onClick={() => onEditText(annotation.id)} />
+      )}
       {onRemove && <RemoveMarkButton label="Remove text" onClick={() => onRemove(annotation.id)} />}
       {movable && <ResizeMarkHandle handleProps={resizeHandleProps} />}
     </div>

@@ -60,7 +60,9 @@ export function PreviewSurface({
     <div
       ref={areaRef}
       className={cn(
-        'relative flex h-[65dvh] min-h-0 shrink bg-muted/30 p-4',
+        // Fills the tool column, so the page area tracks the dialog's size
+        // (which itself tracks the viewport) instead of a fixed height.
+        'relative flex min-h-0 flex-1 bg-muted/30 p-4',
         // A zoomed page is scrolled to, not centred: centring a box larger than
         // its container clips the overflow unreachably in some browsers.
         zoom > 1 ? 'items-start justify-start overflow-auto' : 'items-center justify-center overflow-hidden',

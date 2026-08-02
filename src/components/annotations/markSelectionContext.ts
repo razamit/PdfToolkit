@@ -5,6 +5,12 @@ export interface MarkSelectionValue {
   selectedMarkId: string | null
   /** Pick a mark out (or clear with null); the page rings it and scrolls to it. */
   selectMark: (markId: string | null) => void
+  /**
+   * Begin re-editing a placed text mark's content, or null outside an editing
+   * session — nullable so marks rendered without a session (grid thumbnails)
+   * never grow an edit button that would do nothing.
+   */
+  editTextMark: ((markId: string) => void) | null
 }
 
 /**
@@ -16,7 +22,11 @@ export interface MarkSelectionValue {
  * by five separate tools, so props would have to be threaded through all of
  * them plus `ActiveTool` just to reach the same two values.
  */
-const NO_SELECTION: MarkSelectionValue = { selectedMarkId: null, selectMark: () => {} }
+const NO_SELECTION: MarkSelectionValue = {
+  selectedMarkId: null,
+  selectMark: () => {},
+  editTextMark: null,
+}
 
 export const MarkSelectionContext = createContext<MarkSelectionValue>(NO_SELECTION)
 

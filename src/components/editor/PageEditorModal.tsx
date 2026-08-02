@@ -9,6 +9,7 @@ import { describePageMarks } from './pageMarks'
 import { useEditorZoom } from './useEditorZoom'
 import { IdleTool } from './tools/IdleTool'
 import { TextTool } from './tools/TextTool'
+import { TextEditTool } from './tools/TextEditTool'
 import { SignTool } from './tools/SignTool'
 import { ImageTool } from './tools/ImageTool'
 import { HighlightTool } from './tools/HighlightTool'
@@ -39,48 +40,69 @@ export function PageEditorModal() {
   const { editingPage, editorTool, setEditorTool, closeEditor } = usePdfToolkit()
   const zoom = useEditorZoom()
   const [selectedMarkId, setSelectedMarkId] = useState<string | null>(null)
+  const [editingTextMarkId, setEditingTextMarkId] = useState<string | null>(null)
   const [listOpen, setListOpen] = useState(
     () => typeof window === 'undefined' || window.matchMedia(SIDE_BY_SIDE_QUERY).matches,
   )
 
   const disarm = useCallback(() => setEditorTool(null), [setEditorTool])
+  // Re-editing text disarms whatever tool was armed, so finishing lands on the
+  // idle page with the freshly edited mark directly nudgeable.
+  const beginTextEdit = useCallback(
+    (markId: string) => {
+      setEditorTool(null)
+      setEditingTextMarkId(markId)
+    },
+    [setEditorTool],
+  )
   const markSelection = useMemo(
-    () => ({ selectedMarkId, selectMark: setSelectedMarkId }),
-    [selectedMarkId],
+    () => ({ selectedMarkId, selectMark: setSelectedMarkId, editTextMark: beginTextEdit }),
+    [selectedMarkId, beginTextEdit],
   )
   const marks = useMemo(
     () => (editingPage ? describePageMarks(editingPage) : []),
     [editingPage],
   )
+  const editingTextMark = useMemo(() => {
+    const annotation = editingPage?.annotations?.find((entry) => entry.id === editingTextMarkId)
+    return annotation?.kind === 'text' ? annotation : null
+  }, [editingPage, editingTextMarkId])
 
   // A selection outlives neither the mark nor the page it belongs to: removing
   // the selected mark (from the list, or from its own corner button) would
-  // otherwise leave an id pointing at nothing.
+  // otherwise leave an id pointing at nothing. The same goes for the text mark
+  // open for re-editing.
   useEffect(() => {
     if (selectedMarkId && !marks.some((mark) => mark.id === selectedMarkId)) setSelectedMarkId(null)
   }, [marks, selectedMarkId])
+  useEffect(() => {
+    if (editingTextMarkId && !editingTextMark) setEditingTextMarkId(null)
+  }, [editingTextMarkId, editingTextMark])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
-      if (selectedMarkId !== null) setSelectedMarkId(null)
+      if (editingTextMarkId !== null) setEditingTextMarkId(null)
+      else if (selectedMarkId !== null) setSelectedMarkId(null)
       else if (editorTool !== null) disarm()
       else closeEditor()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [editorTool, selectedMarkId, disarm, closeEditor])
+  }, [editingTextMarkId, editorTool, selectedMarkId, disarm, closeEditor])
 
   if (!editingPage) return null
 
   return (
     <MarkSelectionContext.Provider value={markSelection}>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+      {/* 25px from every viewport edge: the dialog scales with the screen, so
+          a large monitor gets a large page area with room to zoom into. */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-[25px] backdrop-blur-sm">
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Edit page"
-          className="flex max-h-[94dvh] w-full max-w-4xl flex-col overflow-hidden overscroll-contain rounded-2xl border bg-background shadow-xl"
+          className="flex h-full w-full flex-col overflow-hidden overscroll-contain rounded-2xl border bg-background shadow-xl"
         >
           <header className="flex items-start justify-between gap-4 border-b px-5 py-3">
             <div>
@@ -103,7 +125,12 @@ export function PageEditorModal() {
           <EditorToolbar
             page={editingPage}
             activeTool={editorTool}
-            onSelectTool={setEditorTool}
+            // Picking any tool (or Select) abandons a text re-edit in progress,
+            // so the toolbar never reads as armed behind an edit layer.
+            onSelectTool={(tool) => {
+              setEditingTextMarkId(null)
+              setEditorTool(tool)
+            }}
             zoom={zoom}
             itemsList={{
               open: listOpen,
@@ -122,7 +149,17 @@ export function PageEditorModal() {
               />
             )}
             <div className="flex min-w-0 flex-1 flex-col">
-              <ActiveTool page={editingPage} tool={editorTool} zoom={zoom.zoom} onDone={disarm} />
+              {editingTextMark ? (
+                <TextEditTool
+                  key={editingTextMark.id}
+                  page={editingPage}
+                  zoom={zoom.zoom}
+                  mark={editingTextMark}
+                  onDone={() => setEditingTextMarkId(null)}
+                />
+              ) : (
+                <ActiveTool page={editingPage} tool={editorTool} zoom={zoom.zoom} onDone={disarm} />
+              )}
             </div>
           </div>
         </div>

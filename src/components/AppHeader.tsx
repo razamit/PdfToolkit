@@ -17,7 +17,10 @@ export function AppHeader() {
       ref={headerRef}
       className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur"
     >
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3 px-4 py-3 sm:px-6">
+      {/* Full width, matching `<main>` in PdfToolkitView — the toolbar has to
+          sit over the grid it acts on, so a narrower header would leave the
+          outermost thumbnails with no controls above them. */}
+      <div className="mx-auto flex w-full flex-col gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <MachineMark />

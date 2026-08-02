@@ -3,6 +3,7 @@ import type {
   AnnotationPlacement,
   AnnotationPlacementPatch,
   EditorTool,
+  TextAnnotationPatch,
   GridColumns,
   NormalizedRect,
   PageDescriptor,
@@ -89,6 +90,12 @@ export interface ToolkitContextValue {
     pageId: string,
     annotationId: string,
     patch: AnnotationPlacementPatch,
+  ) => void
+  /** Rewrite a placed text annotation's content and style (the in-place edit). */
+  updateTextAnnotation: (
+    pageId: string,
+    annotationId: string,
+    patch: TextAnnotationPatch,
   ) => void
 }
 

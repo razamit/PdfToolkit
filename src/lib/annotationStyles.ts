@@ -5,6 +5,14 @@ export const TEXT_COLORS = ['#111827', '#DC2626', '#2563EB', '#16A34A']
 export const DEFAULT_TEXT_FONT_SIZE_PT = 14
 export const DEFAULT_TEXT_COLOR = TEXT_COLORS[0]
 
+/**
+ * Size of the text box a plain click drops, in fractions of the displayed
+ * page. It only has to be big enough to type into — `TextEditLayer` grows it
+ * to the content on every keystroke, so this is a starting point, not a
+ * limit. Re-editing a placed mark uses it as the shrink-to-fit floor.
+ */
+export const TEXT_CLICK_BOX = { width: 0.24, height: 0.045 }
+
 export const HIGHLIGHT_COLORS = ['#FFEB3B', '#B9F6CA', '#F8BBD0', '#B3E5FC']
 export const DEFAULT_HIGHLIGHT_COLOR = HIGHLIGHT_COLORS[0]
 

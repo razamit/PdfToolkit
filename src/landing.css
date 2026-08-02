@@ -63,9 +63,10 @@
   min-height: 60vh;
   /* `width: 100%` is required, not redundant: `margin-inline: auto` centres the
      box but also opts it out of the column flex container's cross-axis stretch,
-     so without this it collapses to its content width. */
+     so without this it collapses to its content width. No max-width: the app
+     is full-bleed, and a cap here would resize the box the instant React
+     replaced this placeholder with the real empty state. */
   width: 100%;
-  max-width: 1400px;
   margin-inline: auto;
   display: flex;
   flex-direction: column;

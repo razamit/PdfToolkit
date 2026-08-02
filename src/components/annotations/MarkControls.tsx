@@ -1,4 +1,4 @@
-import { MoveDiagonal2, X } from 'lucide-react'
+import { MoveDiagonal2, Pencil, X } from 'lucide-react'
 import type { MarkHandleProps } from '@/hooks/useMarkTransform'
 
 /**
@@ -18,6 +18,22 @@ export function RemoveMarkButton({ label, onClick }: { label: string; onClick: (
       className="pointer-events-auto absolute -right-2.5 -top-2.5 flex size-5 items-center justify-center rounded-full border bg-background text-destructive shadow-sm transition-colors hover:bg-destructive/10"
     >
       <X className="size-3" />
+    </button>
+  )
+}
+
+/** Corner button opening a text mark's content for re-editing. */
+export function EditMarkButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      onPointerDown={(event) => event.stopPropagation()}
+      className="pointer-events-auto absolute -left-2.5 -top-2.5 flex size-5 items-center justify-center rounded-full border bg-background text-primary shadow-sm transition-colors hover:bg-accent"
+    >
+      <Pencil className="size-3" />
     </button>
   )
 }

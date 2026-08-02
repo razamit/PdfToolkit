@@ -6,6 +6,81 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-08-02 — Made the app shell full-bleed so a bigger window actually gives a
+bigger page: the 1400px cap is gone from `<main>`, the header, and the boot
+state (offline, code + docs). ✅ DONE.** Follow-up to the entry below, from the
+user reporting that enlarging the browser window did not stretch the page.
+**Diagnosed before changing anything:** the editing dialog was fine — with it
+open, a live resize from 1200×800 to 2000×1300 grew its page canvas 386×547 →
+740×1047 and its margins stayed exactly 25px, so the flex chain reflows as
+intended. The regular view was the problem: `<main>` measured **1400px wide
+inside a 2000px window, with 293px and 308px of dead gutter**, because of a
+`max-w-[1400px]` that is invisible on a ≤1400px laptop screen and only shows up
+on a larger display. Removed it from the three places that must agree —
+`<main>` in `PdfToolkitView`, the header's inner container in `AppHeader`, and
+`.app-boot-box` in `src/landing.css` (the placeholder React replaces on mount;
+a width mismatch there would resize the dashed box at mount, the shift rows 15
+and 16 guard against). **Proof:** `<main>` and the header both now measure
+`left=0, width=1985` at a 2000px viewport, and the grid's fixed column counts
+turn that into visibly larger thumbnails; the editor still measures
+top/left/bottom 25px with a 740×1047 page; at 390px `document.body.scrollWidth`
+equals the viewport width, so nothing overflows and the mobile layout is
+unchanged. `npm run build` green, `npm run lint` unchanged at 4 pre-existing
+warnings. Screenshots at 2000×1300 (grid, editor) and 390×844 taken with
+`agent-browser` against `npm run dev`. **Files:**
+`src/components/PdfToolkitView.tsx`, `src/components/AppHeader.tsx`,
+`src/landing.css`. Cross-refs: decision row 25; extends row 24. Not committed
+(not requested).
+
+---
+
+**2026-08-02 — Placed text boxes are now editable (pencil on the mark and on
+its items-list row), and the editing dialog sizes to the viewport at 25px from
+every edge with the page area flex-filling it (offline, code + docs). ✅ DONE.**
+Three user asks in one unit: an edit button on the text box element, the same
+edit on the left sidebar, and a dynamic editor view "25px from all sides" so
+big screens get a big page worth zooming. Editing reuses the creation editor: a
+session-scoped `editingTextMarkId` in `PageEditorModal` swaps the active tool
+for a new `TextEditTool`, which hides the mark from `ExistingMarksOverlay`
+(new `hiddenMarkId` prop), brings its text up prefilled in `TextEditLayer` at
+the mark's displayed position (clamped down to `TEXT_CLICK_BOX` so shortened
+text shrink-fits), and saves through the coordinator's new
+`updateTextAnnotation` — re-basing `rotationAtCreate` to the current page
+rotation, so text edited on a since-rotated page saves upright at the same
+spot (decision row 23). The pencil reaches both entry points through
+`markSelectionContext` as a nullable `editTextMark`, so grid thumbnails stay
+inert. Escape gained a first step (cancel edit), picking any tool cancels the
+edit, and starting an edit disarms the tool. Sizing: overlay `p-[25px]`,
+dialog `h-full w-full` replacing `max-w-4xl`/`max-h-[94dvh]`, and the three
+hard-coded `h-[65dvh]` page areas (`PreviewSurface`, `SignatureDrawStep`,
+`ImagePickStep`) became `min-h-0 flex-1` (row 24). **Proof:** `tsc -b` +
+`vite build` green; `npm run lint` unchanged at 4 pre-existing warnings.
+Driven end-to-end with `agent-browser` against `npm run dev`: text box placed
+and saved; on-page pencil reopened it prefilled with caret at end (verified
+`selectionStart` 11, `activeElement` the textarea), appended text saved and
+the list row title followed ("Text: Hello world edited"); sidebar pencil
+opened the same editor; typed junk then Escape left the mark untouched with
+the session still open; page rotated 90° in the grid, its rotated mark edited
+— textarea came up horizontal and the save landed upright at the mark's spot;
+dialog gaps measured exactly top/left/bottom 25px at both 1600×1000 and
+1100×760 (right 25px + document scrollbar), zoom to 150% scrolling within the
+enlarged area. **Files:** added
+`src/components/editor/tools/TextEditTool.tsx`; edited `src/domain/types.ts`
+(`TextAnnotationPatch`), `src/managers/PageListManager.ts`,
+`src/coordinator/{toolkitContext.ts,PdfToolkitCoordinator.tsx}`,
+`src/components/annotations/{markSelectionContext.ts,MarkControls.tsx,AnnotationOverlay.tsx,ExistingMarksOverlay.tsx,PreviewSurface.tsx}`,
+`src/components/editor/{MarksListPanel.tsx,PageEditorModal.tsx}`,
+`src/components/editor/tools/TextTool.tsx`,
+`src/components/text/TextEditLayer.tsx` (caret-to-end on focus),
+`src/lib/annotationStyles.ts` (`TEXT_CLICK_BOX` moved here for fast refresh),
+`src/components/signature/SignatureDrawStep.tsx`,
+`src/components/image/ImagePickStep.tsx`. Cross-refs: decision rows 23–24;
+refines the row 19 session and row 21 items list. Not committed (not
+requested). The untracked `--full-page` file in the repo root predates this
+session and was left alone.
+
+---
+
 **2026-07-29 — Deleted the SPA catch-all from `netlify.toml` and added a
 self-contained `public/404.html`, so scanner probes stop being counted as
 pageviews and dead URLs return a real 404. Deployed and verified live in

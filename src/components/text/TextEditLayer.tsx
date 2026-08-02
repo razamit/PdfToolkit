@@ -63,7 +63,12 @@ export function TextEditLayer({
   // Re-focus whenever the box moves to a new spot, not only on first mount —
   // clicking elsewhere repositions this same editor rather than remounting it.
   useLayoutEffect(() => {
-    textareaRef.current?.focus()
+    const textarea = textareaRef.current
+    if (!textarea) return
+    textarea.focus()
+    // Caret at the end, which is where typing resumes when a box comes up
+    // prefilled (re-editing a placed mark).
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length)
   }, [rect.x, rect.y])
 
   const { width: fittedWidthPx, height: fittedHeightPx } = fittedSize

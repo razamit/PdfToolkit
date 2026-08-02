@@ -5,6 +5,7 @@ import type {
   PageDescriptor,
   Rotation,
   SignaturePlacement,
+  TextAnnotationPatch,
 } from '@/domain/types'
 
 /** Normalize any degree value into the 0/90/180/270 domain. */
@@ -120,6 +121,26 @@ export const PageListManager = {
         ...page,
         signatures: page.signatures.map((signature) =>
           signature.id === signatureId ? { ...signature, rect } : signature,
+        ),
+      }
+    })
+  },
+
+  /** Rewrite an existing text annotation's content and style (the in-place edit). */
+  updateTextAnnotation(
+    pages: PageDescriptor[],
+    pageId: string,
+    annotationId: string,
+    patch: TextAnnotationPatch,
+  ): PageDescriptor[] {
+    return pages.map((page) => {
+      if (page.id !== pageId || !page.annotations) return page
+      return {
+        ...page,
+        annotations: page.annotations.map((annotation) =>
+          annotation.id === annotationId && annotation.kind === 'text'
+            ? { ...annotation, ...patch }
+            : annotation,
         ),
       }
     })
