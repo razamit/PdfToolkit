@@ -1,6 +1,6 @@
 # The app is not installable or usable offline — no PWA manifest or service worker
 
-Status: OPEN · Priority: LOW · Type: enhancement / distribution · Cost: none
+Status: CLOSED (2026-08-03) · Priority: LOW · Type: enhancement / distribution · Cost: none
 
 > This is the "app story" chosen by `docs/DECISIONS.md` row 17 in place of a
 > native-app wrapper, and a prerequisite for any future Google Play listing as a
@@ -66,3 +66,13 @@ meaningful traffic (~10k pv/mo).
   512 px, including a maskable variant.
 
 No code change made by this ticket — it is an observation on the record.
+
+## Resolution
+
+Closed by the 2026-08-03 progress entry “Shipped the seven requested PDF
+workflows…” and decision row 30. The app now has a manifest, production-only
+service-worker registration, manifest-driven application precaching, fixed
+pdf.js decoder/font caching, cache retirement and verified server-off startup.
+The implementation relies on the browser's native installation UI. The distinct
+remaining discoverability gap is tracked in
+`pwa-install-affordance-is-not-visible.md`.

@@ -10,6 +10,9 @@ export type Rotation = 0 | 90 | 180 | 270
 
 export type SourceKind = 'pdf' | 'image'
 
+/** Working-page kinds include synthetic blank pages, which have no uploaded source bytes. */
+export type PageKind = SourceKind | 'blank'
+
 export type ImageFormat = 'jpeg' | 'png'
 
 /** Metadata for an uploaded file. Original bytes are retained for lossless export. */
@@ -69,6 +72,10 @@ export interface TextPlacement extends AnnotationBase {
   fontSizePt: number
   /** Text color as #rrggbb. */
   colorHex: string
+  /** Optional transparency used by export-only batch stamps. */
+  opacity?: number
+  /** Alignment within `rect`; ordinary annotations follow their text direction. */
+  textAlign?: 'left' | 'center' | 'right'
 }
 
 /** An uploaded or pasted image stamped onto one page. */
@@ -159,13 +166,67 @@ export type PageSizePreset = 'match' | 'a4' | 'letter'
 /** Export page sizing: keep original sizes, or normalize every page to a preset. */
 export type PageSizeMode = 'original' | PageSizePreset
 
+/** Visible rectangle chosen by the user, frozen in the display frame used when cropping. */
+export interface PageCrop {
+  rect: NormalizedRect
+  rotationAtCreate: Rotation
+}
+
+/** One invisible OCR word stamped into the exported PDF's searchable text layer. */
+export interface OcrWordPlacement {
+  text: string
+  rect: NormalizedRect
+  rotationAtCreate: Rotation
+  confidence: number
+}
+
+export type PageNumberFormat = 'number' | 'page-of-total'
+export type PageNumberPosition = 'bottom-left' | 'bottom-center' | 'bottom-right'
+
+export interface PageNumberOptions {
+  enabled: boolean
+  format: PageNumberFormat
+  startAt: number
+  position: PageNumberPosition
+  fontSizePt: number
+  colorHex: string
+}
+
+export interface WatermarkOptions {
+  enabled: boolean
+  text: string
+  fontSizePt: number
+  colorHex: string
+  opacity: number
+}
+
+/** Export-only, document-wide stamps. They never mutate the source page objects. */
+export interface ExportDecorations {
+  pageNumbers: PageNumberOptions
+  watermark: WatermarkOptions
+}
+
+export type FormFieldKind = 'text' | 'checkbox' | 'radio' | 'dropdown' | 'option-list'
+export type FormFieldValue = string | boolean | string[]
+
+export interface FormFieldDescriptor {
+  sourceId: string
+  name: string
+  kind: FormFieldKind
+  value: FormFieldValue
+  options?: string[]
+  readOnly: boolean
+}
+
+export type FormValuesBySource = Record<string, Record<string, FormFieldValue>>
+
 /** A single page in the working document, referencing its source. */
 export interface PageDescriptor {
   /** Stable unique id for this page instance (also the dnd-kit sortable id). */
   id: string
   sourceId: string
-  kind: SourceKind
-  /** Page index within the source PDF; always 0 for images. */
+  kind: PageKind
+  /** Page index within the source PDF; always 0 for images and synthetic blanks. */
   sourcePageIndex: number
   /** User-applied rotation, composed with any rotation already in the source. */
   rotation: Rotation
@@ -175,6 +236,10 @@ export interface PageDescriptor {
   height: number
   /** Uniform factor applied to the page box at export (absent = original size). */
   exportScale?: number
+  /** Non-destructive visible page rectangle; original content outside it remains in the source. */
+  crop?: PageCrop
+  /** Invisible words generated locally by OCR and stamped at export for search/select. */
+  ocrWords?: OcrWordPlacement[]
   /** Hand-drawn signatures stamped onto this page (absent when none). */
   signatures?: SignaturePlacement[]
   /** Text, image, and highlight annotations stamped onto this page (absent when none).

@@ -2,6 +2,7 @@ import type {
   AnnotationPlacement,
   AnnotationPlacementPatch,
   NormalizedRect,
+  OcrWordPlacement,
   PageDescriptor,
   Rotation,
   SignaturePlacement,
@@ -162,6 +163,29 @@ export const PageListManager = {
         ),
       }
     })
+  },
+
+  crop(
+    pages: PageDescriptor[],
+    ids: ReadonlySet<string>,
+    rect: NormalizedRect | null,
+  ): PageDescriptor[] {
+    return pages.map((page) => {
+      if (!ids.has(page.id)) return page
+      return rect
+        ? { ...page, crop: { rect, rotationAtCreate: page.rotation } }
+        : { ...page, crop: undefined }
+    })
+  },
+
+  setOcrWords(
+    pages: PageDescriptor[],
+    pageId: string,
+    words: OcrWordPlacement[],
+  ): PageDescriptor[] {
+    return pages.map((page) =>
+      page.id === pageId ? { ...page, ocrWords: words.length > 0 ? words : undefined } : page,
+    )
   },
 }
 

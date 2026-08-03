@@ -3,6 +3,9 @@ import type {
   AnnotationPlacement,
   AnnotationPlacementPatch,
   EditorTool,
+  ExportDecorations,
+  FormFieldDescriptor,
+  FormValuesBySource,
   TextAnnotationPatch,
   GridColumns,
   NormalizedRect,
@@ -41,6 +44,8 @@ export interface ToolkitContextValue {
   setPageSizeMode: (mode: PageSizeMode) => void
 
   addFiles: (files: FileList | File[]) => Promise<void>
+  /** Append a synthetic blank page matching the document's prevailing paper size. */
+  addBlankPage: () => void
   removePages: (ids: string[]) => void
   /** Remove every page belonging to one source (the whole uploaded file). */
   removeSource: (sourceId: string) => void
@@ -97,6 +102,24 @@ export interface ToolkitContextValue {
     annotationId: string,
     patch: TextAnnotationPatch,
   ) => void
+
+  canUndo: boolean
+  canRedo: boolean
+  undo: () => void
+  redo: () => void
+
+  /** Export arbitrary page groups as one PDF or as separate PDFs in a ZIP. */
+  exportPageGroups: (pageIdGroups: string[][], mode: 'combined' | 'zip') => Promise<void>
+
+  exportDecorations: ExportDecorations
+  setExportDecorations: (options: ExportDecorations) => void
+
+  cropPages: (pageIds: string[], rect: NormalizedRect | null) => void
+  ocrPages: (pageIds: string[]) => Promise<void>
+
+  formValues: FormValuesBySource
+  getFormFields: () => FormFieldDescriptor[]
+  setFormValues: (values: FormValuesBySource) => void
 }
 
 export const ToolkitContext = createContext<ToolkitContextValue | null>(null)

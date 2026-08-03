@@ -16,7 +16,7 @@ const RESIZE_CHOICES: Array<{ preset: PageSizeMode; label: string }> = [
  * aspect-preserving, so this only changes how large each page comes out in the
  * exported PDF — thumbnails keep their shape and show a percent badge.
  */
-export function ResizeMenu({ pageIds }: { pageIds: string[] }) {
+export function ResizeMenu({ pageIds, disabled = false }: { pageIds: string[]; disabled?: boolean }) {
   const { resizePages } = usePdfToolkit()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -42,10 +42,11 @@ export function ResizeMenu({ pageIds }: { pageIds: string[] }) {
         variant="outline"
         aria-expanded={open}
         aria-label="Resize pages"
+        disabled={disabled}
         onClick={() => setOpen((previous) => !previous)}
       >
         <Scaling />
-        <span className="hidden sm:inline">Resize</span>
+        <span>Resize</span>
       </Button>
       {open && (
         <div className="absolute bottom-full left-0 z-50 mb-1 w-40 overflow-hidden rounded-md border bg-background py-1 shadow-md">

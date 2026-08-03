@@ -4,8 +4,8 @@
 
 A private, in-browser PDF editor. Feed in one or more PDFs (and JPEG/PNG images),
 see every page as a thumbnail grid, then rotate, remove, reorder (drag-and-drop),
-resize, sign, annotate, and export a new PDF — all **without ever uploading your
-files to a server**, and **without losing any quality**.
+resize, crop, split, sign, annotate, fill forms, run local OCR, and export a new
+PDF — all **without ever uploading document content to a server**.
 
 ## Quality guarantee
 
@@ -24,18 +24,27 @@ resolution, and quality are preserved exactly.
 ## Features
 
 - Combine multiple PDFs and images into one working document
+- Insert editable blank pages (A4 for an empty document, otherwise matching the prevailing page size)
 - Thumbnail grid with an adjustable size slider (more/fewer per row)
 - Rotate, delete, and reorder pages (drag-and-drop)
 - Resize pages to A4 / Letter / the document's dominant size, or keep originals
 - Draw and place signatures, with a reusable session library
 - Text, image, and highlight annotations, with drag-to-rearrange
+- Undo/redo for up to 100 page-edit states
+- Smart page-range splitting into a ZIP
+- Percentage-margin crop for one, selected, or all pages
+- Batch page numbers and text watermarks during export
+- Fill and flatten supported standard AcroForm fields
+- On-device English OCR that adds searchable text to selected pages
+- Installable PWA with offline editing after the first online visit
 - Multi-select for bulk rotate / delete / export
+- Persistent multi-page action bar that explains when no pages are selected
 - Export all pages, or just the selected ones
 - 100% client-side — files never leave the browser
 
 ## Tech stack
 
-React 19 · Vite · TypeScript · Tailwind v4 · `@cantoo/pdf-lib` · `pdfjs-dist` · `@dnd-kit` · lucide-react
+React 19 · Vite · TypeScript · Tailwind v4 · `@cantoo/pdf-lib` · `pdfjs-dist` · Tesseract.js · `@dnd-kit` · lucide-react
 
 ## Development
 
@@ -52,7 +61,7 @@ npm run lint     # oxlint
 The site records anonymous usage counts to its own backend — no third-party
 script, no cookies, no persistent identifier, and therefore no consent banner.
 
-**Only counts are ever sent.** Each tracked action posts a single event *name* to
+**Only event names are sent automatically.** Each tracked action posts a single event *name* to
 `/api/track` and nothing else — no filenames, annotation text, image data, or even
 the event's own properties. The stronger guarantee is still enforced by the type
 system: `AnalyticsEventShape` restricts event properties to
@@ -63,6 +72,11 @@ system: `AnalyticsEventShape` restricts event properties to
 Tracking is disabled in development (the no-op tracker), and `/api/track` itself
 only accepts writes from the canonical host, so Netlify deploy previews cannot
 reach production counts even while running the same code.
+
+The Feedback button is an explicit exception controlled by the user. It submits
+the chosen category, message, and optional email address through Netlify Forms.
+It never includes document content. The static hidden declaration in `index.html`
+allows Netlify to detect the React-rendered form at deploy time.
 
 ## Public usage counters
 
@@ -94,7 +108,8 @@ eight, not per counter), so a fresh deployment does not advertise single digits.
 ## Deploying to Netlify
 
 `netlify.toml` is included. Build command `npm run build`, publish directory `dist`,
-functions directory `netlify/functions`.
+functions directory `netlify/functions`. Netlify Forms automatically provisions
+the form named `feedback` from the declaration in the built `index.html`.
 
 No environment variables are required. The counters run entirely on Netlify's free
 tier (Functions + Blobs); the `usage` store is created on the first write.

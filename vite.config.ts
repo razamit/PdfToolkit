@@ -12,4 +12,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    // The service worker reads this to precache every hashed app/worker chunk,
+    // including dynamic OCR and font chunks, without hard-coding Vite filenames.
+    manifest: 'vite-manifest.json',
+  },
 })

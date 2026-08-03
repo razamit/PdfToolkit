@@ -40,9 +40,7 @@ export function SourceLegend() {
 
   return (
     <section className="rounded-xl border bg-card p-3">
-      <h2 className="px-1 pb-2 text-xs font-medium text-muted-foreground">
-        {sources.length} {sources.length === 1 ? 'file' : 'files'}
-      </h2>
+      <h2 className="px-1 pb-2 text-xs font-medium text-muted-foreground">Sources</h2>
       <ul className="space-y-0.5">
         {sources.map((source) => (
           <SourceRow

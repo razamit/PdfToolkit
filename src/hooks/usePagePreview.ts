@@ -39,7 +39,7 @@ export function usePagePreview(page: PageDescriptor, targetWidthPx?: number | nu
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [renderedSize, setRenderedSize] = useState<RenderedSize | null>(null)
 
-  const { kind, sourceId, sourcePageIndex, rotation } = page
+  const { kind, sourceId, sourcePageIndex, rotation, width, height } = page
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -57,7 +57,9 @@ export function usePagePreview(page: PageDescriptor, targetWidthPx?: number | nu
             targetWidthPx,
             controller.signal,
           )
-        : renderImagePreview(canvas, imageManager, sourceId, rotation, controller.signal)
+        : kind === 'image'
+          ? renderImagePreview(canvas, imageManager, sourceId, rotation, controller.signal)
+          : Promise.resolve(renderBlankPreview(canvas, width, height, rotation, targetWidthPx))
 
     render
       .then((size) => {
@@ -66,7 +68,7 @@ export function usePagePreview(page: PageDescriptor, targetWidthPx?: number | nu
       .catch(() => {})
 
     return () => controller.abort()
-  }, [kind, sourceId, sourcePageIndex, rotation, targetWidthPx, thumbnailRenderer, imageManager])
+  }, [kind, sourceId, sourcePageIndex, rotation, width, height, targetWidthPx, thumbnailRenderer, imageManager])
 
   return { canvasRef, ready: renderedSize !== null, renderedSize }
 }
@@ -133,6 +135,29 @@ function drawRotatedImage(
     context.rotate((rotation * Math.PI) / 180)
     context.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight)
     context.restore()
+  }
+  return { width: canvas.width, height: canvas.height }
+}
+
+/** Paint a synthetic white page at the same resolution budget as a PDF preview. */
+function renderBlankPreview(
+  canvas: HTMLCanvasElement,
+  width: number,
+  height: number,
+  rotation: Rotation,
+  requestedWidthPx: number | null | undefined,
+): RenderedSize {
+  const sideways = rotation === 90 || rotation === 270
+  const displayedWidth = sideways ? height : width
+  const displayedHeight = sideways ? width : height
+  const dpr = Math.min(window.devicePixelRatio || 1, MAX_PREVIEW_DPR)
+  const scale = Math.max(0.1, (previewTargetWidthPx(requestedWidthPx) * dpr) / displayedWidth)
+  canvas.width = Math.max(1, Math.round(displayedWidth * scale))
+  canvas.height = Math.max(1, Math.round(displayedHeight * scale))
+  const context = canvas.getContext('2d')
+  if (context) {
+    context.fillStyle = '#ffffff'
+    context.fillRect(0, 0, canvas.width, canvas.height)
   }
   return { width: canvas.width, height: canvas.height }
 }

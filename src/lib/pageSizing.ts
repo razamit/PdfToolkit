@@ -22,6 +22,39 @@ const LETTER_EXTENT: PageExtent = { short: 612, long: 792 }
 /** Factors within 0.5% of 1 are treated as "already the right size". */
 const NEAR_ORIGINAL_TOLERANCE = 0.005
 
+export interface PageDimensions {
+  width: number
+  height: number
+}
+
+/** A4 portrait is the blank-page fallback when the working document has no paper-sized pages. */
+export const DEFAULT_BLANK_PAGE_SIZE: PageDimensions = {
+  width: A4_EXTENT.short,
+  height: A4_EXTENT.long,
+}
+
+/**
+ * Match a new blank to the most common non-image page box, preserving its
+ * orientation. Images are pixel-sized rather than paper-sized and would make a
+ * poor blank-page template; an image-only/empty document therefore gets A4.
+ */
+export function preferredBlankPageSize(pages: PageDescriptor[]): PageDimensions {
+  const counts = new Map<string, { size: PageDimensions; count: number }>()
+  for (const page of pages) {
+    if (page.kind === 'image') continue
+    const size = { width: page.width, height: page.height }
+    const key = `${Math.round(size.width)}x${Math.round(size.height)}`
+    const entry = counts.get(key) ?? { size, count: 0 }
+    entry.count += 1
+    counts.set(key, entry)
+  }
+  let preferred: { size: PageDimensions; count: number } | null = null
+  for (const entry of counts.values()) {
+    if (!preferred || entry.count > preferred.count) preferred = entry
+  }
+  return preferred?.size ?? DEFAULT_BLANK_PAGE_SIZE
+}
+
 export function pageExtent(page: Pick<PageDescriptor, 'width' | 'height'>): PageExtent {
   return {
     short: Math.min(page.width, page.height),

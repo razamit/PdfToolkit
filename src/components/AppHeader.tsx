@@ -1,16 +1,31 @@
-import { ShieldCheck } from 'lucide-react'
+import { useState } from 'react'
+import { MessageSquareText, ShieldCheck } from 'lucide-react'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { useCssHeightVariable } from '@/hooks/useCssHeightVariable'
 import { BulkActionBar } from './BulkActionBar'
 import { MachineMark } from './MachineMark'
 import { Toolbar } from './Toolbar'
+import { FeedbackDialog } from './feedback/FeedbackDialog'
 
 /** Sticky app header: brand, privacy badge, page summary, and the toolbar. */
 export function AppHeader() {
   const { pages } = usePdfToolkit()
   const hasPages = pages.length > 0
-  const sourceCount = new Set(pages.map((page) => page.sourceId)).size
+  const uploadedFileCount = new Set(
+    pages.filter((page) => page.kind !== 'blank').map((page) => page.sourceId),
+  ).size
+  const blankPageCount = pages.filter((page) => page.kind === 'blank').length
+  const documentSummary = [
+    `${pages.length} ${pages.length === 1 ? 'page' : 'pages'}`,
+    uploadedFileCount > 0
+      ? `${uploadedFileCount} ${uploadedFileCount === 1 ? 'file' : 'files'}`
+      : null,
+    blankPageCount > 0
+      ? `${blankPageCount} blank ${blankPageCount === 1 ? 'page' : 'pages'}`
+      : null,
+  ].filter(Boolean).join(' · ')
   const headerRef = useCssHeightVariable<HTMLElement>('--app-header-height')
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   return (
     <header
@@ -35,14 +50,22 @@ export function AppHeader() {
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {hasPages
-                  ? `${pages.length} ${pages.length === 1 ? 'page' : 'pages'} · ${sourceCount} ${
-                      sourceCount === 1 ? 'file' : 'files'
-                    } loaded`
+                  ? documentSummary
                   : 'Free PDF editor · nothing is uploaded'}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-label="Send feedback"
+              title="Send feedback"
+              onClick={() => setFeedbackOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <MessageSquareText className="size-3.5" />
+              <span className="hidden sm:inline">Feedback</span>
+            </button>
             <a
               href="https://rzailabs.com"
               target="_blank"
@@ -67,6 +90,7 @@ export function AppHeader() {
 
         <BulkActionBar />
       </div>
+      {feedbackOpen && <FeedbackDialog onClose={() => setFeedbackOpen(false)} />}
     </header>
   )
 }

@@ -1,48 +1,55 @@
-import { CheckCheck, FileDown, RotateCcw, RotateCw, Trash2, X } from 'lucide-react'
+import { CheckCheck, FileDown, RotateCcw, RotateCw, ScanText, Trash2, X } from 'lucide-react'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { Button } from './ui/button'
 import { ResizeMenu } from './ResizeMenu'
 
 /** Bulk actions for the current multi-select, shown as a row in the sticky header. */
 export function BulkActionBar() {
-  const { selection, rotatePages, removePages, exportPdf, pages } = usePdfToolkit()
-  if (selection.count === 0) return null
+  const { selection, rotatePages, removePages, exportPdf, ocrPages, isBusy, pages } = usePdfToolkit()
+  if (pages.length === 0) return null
 
   const ids = Array.from(selection.selectedIds)
+  const hasSelection = selection.count > 0
   const allSelected = selection.count === pages.length
 
   return (
     <div className="border-t pt-3">
       <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/40 px-3 py-2">
-        <span className="px-1 text-sm font-medium">{selection.count} selected</span>
+        <span className="min-w-24 px-1 text-sm font-medium">
+          {hasSelection ? `${selection.count} selected` : 'Nothing selected'}
+        </span>
         <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
-        <Button size="sm" variant="outline" onClick={() => rotatePages(ids, -90)}>
+        <Button size="sm" variant="outline" disabled={!hasSelection} onClick={() => rotatePages(ids, -90)}>
           <RotateCcw />
-          <span className="hidden sm:inline">Rotate left</span>
+          <span>Rotate left</span>
         </Button>
-        <Button size="sm" variant="outline" onClick={() => rotatePages(ids, 90)}>
+        <Button size="sm" variant="outline" disabled={!hasSelection} onClick={() => rotatePages(ids, 90)}>
           <RotateCw />
-          <span className="hidden sm:inline">Rotate right</span>
+          <span>Rotate right</span>
         </Button>
-        <ResizeMenu pageIds={ids} />
-        <Button size="sm" variant="outline" onClick={() => exportPdf('selected')}>
+        <ResizeMenu pageIds={ids} disabled={!hasSelection} />
+        <Button size="sm" variant="outline" disabled={!hasSelection || isBusy} onClick={() => void ocrPages(ids)}>
+          <ScanText />
+          <span>OCR locally</span>
+        </Button>
+        <Button size="sm" variant="outline" disabled={!hasSelection || isBusy} onClick={() => exportPdf('selected')}>
           <FileDown />
-          <span className="hidden sm:inline">Export selected</span>
+          <span>Export selected</span>
         </Button>
-        <Button size="sm" variant="destructive" onClick={() => removePages(ids)}>
+        <Button size="sm" variant="destructive" disabled={!hasSelection} onClick={() => removePages(ids)}>
           <Trash2 />
-          <span className="hidden sm:inline">Delete</span>
+          <span>Delete</span>
         </Button>
         <span className="mx-1 ml-auto hidden h-5 w-px bg-border sm:block" />
         {!allSelected && (
           <Button size="sm" variant="ghost" onClick={selection.selectAll}>
             <CheckCheck />
-            <span className="hidden sm:inline">Select all</span>
+            <span>Select all</span>
           </Button>
         )}
-        <Button size="sm" variant="ghost" onClick={selection.clear}>
+        <Button size="sm" variant="ghost" disabled={!hasSelection} onClick={selection.clear}>
           <X />
-          <span className="hidden sm:inline">Clear</span>
+          <span>Clear</span>
         </Button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { usePagePreview, type RenderedSize } from '@/hooks/usePagePreview'
 import { useElementSize } from '@/hooks/useElementSize'
 import { fitBoxWithin } from '@/lib/signatureGeometry'
 import { cn } from '@/lib/utils'
+import { cropRectForFrame } from '@/lib/cropGeometry'
 import type { PageDescriptor } from '@/domain/types'
 
 export interface PreviewSurfaceContext {
@@ -50,11 +51,18 @@ export function PreviewSurface({
     onRenderedSizeChange?.(renderedSize)
   }, [renderedSize, onRenderedSizeChange])
 
+  const cropRect = cropRectForFrame(page.crop, page.rotation)
+  const visibleAspect = renderedSize
+    ? (renderedSize.width * cropRect.width) / (renderedSize.height * cropRect.height)
+    : null
   const base =
     renderedSize && areaSize
-      ? fitBoxWithin(areaSize, renderedSize.width / renderedSize.height)
+      ? fitBoxWithin(areaSize, visibleAspect ?? renderedSize.width / renderedSize.height)
       : null
-  const fitted = base ? { width: base.width * zoom, height: base.height * zoom } : null
+  const visibleFitted = base ? { width: base.width * zoom, height: base.height * zoom } : null
+  const fullFitted = visibleFitted
+    ? { width: visibleFitted.width / cropRect.width, height: visibleFitted.height / cropRect.height }
+    : null
 
   return (
     <div
@@ -71,14 +79,28 @@ export function PreviewSurface({
       {!ready && <Loader2 className="absolute size-6 animate-spin text-muted-foreground" />}
       <div
         className={cn(
-          'relative shrink-0 transition-opacity',
-          ready && fitted ? 'opacity-100' : 'opacity-0',
+          'relative shrink-0 overflow-hidden transition-opacity',
+          ready && visibleFitted ? 'opacity-100' : 'opacity-0',
           zoom > 1 && 'm-auto',
         )}
-        style={fitted ?? { width: '60%', height: '60%' }}
+        style={visibleFitted ?? { width: '60%', height: '60%' }}
       >
-        <canvas ref={canvasRef} className="size-full bg-white shadow-sm" />
-        {renderedSize && fitted && children({ renderedSize, fittedSize: fitted })}
+        <div
+          className="absolute bg-white shadow-sm"
+          style={
+            fullFitted
+              ? {
+                  width: fullFitted.width,
+                  height: fullFitted.height,
+                  left: -cropRect.x * fullFitted.width,
+                  top: -cropRect.y * fullFitted.height,
+                }
+              : undefined
+          }
+        >
+          <canvas ref={canvasRef} className="size-full" />
+          {renderedSize && fullFitted && children({ renderedSize, fittedSize: fullFitted })}
+        </div>
       </div>
     </div>
   )

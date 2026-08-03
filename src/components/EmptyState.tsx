@@ -1,12 +1,13 @@
-import { FileUp, ImageUp } from 'lucide-react'
+import { FilePlus2, FileUp, ImageUp } from 'lucide-react'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
 import { FileInputButton } from './FileInputButton'
 import { MachineMark } from './MachineMark'
 import { UsageCounters } from './usage/UsageCounters'
+import { Button } from './ui/button'
 
 /** Initial screen / drop target shown when no pages are loaded. */
 export function EmptyState() {
-  const { addFiles, isBusy } = usePdfToolkit()
+  const { addFiles, addBlankPage, isBusy } = usePdfToolkit()
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-card/50 px-6 py-16 text-center">
@@ -30,6 +31,10 @@ export function EmptyState() {
           <ImageUp />
           Add images
         </FileInputButton>
+        <Button variant="outline" onClick={addBlankPage} disabled={isBusy}>
+          <FilePlus2 />
+          Add blank page
+        </Button>
       </div>
       <p className="mt-6 text-xs text-muted-foreground">Supports PDF, JPEG, and PNG</p>
 

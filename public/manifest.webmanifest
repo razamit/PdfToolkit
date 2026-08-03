@@ -1,0 +1,18 @@
+{
+  "name": "Free PDF Machine",
+  "short_name": "PDF Machine",
+  "description": "Private, local PDF editing with no uploads.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -39,7 +39,8 @@ export function stampTextAnnotation(
     color: rgb(r, g, b),
     rotateDegrees: anchor.rotateDegrees,
     boxWidthPt: displayedRectWidthPt(placement.rect, totalRotation, page.getCropBox()),
-    rightAlign: baseDirection === 'rtl',
+    alignment: placement.textAlign ?? (baseDirection === 'rtl' ? 'right' : 'left'),
+    opacity: placement.opacity,
   }
 
   const radians = (anchor.rotateDegrees * Math.PI) / 180
@@ -63,7 +64,8 @@ interface LineDrawContext {
   rotateDegrees: number
   /** Alignment span for RTL lines: the drawn box's width in points. */
   boxWidthPt: number
-  rightAlign: boolean
+  alignment: 'left' | 'center' | 'right'
+  opacity?: number
 }
 
 /** Draw one line's runs sequentially along the (possibly rotated) baseline. */
@@ -73,13 +75,18 @@ function drawTextLine(
   origin: { x: number; y: number },
   context: LineDrawContext,
 ): void {
-  const { font, sizePt, color, rotateDegrees, boxWidthPt, rightAlign } = context
+  const { font, sizePt, color, rotateDegrees, boxWidthPt, alignment, opacity } = context
   const runWidths = runs.map((run) => font.widthOfTextAtSize(run, sizePt))
   const lineWidth = runWidths.reduce((sum, width) => sum + width, 0)
   const radians = (rotateDegrees * Math.PI) / 180
   const advance = { x: Math.cos(radians), y: Math.sin(radians) }
 
-  let offset = rightAlign ? Math.max(0, boxWidthPt - lineWidth) : 0
+  let offset =
+    alignment === 'right'
+      ? Math.max(0, boxWidthPt - lineWidth)
+      : alignment === 'center'
+        ? Math.max(0, (boxWidthPt - lineWidth) / 2)
+        : 0
   runs.forEach((run, index) => {
     page.drawText(run, {
       x: origin.x + advance.x * offset,
@@ -88,6 +95,7 @@ function drawTextLine(
       size: sizePt,
       color,
       rotate: degrees(rotateDegrees),
+      opacity,
     })
     offset += runWidths[index]
   })

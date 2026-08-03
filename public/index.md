@@ -1,13 +1,14 @@
 # Free PDF Machine
 
-**Free PDF editor that runs entirely in your browser.** Merge, reorder, rotate,
-resize, sign and annotate PDFs, then export with no quality loss. Your files are
-never uploaded to a server, and there is no signup, no account and no cost.
+**Private PDF editor that runs entirely in your browser.** Merge, crop and split
+PDFs, fill forms, add page numbers and watermarks, and run English OCR locally.
+Document content is never uploaded, and there is no signup, account or cost.
 
 Open it at [freepdfmachine.com](https://freepdfmachine.com/), pick your files, and
-start working. There is no upload step and nothing to install.
+start working. There is no upload step, and you can optionally install the app for
+offline use after the first online visit.
 
-- **Free.** No paid tier, no trial, no watermark, no page limit.
+- **Free.** No paid tier, no trial, no product-added watermark, no page limit.
 - **Private.** Files are opened and edited inside your browser tab and never sent
   anywhere. There is no server to store them.
 - **No signup.** No email, no account, no login screen.
@@ -21,11 +22,17 @@ Accepts PDF, JPEG and PNG. Exports a single PDF.
 | | |
 |---|---|
 | **Merge** | Combine any number of PDFs and images into one document. Each page's border is colour-coded by the file it came from. |
+| **Add blank pages** | Start with an A4 page or append one matching the document's prevailing paper size, then edit and reorder it like any other page. |
 | **Reorder** | Drag pages into any order, freely across source files. |
 | **Rotate and delete** | In 90 degree steps, one page at a time or many at once. |
 | **Resize** | A4, US Letter, the document's own dominant page size, or leave originals untouched. |
 | **Sign** | Draw a signature, place it, move and resize it. Drawn signatures are reusable for the rest of the session. |
 | **Annotate** | Text boxes in seven sizes and four colours, placed images, text highlighting, and a free-hand highlighter that works on scanned pages too. |
+| **Undo and split** | Undo or redo up to 100 page edits, and split ranges into separate PDFs in one ZIP. |
+| **Crop and stamp** | Crop one, selected or all pages, then add page numbers and watermarks during export. |
+| **Fill forms** | Fill supported standard AcroForm fields and flatten the values into the exported PDF. |
+| **Local OCR** | Recognize English text on selected pages on-device and add an invisible searchable text layer. |
+| **Offline app** | Install or revisit after the first online load to start, edit and export without a connection. OCR needs one online use to cache its model. |
 | **Export** | The whole document, or only the pages you selected. |
 
 ## How the privacy claim works
@@ -33,14 +40,19 @@ Accepts PDF, JPEG and PNG. Exports a single PDF.
 There is no upload endpoint. The page reads your file into memory using the
 browser's own file APIs, every edit happens in the tab, and the exported PDF is
 assembled in the browser and saved straight back to your device. Nothing is
-transmitted, so there is nothing for anyone to store, read or leak. It is not a
-retention policy that could change later; there is no data.
+transmitted, so there is no remote document copy for anyone to store, read or
+leak.
 
 The site does count how often each action is used, and only that. Each tracked
 action sends one event name from a fixed list of eight, and nothing else: no
 filenames, no annotation text, no image data. There is no third-party analytics
 script, no cookie and no persistent identifier. The lifetime totals are shown
 publicly on the page under "The machine so far".
+
+The optional feedback form is separate: it sends only the category, message and
+optional email you deliberately submit to Netlify Forms. It never includes
+document content. Working documents are not persisted between visits; only the
+offline application shell and, after first use, OCR model data may be cached.
 
 ## How the quality guarantee works
 
@@ -60,19 +72,21 @@ and hand back a download link. That means your file sits on someone else's
 infrastructure under their retention window and access controls, and the free tier
 is usually gated by an email signup, a daily quota, or a watermark.
 
-Free PDF Machine never uploads the file, asks for nothing, and adds no watermark.
+Free PDF Machine never uploads the file, asks for nothing, and adds no branding
+watermark. A batch watermark appears only when the user configures one.
 
 The trade-offs, stated fairly: everything runs on your own hardware, so very large
-documents are bounded by your device's memory. There is no OCR, no PDF form
-filling, no compression targeting a smaller file size, and no collaboration or
-cloud storage. Nothing is kept between sessions. If you need any of those, use a
-different tool.
+documents are bounded by your device's memory. OCR is English-only, form filling
+supports standard AcroForms but not XFA, and there is no compression targeting a
+smaller file size, collaboration or cloud storage. Nothing is kept between
+sessions.
 
 ## Questions
 
 **Is Free PDF Machine really free?**
-Yes, completely. There is no paid tier, no trial, no watermark, no page limit, and
-no feature reserved for a premium plan. The price is 0 USD.
+Yes, completely. There is no paid tier, no trial, no product-added watermark, no
+page limit, and no feature reserved for a premium plan. A batch watermark is
+added only if you choose one. The price is 0 USD.
 
 **Do my PDF files get uploaded anywhere?**
 No. Files are opened and edited inside your own browser tab and are never sent to
@@ -84,17 +98,17 @@ No. There is no account system at all. The consequence is that nothing is saved
 between visits, so download your exported PDF before closing the tab.
 
 **What can it do to a PDF?**
-Merge several PDFs and images into one document, reorder pages by dragging them,
-rotate in 90 degree steps, delete pages, resize to A4, US Letter or the document's
-dominant size, add a hand-drawn signature, add text boxes, place images, highlight
-selected text, and draw free-hand highlighter marks over any page including
-scanned ones. Multi-select acts on many pages at once, and you can export either
-the whole document or just the pages you selected.
+Merge PDFs and images; insert editable blank pages; reorder, rotate, delete,
+resize and crop pages; undo and redo page edits; split ranges into a ZIP; add signatures, annotations, page
+numbers and watermarks; fill and flatten supported AcroForm fields; and run
+English OCR locally on selected scanned pages. Export the whole document or only
+selected pages.
 
 **Does it work offline?**
-Partly. The page has to load over the internet at least once. After that the
-editing work is fully local, so if your connection drops mid-session you can still
-finish and export your document.
+Yes, after the first online visit. Install it or revisit it after the offline
+cache has been prepared and the editor can load without a connection. PDF editing
+and export stay local. OCR's English model must be used online once before that
+model is available offline.
 
 **Does editing reduce the quality of my PDF?**
 No. The export is rebuilt from the original bytes of the file you opened, so text
@@ -115,4 +129,4 @@ consulting and software development practice in Haifa, Israel.
 - Source: https://github.com/razamit/PdfToolkit
 - Contact: amit@rzailabs.com
 
-Last verified: 2026-07-23
+Last verified: 2026-08-03

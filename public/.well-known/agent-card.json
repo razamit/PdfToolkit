@@ -1,10 +1,10 @@
 {
   "name": "Free PDF Machine",
-  "description": "Free PDF editor that runs entirely in the user's web browser. Merges, reorders, rotates, resizes, signs and annotates PDFs and images, then exports a new PDF with no quality loss. Files are never uploaded to a server, and there is no signup, no account and no cost.",
+  "description": "Private PDF editor that runs entirely in the user's browser. Merges PDFs, inserts editable blank pages, crops and splits, fills forms, adds page numbers and watermarks, and runs English OCR locally.",
   "url": "https://freepdfmachine.com/",
   "iconUrl": "https://freepdfmachine.com/favicon.svg",
   "documentationUrl": "https://freepdfmachine.com/llms.txt",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "provider": {
     "organization": "RZ AI Labs",
     "url": "https://rzailabs.com/"
@@ -45,9 +45,10 @@
     {
       "id": "organize-pages",
       "name": "Reorder, rotate, delete and resize pages",
-      "description": "Drag pages into any order across source files, rotate in 90 degree steps, delete pages, and resize to A4, US Letter, the document's dominant page size, or leave originals untouched. Multi-select applies an action to many pages at once.",
-      "tags": ["pdf", "reorder", "rotate", "delete", "resize", "page-size"],
+      "description": "Insert editable blank pages, drag pages into any order across sources, rotate in 90 degree steps, delete pages, and resize to A4, US Letter, the document's dominant page size, or leave originals untouched. Multi-select applies an action to many pages at once.",
+      "tags": ["pdf", "blank-page", "reorder", "rotate", "delete", "resize", "page-size"],
       "examples": [
+        "Add a clean page to this PDF for a note and signature",
         "Rotate the sideways pages in my scan",
         "Delete pages 4 to 7 and reorder the rest"
       ]
@@ -81,6 +82,36 @@
         "Export only the pages I selected",
         "Combine scans without degrading them"
       ]
+    },
+    {
+      "id": "split-crop-stamp",
+      "name": "Split, crop and batch-stamp PDFs",
+      "description": "Splits page ranges into a ZIP, crops one or many pages, and adds configurable page numbers and watermarks during export. Page edits support up to 100 undo and redo states.",
+      "tags": ["pdf", "split", "crop", "page-numbers", "watermark", "undo"],
+      "examples": [
+        "Split pages 1-4 and 10-end into separate PDFs",
+        "Crop every page and add Page N of M"
+      ]
+    },
+    {
+      "id": "fill-pdf-forms",
+      "name": "Fill standard PDF forms",
+      "description": "Fills supported AcroForm text fields, checkboxes, radio buttons and dropdowns locally, then flattens the values into the exported PDF. XFA is not supported.",
+      "tags": ["pdf", "forms", "acroform", "fill", "flatten"],
+      "examples": [
+        "Fill this application form without uploading it",
+        "Flatten completed fields into the exported PDF"
+      ]
+    },
+    {
+      "id": "ocr-pdf-locally",
+      "name": "Make scanned PDFs searchable locally",
+      "description": "Runs English OCR on selected pages on the user's device and adds an invisible searchable text layer. The model is lazily downloaded and can be reused offline.",
+      "tags": ["pdf", "ocr", "searchable", "scan", "offline"],
+      "examples": [
+        "Make these scanned pages searchable",
+        "OCR selected English pages without uploading them"
+      ]
     }
   ],
   "privacy": {
@@ -88,8 +119,8 @@
     "accountRequired": false,
     "cookies": false,
     "thirdPartyAnalytics": false,
-    "dataRetained": "none",
-    "note": "All file processing happens in the user's browser. The site records only anonymous aggregate counts of which of eight actions were used, sending nothing but the event name, and stores nothing on the device."
+    "dataRetained": "No document data. User-submitted feedback is handled by Netlify Forms.",
+    "note": "All document processing happens in the user's browser. Usage analytics send only one fixed event name. The optional feedback form sends only the category, message and optional email the user deliberately submits; it never includes document content."
   },
   "pricing": {
     "price": "0",
@@ -102,5 +133,5 @@
     "https://rzailabs.com/blog/free-pdf-editor-claude-code",
     "https://github.com/razamit/PdfToolkit"
   ],
-  "lastVerified": "2026-07-23"
+  "lastVerified": "2026-08-03"
 }

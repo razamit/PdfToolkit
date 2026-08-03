@@ -78,6 +78,19 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# The browser must revalidate these two PWA control files on every visit. The
+# worker itself versions and retires application caches after it sees a change.
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json; charset=utf-8"
+    Cache-Control = "no-cache"
+
 # The bundled annotation font is NOT content-hashed, so it cannot be immutable:
 # a future font swap at the same path has to be able to propagate. Thirty days
 # is long enough to stop the repeat fetches and short enough to recover.

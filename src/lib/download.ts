@@ -1,10 +1,17 @@
 /** Trigger a browser download of the given PDF bytes. */
 export function downloadPdf(bytes: Uint8Array, filename: string): void {
-  const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' })
+  downloadBlob(
+    new Blob([bytes as BlobPart], { type: 'application/pdf' }),
+    filename.endsWith('.pdf') ? filename : `${filename}.pdf`,
+  )
+}
+
+/** Trigger a browser download for any generated client-side artifact. */
+export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = filename.endsWith('.pdf') ? filename : `${filename}.pdf`
+  anchor.download = filename
   document.body.appendChild(anchor)
   anchor.click()
   anchor.remove()

@@ -164,6 +164,8 @@ function PlacedText({
             fontSize: fontSizePx,
             lineHeight: TEXT_LINE_HEIGHT_EM,
             color: annotation.colorHex,
+            opacity: annotation.opacity,
+            textAlign: annotation.textAlign,
           }}
         >
           {annotation.text}

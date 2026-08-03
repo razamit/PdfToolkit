@@ -94,12 +94,16 @@ function PageThumbnailComponent({
       <div className="flex items-center justify-between gap-2 border-t px-2.5 py-1.5">
         <span className="text-xs font-medium text-foreground">{index + 1}</span>
         <span className="truncate text-[11px] text-muted-foreground">
-          {page.kind === 'image' ? 'Image' : 'PDF page'}
+          {page.kind === 'image' ? 'Image' : page.kind === 'blank' ? 'Blank page' : 'PDF page'}
           {page.exportScale !== undefined && (
             <span title="Scaled to this size at export">
               {' · '}
               {Math.round(page.exportScale * 100)}%
             </span>
+          )}
+          {page.crop && <span title="Cropped at export"> · Cropped</span>}
+          {page.ocrWords && page.ocrWords.length > 0 && (
+            <span title={`${page.ocrWords.length} searchable OCR words`}> · OCR</span>
           )}
         </span>
       </div>
@@ -142,6 +146,7 @@ function PageThumbnailContent({
   targetWidthPx: number
 }) {
   if (page.kind === 'image') return <ImageThumbnail page={page} />
+  if (page.kind === 'blank') return <BlankThumbnail page={page} />
   return <PdfThumbnail page={page} targetWidthPx={targetWidthPx} />
 }
 
@@ -206,6 +211,39 @@ function ImageThumbnail({ page }: { page: PageDescriptor }) {
           style={{ ...fitted, transform: `rotate(${page.rotation}deg)` }}
         >
           <img src={url} alt="" draggable={false} className="size-full bg-white shadow-sm" />
+          {page.signatures && page.signatures.length > 0 && (
+            <SignatureOverlay signatures={page.signatures} frameRotation={0} />
+          )}
+          {page.annotations && page.annotations.length > 0 && (
+            <AnnotationOverlay
+              annotations={page.annotations}
+              frameRotation={0}
+              pageSize={{ width: page.width, height: page.height }}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BlankThumbnail({ page }: { page: PageDescriptor }) {
+  const { ref: areaRef, size: areaSize } = useElementSize<HTMLDivElement>()
+  const sideways = page.rotation === 90 || page.rotation === 270
+  const fitted = areaSize
+    ? fitBoxWithin(
+        sideways ? { width: areaSize.height, height: areaSize.width } : areaSize,
+        page.width / page.height,
+      )
+    : null
+
+  return (
+    <div ref={areaRef} className="flex size-full items-center justify-center">
+      {fitted && (
+        <div
+          className="relative bg-white shadow-sm transition-transform"
+          style={{ ...fitted, transform: `rotate(${page.rotation}deg)` }}
+        >
           {page.signatures && page.signatures.length > 0 && (
             <SignatureOverlay signatures={page.signatures} frameRotation={0} />
           )}

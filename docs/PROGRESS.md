@@ -6,6 +6,143 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-08-03 — Made the multi-page action row persistent and added first-class
+blank pages (offline, code + discovery surfaces + browser QA). ✅ DONE.** The
+bulk row now renders whenever the working document has pages, displays “Nothing
+selected” in the count position, leaves Select all usable, and visibly disables
+Rotate, Resize, OCR, selected export, Delete and Clear until a selection exists.
+All action labels remain visible at mobile widths. “Add blank page” is available
+in both the empty state and loaded-document toolbar; it appends a synthetic page
+matching the document's prevailing non-image paper size, or A4 portrait when no
+paper-sized page exists. Blank pages have their own source identity without
+being counted as uploaded files, support the ordinary editor, annotations,
+rotation, crop, resize, selection and undo/redo paths, skip needless OCR model
+loading, and become real pages during PDF export. Public feature descriptions
+now disclose the capability. **Proof:** `npm run build` green (448 modules;
+existing >500 kB warning only); `npm run lint` green with the same four
+pre-existing warnings; `git diff --check` clean; agent-card JSON and homepage
+JSON-LD parse, and all seven visible FAQ answers exactly match their structured
+counterparts. Browser QA created an A4 blank from the empty state, added the text
+“Blank page works,” and extracted that text from a one-page exported PDF; adding
+a blank to a four-page 612×792 fixture produced “5 pages · 1 file · 1 blank
+page,” a five-page export whose last page was also 612×792, and Undo/Redo changed
+the document 5→4→5. At 390px all eight bulk labels remained visible, empty-state
+actions were disabled as intended, and document width did not overflow.
+Screenshots and exported QA PDFs are under `/private/tmp/pdf-toolkit-qa/`.
+**Files:** `src/domain/types.ts`, `src/lib/pageSizing.ts`,
+`src/coordinator/{toolkitContext,PdfToolkitCoordinator}.tsx`,
+`src/managers/{PdfExportManager,OcrManager}.ts`,
+`src/hooks/usePagePreview.ts`,
+`src/components/{AppHeader,BulkActionBar,EmptyState,PageThumbnail,ResizeMenu,SourceLegend,Toolbar}.tsx`,
+`README.md`, `index.html`,
+`public/{index.md,llms.txt,llms-full.txt,.well-known/agent-card.json}`,
+`docs/{PROGRESS,DECISIONS}.md`, and
+`docs/tickets/{blank-page-creation-is-missing,ocr-action-is-hidden-until-a-page-is-selected}.md`.
+Cross-ref: decision row 31; both named tickets closed. Not committed or deployed
+(not requested).
+
+---
+
+**2026-08-03 — Audited the reported missing controls and separated one absent
+feature from three environment/discoverability behaviors (diagnosis + tickets;
+no application code). ✅ DONE.** Blank-page creation is genuinely unimplemented:
+repository search returned no operation or control and the loaded-document
+toolbar exposed none, so `blank-page-creation-is-missing.md` records the expected
+feature gap. Metrics are healthy in production: the live `/api/usage` returned
+200 JSON with totals (including 762 pages removed and 204 files added), and
+browser measurement found “The machine so far” within the initial viewport;
+plain Vite dev intentionally receives HTML from `/api/usage`, fails the JSON
+read and reserves blank space instead. OCR is selection-scoped: it was absent
+after a four-page fixture loaded and appeared as “OCR locally” immediately after
+selecting page one; its discoverability gap is now
+`ocr-action-is-hidden-until-a-page-is-selected.md`. PWA behavior is likewise
+production-only: dev had a manifest but no registration, while the production
+preview reported an active controller/registration and current cache
+`free-pdf-machine-2026-08-03-3`; the old implementation ticket is closed and the
+lack of an in-app install affordance continues in
+`pwa-install-affordance-is-not-visible.md`. The production preview was left
+running at `127.0.0.1:4173` for user testing. **Files:** added the three tickets
+above; updated `docs/tickets/no-pwa-manifest-or-offline-support.md` and
+`docs/PROGRESS.md`. No build/lint run because this turn changed documentation
+only; the preceding code unit's green proof remains unchanged.
+
+---
+
+**2026-08-03 — Centered every new feature/feedback popup in the viewport and
+kept long dialogs internally scrollable instead of clipped (offline, shared UI
+fix + browser QA). ✅ DONE.** The shared `Modal` already used flex centering, but
+it was mounted below `AppHeader`; that sticky header's `backdrop-filter` created
+a containing block for `position: fixed`, so the overlay was fixed to the short
+header area rather than the viewport and appeared at the top/cropped. `Modal`
+now portals its overlay to `document.body` and gives the viewport overlay
+vertical overflow handling, while the panel retains its `90dvh` maximum and
+internal scroll. Smart Split, Page Numbers & Watermark, Crop, Forms and Feedback
+all consume this one component, so one change covers all five. **Proof:** `npm
+run build` green; `npm run lint` green with the same four pre-existing warnings.
+`agent-browser` measured the feedback dialog at 1440×900 with vertical center
+delta exactly `0px` and `parent=BODY`; at a deliberately short 390×500 viewport
+it measured `top=25`, `bottom=475`, `height=450`, center delta `0px`, fully
+visible `true`, and internal scrolling `true`. Screenshots:
+`/private/tmp/pdf-toolkit-qa/screenshots/modal-centered-{desktop,mobile}.png`.
+**Files:** `src/components/ui/Modal.tsx`, `docs/PROGRESS.md`. No decision row:
+this restores the already-intended centering behavior rather than establishing a
+new product choice. Not committed or deployed (not requested).
+
+---
+
+**2026-08-03 — Shipped the seven requested PDF workflows—smart split, document
+undo/redo, batch page numbers/watermarks, crop, installable offline PWA,
+AcroForm filling, and on-device OCR—plus a Netlify Forms feedback dialog; synced
+the complete public spec (offline, code + docs). ✅ DONE.** Page mutations now
+keep 100 undo/redo snapshots and source handles survive until Reset; the split
+parser accepts comma groups, `end`, reverse ranges, odd/even and selected pages,
+then emits one extracted PDF or one PDF per group in a ZIP. Export-only stamps
+add page numbers and an opacity-controlled watermark; percentage margins become
+real PDF CropBoxes without rasterizing. Supported standard AcroForm controls are
+read locally, applied to pristine source clones, given embedded-font appearances
+and flattened before page copy. Tesseract.js lazily performs sequential English
+OCR on selected pages and exports invisible word-positioned searchable text.
+The PWA precaches Vite's hashed graph, fonts and pdf.js decoders; an offline QA
+failure caused by `Vary: Origin` was found, documented, fixed with same-origin
+`ignoreVary` matching, and re-tested server-off. The Feedback button uses a
+React dialog over a hidden build-time Netlify form declaration and POSTs only
+the category, message and optional email the user deliberately submits. Public
+privacy copy now states that exception while continuing to guarantee that no
+document content is sent. **Proof:** `npm run build` green (447 modules; OCR
+split into lazy 8.76/17.24 kB chunks; existing >500 kB bundle warning remains);
+`npm run lint` green with the same four pre-existing warnings; `npm audit
+--omit=dev` reports 0 vulnerabilities after non-breaking transitive fixes;
+`git diff --check` clean; agent-card JSON and homepage JSON-LD parse; a scripted
+check confirms all seven visible FAQ answers exactly match JSON-LD. Browser QA
+on a generated four-page PDF verified delete/Undo/Redo state counts, range error
+handling, a two-entry split ZIP, three detected/form-filled field kinds, 5% crop,
+watermark and `Page N of 4` on all pages, flattened forms (zero fields), and
+searchable OCR text. A stopped production server then reloaded the full cached
+editor; mobile 390×844 had no horizontal overflow and the feedback control has
+an accessible name. The feedback submission was intercepted as a URL-encoded
+POST to `/` returning 200 and showed “Thanks—your feedback was sent.” Temporary
+QA evidence lives under `/private/tmp/pdf-toolkit-qa/`, including the resolved
+dogfood report and screenshots. **Files:** added
+`public/{manifest.webmanifest,service-worker.js}`,
+`src/components/feedback/FeedbackDialog.tsx`,
+`src/components/tools/{SmartSplitDialog,DecorationsDialog,CropDialog,FormFillingDialog}.tsx`,
+`src/components/ui/Modal.tsx`,
+`src/lib/{pageRanges,cropGeometry,exportDecorationDefaults,exportDecorations}.ts`,
+and `src/managers/OcrManager.ts`; edited `README.md`, `index.html`,
+`netlify.toml`, `package.json`, `package-lock.json`,
+`public/{index.md,llms.txt,llms-full.txt,sitemap.xml,.well-known/agent-card.json}`,
+`vite.config.ts`, `src/main.tsx`,
+`src/domain/types.ts`, `src/lib/download.ts`,
+`src/coordinator/toolkitContext.ts`, `src/coordinator/PdfToolkitCoordinator.tsx`,
+`src/managers/{PageListManager,PdfExportManager,PdfSourceManager}.ts`,
+`src/managers/annotation/TextStamper.ts`,
+`src/components/{AppHeader,BulkActionBar,PageThumbnail,Toolbar}.tsx`,
+`src/components/annotations/{AnnotationOverlay,PreviewSurface}.tsx`, and
+`docs/{PROGRESS,DECISIONS}.md`. Cross-refs: decision rows 28–30. Not committed
+or deployed (not requested).
+
+---
+
 **2026-08-03 — Ported and enabled the existing Devlog workflow for Codex while
 sharing the repository's current history (personal plugin + repo wiring; docs
 only, no code change). ✅ DONE.** Identified the Claude integration as the local

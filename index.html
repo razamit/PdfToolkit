@@ -8,7 +8,7 @@
     <title>Free PDF Editor: Edit PDFs Without Uploading | Free PDF Machine</title>
     <meta
       name="description"
-      content="Free PDF editor that runs entirely in your browser. Merge, reorder, rotate, sign and annotate PDFs with no quality loss. No upload, no signup, no cost."
+      content="Private PDF editor to merge, create, crop and split pages, fill forms, run local OCR and add page numbers or watermarks. No uploads, signup or cost."
     />
     <link rel="canonical" href="https://freepdfmachine.com/" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
@@ -19,7 +19,7 @@
     <meta property="og:title" content="Free PDF Editor: Edit PDFs Without Uploading" />
     <meta
       property="og:description"
-      content="Free PDF editor that runs entirely in your browser. Merge, reorder, rotate, sign and annotate PDFs with no quality loss. No upload, no signup, no cost."
+      content="Private PDF editor to merge, create, crop and split pages, fill forms, run local OCR and add page numbers or watermarks. No uploads, signup or cost."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://freepdfmachine.com/" />
@@ -37,7 +37,7 @@
     <meta name="twitter:title" content="Free PDF Editor: Edit PDFs Without Uploading" />
     <meta
       name="twitter:description"
-      content="Free PDF editor that runs entirely in your browser. Merge, reorder, rotate, sign and annotate PDFs with no quality loss. No upload, no signup, no cost."
+      content="Private PDF editor to merge, create, crop and split pages, fill forms, run local OCR and add page numbers or watermarks. No uploads, signup or cost."
     />
     <meta name="twitter:image" content="https://freepdfmachine.com/og-image.png" />
     <meta
@@ -52,6 +52,8 @@
       rel="stylesheet"
     />
     <link rel="preload" href="/fonts/LiberationSans-Regular.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#4f46e5" />
 
     <!--
       Structured data. One @graph so the nodes cross-reference by @id instead of
@@ -78,7 +80,7 @@
             "name": "Free PDF Machine",
             "alternateName": "Free PDF Editor",
             "url": "https://freepdfmachine.com/",
-            "description": "Free PDF editor that runs entirely in your browser. Merge, reorder, rotate, resize, sign and annotate PDFs, then export with no quality loss. Files are never uploaded to a server, and there is no signup, no account and no cost.",
+            "description": "Private PDF editor that runs entirely in your browser. Merge PDFs, insert blank pages, organize, crop, split, sign, annotate, fill forms and run OCR locally without uploading document content.",
             "applicationCategory": "UtilitiesApplication",
             "applicationSubCategory": "PDF Editor",
             "operatingSystem": "Any, runs in a web browser",
@@ -96,12 +98,20 @@
             },
             "featureList": [
               "Merge multiple PDFs and images into one document",
+              "Insert editable blank pages that match the document's paper size",
               "Reorder pages by drag and drop across source files",
               "Rotate and delete pages, individually or in bulk",
               "Resize pages to A4, US Letter or the document's dominant page size",
               "Draw and place a signature, reusable across pages in the session",
               "Add text, image and highlight annotations",
               "Free-hand highlighter that works on scanned and image pages",
+              "Undo and redo up to 100 page-edit states",
+              "Split page ranges into separate PDFs in a ZIP file",
+              "Add page numbers and watermarks to many pages at export",
+              "Crop one page, selected pages or every page",
+              "Fill and flatten supported AcroForm fields",
+              "Run English OCR locally and add searchable text to selected pages",
+              "Install as an offline-capable web app",
               "Export the whole document or only the selected pages",
               "Lossless export that preserves original resolution and quality"
             ],
@@ -134,13 +144,13 @@
             "@id": "https://freepdfmachine.com/#webpage",
             "url": "https://freepdfmachine.com/",
             "name": "Free PDF Editor: Edit PDFs Without Uploading | Free PDF Machine",
-            "description": "Free PDF editor that runs entirely in your browser. Merge, reorder, rotate, sign and annotate PDFs with no quality loss. No upload, no signup, no cost.",
+            "description": "Private PDF editor to merge, create, crop and split pages, fill forms, run local OCR and add page numbers or watermarks. No uploads, signup or cost.",
             "isPartOf": { "@id": "https://freepdfmachine.com/#website" },
             "about": { "@id": "https://freepdfmachine.com/#app" },
             "primaryImageOfPage": "https://freepdfmachine.com/og-image.png",
             "inLanguage": "en",
             "datePublished": "2026-06-29",
-            "dateModified": "2026-07-23",
+            "dateModified": "2026-08-03",
             "author": { "@id": "https://rzailabs.com/#amitraz" },
             "speakable": {
               "@type": "SpeakableSpecification",
@@ -159,7 +169,7 @@
                 "name": "Is Free PDF Machine really free?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Yes, completely. There is no paid tier, no trial period, no watermark on the exported PDF, no page or file-size limit imposed by the product, and no feature reserved for a premium plan. It does not ask for a credit card and there is nothing to cancel. The price is 0 USD and the whole tool is available to everyone who opens the page."
+                  "text": "Yes, completely. There is no paid tier, no trial period, no product-added watermark, no page or file-size limit imposed by the product, and no feature reserved for a premium plan. A batch watermark is added only if you choose one. It does not ask for a credit card and there is nothing to cancel. The price is 0 USD and the whole tool is available to everyone who opens the page."
                 }
               },
               {
@@ -167,7 +177,7 @@
                 "name": "Do my PDF files get uploaded anywhere?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "No. Your files are opened and edited inside your own browser tab and are never sent to a server. There is no upload step in the product because there is no server-side processing to upload to: the page reads the file from your device into memory, and the edited PDF is assembled in the browser and saved straight back to your device. Because nothing is transmitted, there is nothing for anyone to store, read or leak."
+                  "text": "No. Your files are opened and edited inside your own browser tab and are never sent to a server. There is no upload step in the product because there is no server-side document processing to upload to: the page reads the file from your device into memory, and the edited PDF is assembled in the browser and saved straight back to your device. Because document content is not transmitted, there is no remote copy for anyone to store, read or leak."
                 }
               },
               {
@@ -183,7 +193,7 @@
                 "name": "What can it do to a PDF?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "It can merge several PDFs and images into one document, reorder pages by dragging them, rotate pages in 90 degree steps, delete pages, resize pages to A4, US Letter or the document's dominant size, add a hand-drawn signature, add text boxes in a choice of sizes and colours, place images onto pages, highlight selected text, and draw free-hand highlighter marks over any page including scanned ones. You can act on many pages at once with multi-select, and export either the whole document or just the pages you selected."
+                  "text": "It can merge PDFs and images; insert editable blank pages; reorder, rotate, delete, resize and crop pages; undo and redo page edits; split ranges into a ZIP; add signatures, annotations, page numbers and watermarks; fill and flatten supported AcroForm fields; and run English OCR locally on selected scanned pages. You can export the whole document or only selected pages."
                 }
               },
               {
@@ -191,7 +201,7 @@
                 "name": "Does it work offline?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Partly. The page itself has to be loaded over the internet at least once, because there is no installed app and no offline cache. But once the page has loaded, the editing work is fully local: opening files, every edit, and building the exported PDF all happen on your device with no further network activity. If your connection drops mid-session, you can still finish your document and export it."
+                  "text": "Yes, after the first online visit. Install it or revisit it after the offline cache has been prepared and the editor can load without a connection. PDF editing and export stay local. OCR's English model must be used online once before that model is available offline."
                 }
               },
               {
@@ -217,6 +227,14 @@
     </script>
   </head>
   <body>
+    <!-- Static declaration lets Netlify detect the React-rendered feedback form at build time. -->
+    <form name="feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="feedback" />
+      <input name="bot-field" />
+      <input name="category" />
+      <input name="email" type="email" />
+      <textarea name="message"></textarea>
+    </form>
     <!--
       The React application mounts here and owns the first screen.
 
@@ -327,10 +345,10 @@
       <div class="landing-inner">
         <h1 id="about-heading">Free PDF editor that runs entirely in your browser</h1>
         <p class="landing-lede">
-          Merge, reorder, rotate, resize, sign and annotate PDFs, then export with no quality
-          loss. Your files are opened and edited inside this browser tab and are never sent to a
-          server. There is no signup, no account and no cost. Add a PDF or an image above to
-          start, with nothing to install.
+          Merge PDFs, insert blank pages, reorder, crop and split; fill forms; add signatures, page numbers and
+          watermarks; or make scanned pages searchable with local OCR. Your documents stay in
+          this browser tab. There is no signup, no account and no cost, and the editor can be
+          installed for offline use.
         </p>
         <ul class="landing-claims">
           <li>Free</li>
@@ -354,6 +372,13 @@
             <div>
               <dt>Reorder</dt>
               <dd>Drag pages into any order, freely across source files.</dd>
+            </div>
+            <div>
+              <dt>Add blank pages</dt>
+              <dd>
+                Start from a clean A4 page or append one matching the document's prevailing
+                paper size, then annotate, sign, rotate, crop or reorder it like any other page.
+              </dd>
             </div>
             <div>
               <dt>Rotate and delete</dt>
@@ -381,14 +406,38 @@
               </dd>
             </div>
             <div>
-              <dt>Export</dt>
-              <dd>The whole document, or only the pages you selected.</dd>
+              <dt>Undo and split</dt>
+              <dd>
+                Undo or redo up to 100 page edits, and split ranges such as 1-4, 7 or 10-end into
+                separate PDFs in one ZIP file.
+              </dd>
             </div>
             <div>
-              <dt>Nothing to install</dt>
+              <dt>Crop and stamp</dt>
               <dd>
-                No extension, no plugin and no account. It runs in a current desktop or mobile
-                browser.
+                Crop one page, selected pages or every page, then add configurable page numbers
+                and watermarks during export.
+              </dd>
+            </div>
+            <div>
+              <dt>Fill forms</dt>
+              <dd>
+                Complete supported text fields, checkboxes, radio buttons and dropdowns, then
+                flatten the values into the exported PDF.
+              </dd>
+            </div>
+            <div>
+              <dt>Local OCR</dt>
+              <dd>
+                Recognize English text on selected scanned pages on your device and export it as
+                an invisible searchable text layer.
+              </dd>
+            </div>
+            <div>
+              <dt>Offline app</dt>
+              <dd>
+                Install the editor or revisit it after the first online load to edit and export
+                without a connection. OCR needs one online use to cache its English model.
               </dd>
             </div>
           </dl>
@@ -399,17 +448,17 @@
           <p>
             There is no upload endpoint. The page reads your file into memory using the browser's
             own file APIs, every edit happens in this tab, and the exported PDF is assembled here
-            and saved straight back to your device. Nothing is transmitted, so there is nothing
-            for anyone to store, read or leak. It is not a retention policy that could change
-            later: there is no data.
+            and saved straight back to your device. Document content is not transmitted, so
+            there is no remote copy for anyone to store, read or leak.
           </p>
           <p>
             The site does count how often each action is used, and only that. Each tracked action
             sends one event name from a fixed list of eight and nothing else, so no filenames, no
             annotation text and no image data ever leave the page. There is no third-party
             analytics script, no cookie and no persistent identifier, which is why there is no
-            consent banner. Nothing is stored on your device either, so closing the tab discards
-            everything.
+            consent banner. The optional feedback form sends only the category, message and email
+            address you deliberately submit to Netlify Forms; it never includes document content.
+            Working documents are not persisted, so closing the tab discards them.
           </p>
         </section>
 
@@ -440,7 +489,7 @@
             quietly degrades scans and text.
           </p>
           <p>
-            Free PDF Machine never uploads the file, asks for nothing, adds no watermark, and
+            Free PDF Machine never uploads the file, asks for nothing, adds no branding watermark, and
             copies the original page objects instead of re-rendering them. Those differences are
             verifiable rather than promised: there is no upload step to opt out of, because there
             is no server-side processing to upload to.
@@ -449,11 +498,10 @@
             <h3>The trade-offs, stated fairly</h3>
             <p>
               Everything runs on your own hardware, so very large documents are bounded by your
-              device's memory. There is no OCR, no PDF form filling, no compression targeting a
-              smaller file size, and no collaboration or cloud storage, because those either need
-              a server or are out of scope. Nothing is kept between sessions. A PDF locked with a
-              password to view cannot be opened. If you need any of those, another tool is the
-              right answer.
+              device's memory. OCR is English-only, form filling supports standard AcroForms but
+              not XFA, and there is no compression targeting a smaller file size, collaboration
+              or cloud storage. Nothing is kept between sessions. A PDF locked with a password to
+              view cannot be opened.
             </p>
           </div>
         </section>
@@ -464,22 +512,13 @@
             <div>
               <h3>Is Free PDF Machine really free?</h3>
               <p>
-                Yes, completely. There is no paid tier, no trial period, no watermark on the
-                exported PDF, no page or file-size limit imposed by the product, and no feature
-                reserved for a premium plan. It does not ask for a credit card and there is
-                nothing to cancel. The price is 0 USD and the whole tool is available to everyone
-                who opens the page.
+                Yes, completely. There is no paid tier, no trial period, no product-added watermark, no page or file-size limit imposed by the product, and no feature reserved for a premium plan. A batch watermark is added only if you choose one. It does not ask for a credit card and there is nothing to cancel. The price is 0 USD and the whole tool is available to everyone who opens the page.
               </p>
             </div>
             <div>
               <h3>Do my PDF files get uploaded anywhere?</h3>
               <p>
-                No. Your files are opened and edited inside your own browser tab and are never
-                sent to a server. There is no upload step in the product because there is no
-                server-side processing to upload to: the page reads the file from your device
-                into memory, and the edited PDF is assembled in the browser and saved straight
-                back to your device. Because nothing is transmitted, there is nothing for anyone
-                to store, read or leak.
+                No. Your files are opened and edited inside your own browser tab and are never sent to a server. There is no upload step in the product because there is no server-side document processing to upload to: the page reads the file from your device into memory, and the edited PDF is assembled in the browser and saved straight back to your device. Because document content is not transmitted, there is no remote copy for anyone to store, read or leak.
               </p>
             </div>
             <div>
@@ -495,23 +534,13 @@
             <div>
               <h3>What can it do to a PDF?</h3>
               <p>
-                It can merge several PDFs and images into one document, reorder pages by dragging
-                them, rotate pages in 90 degree steps, delete pages, resize pages to A4, US
-                Letter or the document's dominant size, add a hand-drawn signature, add text
-                boxes in a choice of sizes and colours, place images onto pages, highlight
-                selected text, and draw free-hand highlighter marks over any page including
-                scanned ones. You can act on many pages at once with multi-select, and export
-                either the whole document or just the pages you selected.
+                It can merge PDFs and images; insert editable blank pages; reorder, rotate, delete, resize and crop pages; undo and redo page edits; split ranges into a ZIP; add signatures, annotations, page numbers and watermarks; fill and flatten supported AcroForm fields; and run English OCR locally on selected scanned pages. You can export the whole document or only selected pages.
               </p>
             </div>
             <div>
               <h3>Does it work offline?</h3>
               <p>
-                Partly. The page itself has to be loaded over the internet at least once, because
-                there is no installed app and no offline cache. But once the page has loaded, the
-                editing work is fully local: opening files, every edit, and building the exported
-                PDF all happen on your device with no further network activity. If your
-                connection drops mid-session, you can still finish your document and export it.
+                Yes, after the first online visit. Install it or revisit it after the offline cache has been prepared and the editor can load without a connection. PDF editing and export stay local. OCR's English model must be used online once before that model is available offline.
               </p>
             </div>
             <div>
