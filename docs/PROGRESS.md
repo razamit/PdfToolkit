@@ -6,6 +6,25 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-08-03 — Ported and enabled the existing Devlog workflow for Codex while
+sharing the repository's current history (personal plugin + repo wiring; docs
+only, no code change). ✅ DONE.** Identified the Claude integration as the local
+`devlog` plugin, ported its five disciplines (`init`, `progress-log`,
+`decision-log`, `tickets`, and `session-wrap`) to Codex conventions, installed
+and enabled it from the personal marketplace, and added `AGENTS.md` so Codex
+reads the same `docs/PROGRESS.md`, `docs/DECISIONS.md`, and `docs/tickets/`
+artifacts rather than creating parallel state. The port replaces Claude-only
+references with Codex/`AGENTS.md` equivalents while preserving the file formats
+and evidence rules. **Proof:** all five official skill validations returned
+`Skill is valid!`; the official plugin validator passed both the staged and
+installed source; `codex plugin list` reports `devlog@personal` as `installed,
+enabled` at version `0.1.0`. No application tests were run because this changed
+only personal Codex configuration and repository documentation. **Repository
+files:** added `AGENTS.md`; updated `docs/PROGRESS.md` and
+`docs/DECISIONS.md`. Cross-ref: decision row 27.
+
+---
+
 **2026-08-02 — Added completed Daily and Weekly usage views backed by immutable
 UTC snapshots (offline, code + docs). ✅ DONE.** The lifetime `totals` blob and
 compare-and-swap increment path remain unchanged. A new scheduled function runs
