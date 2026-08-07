@@ -3,9 +3,7 @@ import {
   Download,
   FileInput,
   FilePlus2,
-  FileSpreadsheet,
   FileUp,
-  ImageUp,
   Redo2,
   Scissors,
   ScanLine,
@@ -14,7 +12,7 @@ import {
   Undo2,
 } from 'lucide-react'
 import { usePdfToolkit } from '@/coordinator/toolkitContext'
-import { ACCEPT_IMAGES, ACCEPT_PDF, ACCEPT_SPREADSHEETS } from '@/lib/fileAccept'
+import { ACCEPT_ALL } from '@/lib/fileAccept'
 import { Button } from './ui/button'
 import { FileInputButton } from './FileInputButton'
 import { GridSizeControl } from './GridSizeControl'
@@ -43,17 +41,9 @@ export function Toolbar() {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <FileInputButton accept={ACCEPT_PDF} onFiles={addFiles} disabled={isBusy}>
+      <FileInputButton accept={ACCEPT_ALL} onFiles={addFiles} disabled={isBusy}>
         <FileUp />
-        Add PDFs
-      </FileInputButton>
-      <FileInputButton accept={ACCEPT_IMAGES} onFiles={addFiles} disabled={isBusy}>
-        <ImageUp />
-        Add images
-      </FileInputButton>
-      <FileInputButton accept={ACCEPT_SPREADSHEETS} onFiles={addFiles} disabled={isBusy}>
-        <FileSpreadsheet />
-        <span className="hidden sm:inline">Add sheets</span>
+        Add files
       </FileInputButton>
       <Button variant="outline" onClick={addBlankPage} disabled={isBusy}>
         <FilePlus2 />

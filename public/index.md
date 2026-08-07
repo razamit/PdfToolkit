@@ -1,8 +1,8 @@
 # Free PDF Machine
 
 **Private PDF editor that runs entirely in your browser.** Merge, crop and split
-PDFs, convert Excel and CSV spreadsheets to PDF, fill forms, add page numbers and
-watermarks, and run English OCR locally.
+PDFs, convert Word documents and Excel or CSV spreadsheets to PDF, fill forms, add
+page numbers and watermarks, and run English OCR locally.
 Document content is never uploaded, and there is no signup, account or cost.
 
 Open it at [freepdfmachine.com](https://freepdfmachine.com/), pick your files, and
@@ -16,13 +16,14 @@ offline use after the first online visit.
 - **No quality loss.** The exported PDF is rebuilt from the original bytes of the
   file you opened, not from what is drawn on screen.
 
-Accepts PDF, JPEG, PNG, CSV, TSV and Excel (.xlsx/.xlsm). Exports a single PDF.
+Accepts PDF, JPEG, PNG, CSV, TSV, Excel (.xlsx/.xlsm) and Word (.docx). Exports a single PDF.
 
 ## What you can do
 
 | | |
 |---|---|
 | **Merge** | Combine any number of PDFs, images and spreadsheets into one document. Each page's border is colour-coded by the file it came from. |
+| **Word to PDF** | Open a .docx and each page converts on this device with its styles, lists, tables, images, headers and footers intact, plus an invisible text layer so it still selects and searches. Converted pages are images, so they are larger than a typed PDF. |
 | **Spreadsheets to PDF** | Open a CSV, TSV or Excel workbook and every worksheet becomes a paginated table of real, selectable PDF text, converted on this device. Wide sheets continue on further pages with the heading row repeated, and right-to-left worksheets keep their direction. |
 | **Add blank pages** | Start with an A4 page or append one matching the document's prevailing paper size, then edit and reorder it like any other page. |
 | **Reorder** | Drag pages into any order, freely across source files. |
@@ -100,7 +101,7 @@ No. There is no account system at all. The consequence is that nothing is saved
 between visits, so download your exported PDF before closing the tab.
 
 **What can it do to a PDF?**
-Merge PDFs, images and spreadsheets; insert editable blank pages; reorder, rotate, delete,
+Merge PDFs, images, spreadsheets and Word documents; insert editable blank pages; reorder, rotate, delete,
 resize and crop pages; undo and redo page edits; split ranges into a ZIP; add signatures, annotations, page
 numbers and watermarks; fill and flatten supported AcroForm fields; and run
 English OCR locally on selected scanned pages. Export the whole document or only

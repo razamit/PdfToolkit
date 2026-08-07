@@ -23,5 +23,18 @@ export const ACCEPT_SPREADSHEETS = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ].join(',')
 
-/** Human-readable list shown under the empty state's buttons. */
-export const SUPPORTED_FORMATS_LABEL = 'Supports PDF, JPEG, PNG, CSV, and Excel (.xlsx)'
+export const ACCEPT_WORD = [
+  '.docx',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+].join(',')
+
+/**
+ * Everything the app can open, for the single "Add files" picker.
+ *
+ * One picker rather than one button per format: the per-format buttons made the
+ * user choose a category before choosing a file, which is a question only the
+ * app cares about — `loadFile` dispatches on the file itself either way. The
+ * supported set is shown as labels beneath the button instead, where it informs
+ * without gating.
+ */
+export const ACCEPT_ALL = [ACCEPT_PDF, ACCEPT_IMAGES, ACCEPT_SPREADSHEETS, ACCEPT_WORD].join(',')

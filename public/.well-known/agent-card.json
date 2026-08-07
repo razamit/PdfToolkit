@@ -1,10 +1,10 @@
 {
   "name": "Free PDF Machine",
-  "description": "Private PDF editor that runs entirely in the user's browser. Merges PDFs, converts Excel and CSV spreadsheets to PDF, inserts editable blank pages, crops and splits, fills forms, adds page numbers and watermarks, and runs English OCR locally.",
+  "description": "Private PDF editor that runs entirely in the user's browser. Merges PDFs, converts Word documents and Excel or CSV spreadsheets to PDF, inserts editable blank pages, crops and splits, fills forms, adds page numbers and watermarks, and runs English OCR locally.",
   "url": "https://freepdfmachine.com/",
   "iconUrl": "https://freepdfmachine.com/favicon.svg",
   "documentationUrl": "https://freepdfmachine.com/llms.txt",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "provider": {
     "organization": "RZ AI Labs",
     "url": "https://rzailabs.com/"
@@ -30,7 +30,8 @@
     "image/png",
     "text/csv",
     "text/tab-separated-values",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ],
   "defaultOutputModes": [
     "application/pdf"
@@ -43,14 +44,15 @@
   "skills": [
     {
       "id": "merge-pdfs",
-      "name": "Merge PDFs, images and spreadsheets",
-      "description": "Combines any number of PDF, image and spreadsheet files into one document, with every page of every input available as a single reorderable list.",
+      "name": "Merge PDFs, images, spreadsheets and Word documents",
+      "description": "Combines any number of PDF, image, spreadsheet and Word files into one document, with every page of every input available as a single reorderable list.",
       "tags": [
         "pdf",
         "merge",
         "combine",
         "images",
-        "spreadsheets"
+        "spreadsheets",
+        "word"
       ],
       "examples": [
         "Combine three PDFs into one file",
@@ -75,6 +77,23 @@
         "Turn a CSV export into a printable PDF table",
         "Append a budget spreadsheet to the end of a PDF report",
         "Convert a Hebrew or Arabic spreadsheet to PDF keeping its right-to-left layout"
+      ]
+    },
+    {
+      "id": "convert-word-to-pdf",
+      "name": "Convert Word documents to PDF",
+      "description": "Converts Word .docx documents to PDF on the user's own device, keeping styles, headings, lists, tables, images, headers, footers and right-to-left text. The app paginates the document itself, breaking between lines rather than through them, and adds an invisible text layer so the result stays selectable and searchable. Converted pages are page images, so they are larger than a typed PDF; fonts the device lacks are substituted, with Calibri and Cambria covered by bundled metric-compatible faces. The older .doc format is not supported.",
+      "tags": [
+        "word",
+        "docx",
+        "convert",
+        "pdf",
+        "document"
+      ],
+      "examples": [
+        "Convert a Word document to PDF without uploading it",
+        "Turn a signed contract in .docx into a PDF",
+        "Append a Word appendix to an existing PDF report"
       ]
     },
     {

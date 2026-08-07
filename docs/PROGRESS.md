@@ -6,6 +6,65 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-08-07 — Added on-device Word (.docx) to PDF conversion with app-side
+pagination, and collapsed the four per-format add buttons into one picker
+(offline, code + discovery surfaces + browser QA on two real documents).
+✅ DONE.** A `.docx` now renders through `docx-preview`, is paginated by the app,
+captured per page with `@zumer/snapdom`, and written into a PDF with an invisible
+DOM-derived text layer over each raster, so converted pages still select and
+search. Styles, headings, lists, tables, images, headers, footers and
+right-to-left text survive. Carlito and Caladea are bundled as metric-compatible
+substitutes for Calibri and Cambria so lines wrap where Word wrapped them. The
+empty state and toolbar now offer one **Add files** picker plus **Start blank**,
+with four coloured file-type badges naming the supported formats. **Proof:**
+`npx tsc -b` exits 0; `npm run build` green (entry chunk 1,447 → 1,453 kB — the
+two libraries are lazy-loaded); `npm run lint` unchanged at the same 4
+pre-existing warnings; all **9** FAQ answers verified word-for-word identical
+between the JSON-LD and the visible block in built `dist/index.html`; agent card
+(v2.3.0, 10 skills, 7 input modes) and sitemap parse. Browser QA drove three
+documents through `agent-browser`: the synthetic `letter.docx` → 2 A4 pages with
+bullets clean and the numbered list correctly reading `1.` then `2.`; a **real
+signed contract** → 1 A4 page, signature at its declared 199×128px in the signing
+block; a **real 4-page Hebrew proposal** → 4 pages at 612×792 Letter (from a
+single 2517pt page before pagination), 1,040 words extractable, RTL tables with
+shaded headers, footer repeated on every page. Regression: the earlier documents
+still produce 2 and 1 pages respectively. **Five bugs found and fixed during QA,
+three of them only visible on the real files:** (1) words ran together in the
+text layer because the invisible font was sized from box height, not width, so
+Liberation Sans overlapped the next word — now fitted to the measured box;
+(2) a word straddling a soft line break was emitted once per client rect,
+writing its whole text several times (`margin, margin, margin,`) — caught by
+counting draw operations, 69 runs vs 71 ops on one page, now one word per entry;
+(3) `renderAsync` resolves before its blob-URL images decode, so a 501 kB
+signature was measured and captured at 0×0 — images are now awaited;
+(4) Tailwind preflight's `img { max-width: 100% }` reached into the render host
+and, because a floating `wp:anchor` image lives in a **zero-size** wrapper,
+collapsed the contract's signature to `0px` wide (`0x128` → `199x128` after the
+fix), and the override had to move to `document.head` because `renderAsync`
+empties its own container; (5) list markers lost their CSS counters and leaked a
+literal `\9` through the capture, because `counter-increment` is declared on the
+`::before` — markers are now resolved and pinned back onto the same
+pseudo-element. **Files:** added
+`src/lib/docx/{docxRender,docxFonts,docxRasterize,docxTextLayer,docxPaginate,docxStage,docxMarkers}.ts`,
+`src/managers/DocxImportManager.ts`,
+`src/components/{SupportedFormats,FileTypeBadge}.tsx`, `public/fonts/docx/*`
+(Carlito, Caladea, OFL, README); edited
+`src/coordinator/PdfToolkitCoordinator.tsx`, `src/lib/fileAccept.ts`,
+`src/components/{EmptyState,Toolbar}.tsx`, `package.json`, `package-lock.json`,
+`index.html`, `README.md`,
+`public/{llms.txt,llms-full.txt,index.md,sitemap.xml,.well-known/agent-card.json}`,
+`docs/{PROGRESS,DECISIONS}.md`; added
+`docs/tickets/{word-conversion-text-layer-has-three-gaps,pdfjs-dist-has-a-high-severity-advisory-not-reachable-in-this-app}.md`.
+`package.json` and `package-lock.json` move from `0.0.0` to `1.1.0`, closing the
+manifest-versus-tag drift that decision row 34 recorded as unresolved at
+`v1.0.0`; the bump rides in this commit so the tagged tree and its tag agree.
+Cross-ref: decision rows 34, 35 and 36. **Known gaps, filed not hidden:** list
+markers, headers/footers and words split across a page break are visible but not
+selectable (~1% of words). Not deployed, so the discovery surfaces remain
+unverified live and must be re-probed after the next deploy per rows 13 and 22.
+
+---
+
 **2026-08-07 — Released the spreadsheet-import work as `v1.0.0`, the project's
 first version tag (commit only; not pushed). ✅ DONE.** The two units below —
 on-device CSV/TSV/Excel import (2026-08-06) and right-to-left worksheet handling
