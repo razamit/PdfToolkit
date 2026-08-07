@@ -6,6 +6,132 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-08-07 — Released the spreadsheet-import work as `v1.0.0`, the project's
+first version tag (commit only; not pushed). ✅ DONE.** The two units below —
+on-device CSV/TSV/Excel import (2026-08-06) and right-to-left worksheet handling
+(2026-08-07) — are committed together on `main` with the devlog and all four new
+tickets in the same commit, and marked with an annotated tag `v1.0.0`. Those two
+entries each close with "Not committed or deployed (not requested)", which was
+true when written; this entry supersedes that status rather than rewriting them.
+The tag naming convention (lowercase `v`, semver, annotated) is decision row 34,
+including the deliberate note that `package.json` still reads `"version":
+"0.0.0"` and that the drift is unresolved. **Proof:** every path in
+`git status --short` enumerated and checked against `git diff` before committing
+— 12 modified, 14 added, no incidental edits, and the stray tracked `--full-page`
+file confirmed absent from the diff after being restored yesterday;
+`npx tsc -b` exits 0, `npm run build` green, `npm run lint` unchanged at the same
+4 pre-existing warnings. **Not pushed**, as requested, so `origin` still points at
+`97ed1bf` and nothing is deployed — the discovery surfaces in this release remain
+unverified live and must be re-probed after the first deploy, as decision rows 13
+and 22 require. Cross-ref: decision rows 32, 33, 34.
+
+---
+
+**2026-08-07 — Right-to-left worksheets are now detected and mirrored; a Hebrew
+workbook no longer converts as left-to-right (offline, bug fix + discovery
+surfaces + browser QA). ✅ DONE.** Reported by the user against a real Hebrew
+`.xlsx`: it converted with column A on the left, the mirror image of what Excel
+shows. Root cause: `readWorksheet` read only `<row>` elements and never opened
+`sheetViews`, so the sheet's own `rightToLeft` declaration was invisible to the
+importer — `grep -rn "rightToLeft" src/` returned 0 hits. Direction is now read
+from `sheetView/@rightToLeft` and obeyed absolutely when present (either value);
+when the attribute is **absent** — its schema default is false, so an LTR sheet
+omits it, and CSV has no metadata at all — direction is inferred from the text,
+requiring a strict majority of strongly-directional cells. An RTL sheet has its
+columns reversed once, up front, so measurement, wrapping and wide-sheet column
+grouping stay direction-agnostic and the first group starts at the rightmost
+columns; the table block and its caption then hang off the right margin.
+Per-cell alignment was deliberately **not** flipped: Microsoft documents General
+alignment as content-driven "regardless of worksheet direction", which is what
+the renderer already did. **Proof:** `npx tsc -b` exits 0; `npm run build` green,
+entry chunk 1,440,640 → 1,441,300 bytes (+660 bytes); `npm run lint` unchanged at
+the same 4 pre-existing warnings; the 8 FAQ answers still word-for-word identical
+in built `dist/index.html`; agent-card (v2.2.1) and sitemap parse, all surfaces
+re-verified to 2026-08-07. Browser QA drove a four-way fixture
+(`scratchpad/rtl.py` → `hebrew.xlsx` with three sheets declaring `rightToLeft=1`,
+`rightToLeft=0` and no flag, plus a Hebrew `hebrew.csv`) and measured the export
+with `pdftotext -bbox` on a 595pt-wide page: `rightToLeft="1"` → ink x 451–559
+(right margin); `rightToLeft="0"` with Hebrew content → x 36–157 (left margin —
+the explicit flag beats the heuristic); flag absent with Hebrew content → x
+451–559 (inferred RTL); Hebrew CSV → x 493–559 (inferred RTL). Rendered page 1
+confirms `אזור` (column A) rightmost, `מוצר`, then `כמות`, with the caption
+`מכירות` bottom-right. Regression check: `report.xlsx`, which holds one Hebrew
+cell among many English ones, still renders LTR (ink from x 36) with that cell
+still right-aligned inside its column, so the majority rule does not flip mixed
+tables. **Files:** `src/lib/sheets/sheetTable.ts`,
+`src/lib/sheets/xlsx/xlsxReader.ts`, `src/lib/sheets/csvParser.ts`,
+`src/lib/sheets/tableRenderer.ts`, `src/managers/SheetImportManager.ts`,
+`index.html`, `public/{llms.txt,llms-full.txt,index.md,sitemap.xml,.well-known/agent-card.json}`,
+`docs/{PROGRESS,DECISIONS}.md`. Cross-ref: decision row 33, refining row 32. Not
+committed or deployed (not requested), so the surfaces remain unverified live.
+
+---
+
+**2026-08-06 — Added on-device CSV/TSV/Excel import: spreadsheets convert to
+PDF pages of real vector text and merge into the working document (offline,
+code + discovery surfaces + browser QA). ✅ DONE.** Opening a `.csv`, `.tsv`,
+`.xlsx` or `.xlsm` file now converts it to PDF **in the browser** and hands the
+bytes to the existing `PdfSourceManager`, so its pages behave as ordinary PDF
+pages everywhere downstream. Each worksheet becomes a paginated table drawn with
+pdf-lib and the bundled Liberation Sans: heading row filled and repeated on every
+page, numbers and dates right-aligned with headings following their column,
+Hebrew cells laid out through the existing bidi run splitter, portrait or
+landscape chosen per worksheet by the table's own width, and a sheet too wide for
+the paper continued across further pages with a `columns N of M` caption. Hidden
+worksheets are skipped; the first 10,000 rows and 256 columns are kept and the
+cap is stated on the page. **No new dependency** — the .xlsx reader is ~450 lines
+over `fflate` (already used by split-to-ZIP) and the platform `DOMParser`; CSV is
+parsed in-app with delimiter sniffing. **Proof:** `npx tsc -b` exits 0;
+`npm run build` green, entry chunk 1,425,196 → 1,440,640 bytes (+15 kB raw,
++5 kB gzip, zero new packages); `npm run lint` unchanged at the same 4
+pre-existing warnings. Browser QA via `agent-browser` against `npm run dev` with
+hand-built OPC fixtures (`scratchpad/make_fixtures.py`, copied to
+`~/Downloads/fpm-qa/`): `report.xlsx` → 2 pages, `budget.csv` → 1,
+`semicolon.csv` → 1, `wide.xlsx` → 3, exported as one 7-page 56,733-byte PDF
+whose text `pdftotext` recovers in full. Verified in that output — shared
+strings, inline strings and formula results; serial `43831` → `2020-01-01` and
+serial `59` → `1900-02-28` (both branches of the Lotus leap-year bug);
+`numFmtId="4"` with no `formatCode` → `1,234,567.89` and `-2,500.00`; custom
+`0.0%` → `12.3%`; `numFmtId="22"` → `2022-01-01 12:00:00`; booleans → `TRUE`/
+`FALSE`; `#DIV/0!` preserved; `0.30000000000000004` → `0.3`; a sparse row with no
+`B3` keeping `C3` in column C; an absent row 5 left blank; the hidden sheet's
+canary string appearing **0** times; a semicolon-delimited European CSV sniffed
+correctly so `1,50` stayed one cell; a CSV field with an embedded comma, an
+embedded newline and an escaped quote all intact; `wide.xlsx`'s 40 columns split
+18/18/4 with captions `Wide · columns 1..3 of 3`. A 10,500-row CSV produced 271
+pages ending at row 9999 with `big · first 10,000 rows shown`. `legacy.xls` was
+rejected with `"legacy.xls" is the older binary Excel format, which can't be read
+in the browser. Re-save it as .xlsx or .csv and try again.` A converted page was
+then rotated 90°, given a text annotation and exported: the result carries
+`/Rotate 90`, the annotation, and the intact table on one page — confirming
+converted pages need no special handling anywhere. Mobile checked at 390×844:
+all four empty-state buttons visible, no horizontal overflow
+(`scrollWidth` 375 ≤ 390), one `<h1>`, 8 FAQ entries, 13 feature entries.
+Discovery surfaces moved in the same unit: descriptions, `featureList`,
+`fileFormat`, a new "Can it convert Excel or CSV files to PDF?" FAQ and the
+updated "What can it do to a PDF?" answer, with all 8 answers verified
+word-for-word identical between the JSON-LD and the visible block in built
+`dist/index.html`; `llms.txt`, `llms-full.txt`, `index.md` and the agent card
+(new `convert-spreadsheet-to-pdf` skill, version 2.2.0) re-verified to
+2026-08-06 and `sitemap.xml` bumped. **Files:** added
+`src/lib/sheets/{sheetTable,csvParser,tableLayout,tableRenderer}.ts`,
+`src/lib/sheets/xlsx/{zipEntries,numberFormat,workbookParts,xlsxReader}.ts`,
+`src/lib/fileAccept.ts`, `src/managers/SheetImportManager.ts`; edited
+`src/coordinator/PdfToolkitCoordinator.tsx`,
+`src/components/{EmptyState,Toolbar}.tsx`, `index.html`, `README.md`,
+`public/{llms.txt,llms-full.txt,index.md,sitemap.xml,.well-known/agent-card.json}`,
+`docs/{PROGRESS,DECISIONS}.md`, and added
+`docs/tickets/{word-and-powerpoint-conversion-not-implemented,spreadsheet-conversion-does-not-reproduce-workbook-formatting,spreadsheet-number-formats-use-a-bounded-subset,stray-full-page-file-committed-at-repo-root}.md`.
+Cross-ref: decision row 32. **Word and PowerPoint are deliberately not built** —
+the route comparison is in the first of those tickets. One incidental find: the
+tracked file `./--full-page` at the repo root (a mis-flagged screenshot committed
+in `9f981e7`) was overwritten by the same mistake this session and restored with
+`git checkout`; its own ticket proposes deleting it. Not committed or deployed
+(not requested), so the surfaces above are **not yet verified live** and need
+re-probing after the next deploy as rows 13 and 22 require.
+
+---
+
 **2026-08-03 — Made the multi-page action row persistent and added first-class
 blank pages (offline, code + discovery surfaces + browser QA). ✅ DONE.** The
 bulk row now renders whenever the working document has pages, displays “Nothing

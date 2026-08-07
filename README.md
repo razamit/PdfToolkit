@@ -23,7 +23,9 @@ resolution, and quality are preserved exactly.
 
 ## Features
 
-- Combine multiple PDFs and images into one working document
+- Combine multiple PDFs, images and spreadsheets into one working document
+- Convert CSV, TSV and Excel (.xlsx/.xlsm) worksheets to PDF tables on-device, with no
+  third-party spreadsheet library (fflate + the platform `DOMParser`)
 - Insert editable blank pages (A4 for an empty document, otherwise matching the prevailing page size)
 - Thumbnail grid with an adjustable size slider (more/fewer per row)
 - Rotate, delete, and reorder pages (drag-and-drop)

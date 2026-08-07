@@ -1,10 +1,10 @@
 {
   "name": "Free PDF Machine",
-  "description": "Private PDF editor that runs entirely in the user's browser. Merges PDFs, inserts editable blank pages, crops and splits, fills forms, adds page numbers and watermarks, and runs English OCR locally.",
+  "description": "Private PDF editor that runs entirely in the user's browser. Merges PDFs, converts Excel and CSV spreadsheets to PDF, inserts editable blank pages, crops and splits, fills forms, adds page numbers and watermarks, and runs English OCR locally.",
   "url": "https://freepdfmachine.com/",
   "iconUrl": "https://freepdfmachine.com/favicon.svg",
   "documentationUrl": "https://freepdfmachine.com/llms.txt",
-  "version": "2.1.0",
+  "version": "2.2.1",
   "provider": {
     "organization": "RZ AI Labs",
     "url": "https://rzailabs.com/"
@@ -24,8 +24,17 @@
     "full": "https://freepdfmachine.com/llms-full.txt",
     "markdown": "https://freepdfmachine.com/index.md"
   },
-  "defaultInputModes": ["application/pdf", "image/jpeg", "image/png"],
-  "defaultOutputModes": ["application/pdf"],
+  "defaultInputModes": [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "text/csv",
+    "text/tab-separated-values",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  ],
+  "defaultOutputModes": [
+    "application/pdf"
+  ],
   "capabilities": {
     "streaming": false,
     "pushNotifications": false,
@@ -34,19 +43,53 @@
   "skills": [
     {
       "id": "merge-pdfs",
-      "name": "Merge PDFs and images",
-      "description": "Combines any number of PDF and image files into one document, with every page of every input available as a single reorderable list.",
-      "tags": ["pdf", "merge", "combine", "images"],
+      "name": "Merge PDFs, images and spreadsheets",
+      "description": "Combines any number of PDF, image and spreadsheet files into one document, with every page of every input available as a single reorderable list.",
+      "tags": [
+        "pdf",
+        "merge",
+        "combine",
+        "images",
+        "spreadsheets"
+      ],
       "examples": [
         "Combine three PDFs into one file",
         "Merge a scanned contract with a photo of a signature page"
       ]
     },
     {
+      "id": "convert-spreadsheet-to-pdf",
+      "name": "Convert Excel and CSV files to PDF",
+      "description": "Converts CSV, TSV and Excel .xlsx/.xlsm workbooks to PDF pages on the user's own device. Each worksheet becomes a paginated table of real, selectable PDF text with its heading row repeated per page, and a sheet too wide for the paper continues on further pages. Right-to-left worksheets are detected and mirrored, so column A stays on the right. Cell values, dates, percentages and number formats are carried across; the workbook's own formatting, charts and images are not. The older binary .xls format is not supported.",
+      "tags": [
+        "excel",
+        "xlsx",
+        "csv",
+        "spreadsheet",
+        "convert",
+        "pdf",
+        "rtl"
+      ],
+      "examples": [
+        "Convert an Excel sheet to PDF without uploading it",
+        "Turn a CSV export into a printable PDF table",
+        "Append a budget spreadsheet to the end of a PDF report",
+        "Convert a Hebrew or Arabic spreadsheet to PDF keeping its right-to-left layout"
+      ]
+    },
+    {
       "id": "organize-pages",
       "name": "Reorder, rotate, delete and resize pages",
       "description": "Insert editable blank pages, drag pages into any order across sources, rotate in 90 degree steps, delete pages, and resize to A4, US Letter, the document's dominant page size, or leave originals untouched. Multi-select applies an action to many pages at once.",
-      "tags": ["pdf", "blank-page", "reorder", "rotate", "delete", "resize", "page-size"],
+      "tags": [
+        "pdf",
+        "blank-page",
+        "reorder",
+        "rotate",
+        "delete",
+        "resize",
+        "page-size"
+      ],
       "examples": [
         "Add a clean page to this PDF for a note and signature",
         "Rotate the sideways pages in my scan",
@@ -57,7 +100,11 @@
       "id": "sign-pdf",
       "name": "Sign a PDF",
       "description": "Draw a signature with a mouse, trackpad or finger, then place, move and resize it on any page. Signatures drawn during the session are reusable across pages.",
-      "tags": ["pdf", "sign", "signature"],
+      "tags": [
+        "pdf",
+        "sign",
+        "signature"
+      ],
       "examples": [
         "Sign a contract without uploading it",
         "Add the same signature to several pages"
@@ -67,7 +114,13 @@
       "id": "annotate-pdf",
       "name": "Annotate a PDF",
       "description": "Add text boxes in seven point sizes and four colours, place JPEG or PNG images onto pages, highlight selected text on PDF pages, and draw free-hand highlighter marks that also work on scanned or image pages.",
-      "tags": ["pdf", "annotate", "text", "highlight", "image"],
+      "tags": [
+        "pdf",
+        "annotate",
+        "text",
+        "highlight",
+        "image"
+      ],
       "examples": [
         "Highlight a clause in a contract",
         "Add a note and a stamp image to a scanned page"
@@ -77,7 +130,12 @@
       "id": "export-lossless",
       "name": "Export without quality loss",
       "description": "Exports the whole document or only the selected pages. Page content is copied at the PDF object level rather than re-rendered, rotation is stored as page metadata, and embedded JPEGs keep their original bytes, so resolution and quality are preserved exactly.",
-      "tags": ["pdf", "export", "lossless", "quality"],
+      "tags": [
+        "pdf",
+        "export",
+        "lossless",
+        "quality"
+      ],
       "examples": [
         "Export only the pages I selected",
         "Combine scans without degrading them"
@@ -87,7 +145,14 @@
       "id": "split-crop-stamp",
       "name": "Split, crop and batch-stamp PDFs",
       "description": "Splits page ranges into a ZIP, crops one or many pages, and adds configurable page numbers and watermarks during export. Page edits support up to 100 undo and redo states.",
-      "tags": ["pdf", "split", "crop", "page-numbers", "watermark", "undo"],
+      "tags": [
+        "pdf",
+        "split",
+        "crop",
+        "page-numbers",
+        "watermark",
+        "undo"
+      ],
       "examples": [
         "Split pages 1-4 and 10-end into separate PDFs",
         "Crop every page and add Page N of M"
@@ -97,7 +162,13 @@
       "id": "fill-pdf-forms",
       "name": "Fill standard PDF forms",
       "description": "Fills supported AcroForm text fields, checkboxes, radio buttons and dropdowns locally, then flattens the values into the exported PDF. XFA is not supported.",
-      "tags": ["pdf", "forms", "acroform", "fill", "flatten"],
+      "tags": [
+        "pdf",
+        "forms",
+        "acroform",
+        "fill",
+        "flatten"
+      ],
       "examples": [
         "Fill this application form without uploading it",
         "Flatten completed fields into the exported PDF"
@@ -107,7 +178,13 @@
       "id": "ocr-pdf-locally",
       "name": "Make scanned PDFs searchable locally",
       "description": "Runs English OCR on selected pages on the user's device and adds an invisible searchable text layer. The model is lazily downloaded and can be reused offline.",
-      "tags": ["pdf", "ocr", "searchable", "scan", "offline"],
+      "tags": [
+        "pdf",
+        "ocr",
+        "searchable",
+        "scan",
+        "offline"
+      ],
       "examples": [
         "Make these scanned pages searchable",
         "OCR selected English pages without uploading them"
@@ -133,5 +210,5 @@
     "https://rzailabs.com/blog/free-pdf-editor-claude-code",
     "https://github.com/razamit/PdfToolkit"
   ],
-  "lastVerified": "2026-08-03"
+  "lastVerified": "2026-08-07"
 }

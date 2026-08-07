@@ -1,7 +1,8 @@
 # Free PDF Machine
 
 **Private PDF editor that runs entirely in your browser.** Merge, crop and split
-PDFs, fill forms, add page numbers and watermarks, and run English OCR locally.
+PDFs, convert Excel and CSV spreadsheets to PDF, fill forms, add page numbers and
+watermarks, and run English OCR locally.
 Document content is never uploaded, and there is no signup, account or cost.
 
 Open it at [freepdfmachine.com](https://freepdfmachine.com/), pick your files, and
@@ -15,13 +16,14 @@ offline use after the first online visit.
 - **No quality loss.** The exported PDF is rebuilt from the original bytes of the
   file you opened, not from what is drawn on screen.
 
-Accepts PDF, JPEG and PNG. Exports a single PDF.
+Accepts PDF, JPEG, PNG, CSV, TSV and Excel (.xlsx/.xlsm). Exports a single PDF.
 
 ## What you can do
 
 | | |
 |---|---|
-| **Merge** | Combine any number of PDFs and images into one document. Each page's border is colour-coded by the file it came from. |
+| **Merge** | Combine any number of PDFs, images and spreadsheets into one document. Each page's border is colour-coded by the file it came from. |
+| **Spreadsheets to PDF** | Open a CSV, TSV or Excel workbook and every worksheet becomes a paginated table of real, selectable PDF text, converted on this device. Wide sheets continue on further pages with the heading row repeated, and right-to-left worksheets keep their direction. |
 | **Add blank pages** | Start with an A4 page or append one matching the document's prevailing paper size, then edit and reorder it like any other page. |
 | **Reorder** | Drag pages into any order, freely across source files. |
 | **Rotate and delete** | In 90 degree steps, one page at a time or many at once. |
@@ -98,11 +100,19 @@ No. There is no account system at all. The consequence is that nothing is saved
 between visits, so download your exported PDF before closing the tab.
 
 **What can it do to a PDF?**
-Merge PDFs and images; insert editable blank pages; reorder, rotate, delete,
+Merge PDFs, images and spreadsheets; insert editable blank pages; reorder, rotate, delete,
 resize and crop pages; undo and redo page edits; split ranges into a ZIP; add signatures, annotations, page
 numbers and watermarks; fill and flatten supported AcroForm fields; and run
 English OCR locally on selected scanned pages. Export the whole document or only
 selected pages.
+
+**Can it convert Excel or CSV files to PDF?**
+Yes, on your device like everything else. Each worksheet is drawn as a paginated
+table of real, selectable PDF text rather than a picture of a spreadsheet, so the
+result stays searchable and small and its pages behave like any other page. Values,
+dates, percentages and number formats come across; cell colours, fonts, merged
+cells, charts and images do not. The older binary .xls format cannot be read in a
+browser, so re-save it as .xlsx or .csv first.
 
 **Does it work offline?**
 Yes, after the first online visit. Install it or revisit it after the offline
@@ -129,4 +139,4 @@ consulting and software development practice in Haifa, Israel.
 - Source: https://github.com/razamit/PdfToolkit
 - Contact: amit@rzailabs.com
 
-Last verified: 2026-08-03
+Last verified: 2026-08-07

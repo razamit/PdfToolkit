@@ -8,7 +8,7 @@
     <title>Free PDF Editor: Edit PDFs Without Uploading | Free PDF Machine</title>
     <meta
       name="description"
-      content="Private PDF editor to merge, create, crop and split pages, fill forms, run local OCR and add page numbers or watermarks. No uploads, signup or cost."
+      content="Private PDF editor to merge, crop and split pages, convert Excel and CSV to PDF, fill forms, run local OCR and add watermarks. No uploads, signup or cost."
     />
     <link rel="canonical" href="https://freepdfmachine.com/" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
@@ -19,7 +19,7 @@
     <meta property="og:title" content="Free PDF Editor: Edit PDFs Without Uploading" />
     <meta
       property="og:description"
-      content="Private PDF editor to merge, create, crop and split pages, fill forms, run local OCR and add page numbers or watermarks. No uploads, signup or cost."
+      content="Private PDF editor to merge, crop and split pages, convert Excel and CSV to PDF, fill forms, run local OCR and add watermarks. No uploads, signup or cost."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://freepdfmachine.com/" />
@@ -37,7 +37,7 @@
     <meta name="twitter:title" content="Free PDF Editor: Edit PDFs Without Uploading" />
     <meta
       name="twitter:description"
-      content="Private PDF editor to merge, create, crop and split pages, fill forms, run local OCR and add page numbers or watermarks. No uploads, signup or cost."
+      content="Private PDF editor to merge, crop and split pages, convert Excel and CSV to PDF, fill forms, run local OCR and add watermarks. No uploads, signup or cost."
     />
     <meta name="twitter:image" content="https://freepdfmachine.com/og-image.png" />
     <meta
@@ -80,7 +80,7 @@
             "name": "Free PDF Machine",
             "alternateName": "Free PDF Editor",
             "url": "https://freepdfmachine.com/",
-            "description": "Private PDF editor that runs entirely in your browser. Merge PDFs, insert blank pages, organize, crop, split, sign, annotate, fill forms and run OCR locally without uploading document content.",
+            "description": "Private PDF editor that runs entirely in your browser. Merge PDFs, convert CSV and Excel spreadsheets to PDF, insert blank pages, organize, crop, split, sign, annotate, fill forms and run OCR locally without uploading document content.",
             "applicationCategory": "UtilitiesApplication",
             "applicationSubCategory": "PDF Editor",
             "operatingSystem": "Any, runs in a web browser",
@@ -97,7 +97,9 @@
               "category": "free"
             },
             "featureList": [
-              "Merge multiple PDFs and images into one document",
+              "Merge multiple PDFs, images and spreadsheets into one document",
+              "Convert CSV, TSV and Excel (.xlsx) spreadsheets to PDF pages on the device",
+              "Detect right-to-left worksheets and mirror their column order and layout",
               "Insert editable blank pages that match the document's paper size",
               "Reorder pages by drag and drop across source files",
               "Rotate and delete pages, individually or in bulk",
@@ -115,7 +117,14 @@
               "Export the whole document or only the selected pages",
               "Lossless export that preserves original resolution and quality"
             ],
-            "fileFormat": ["application/pdf", "image/jpeg", "image/png"],
+            "fileFormat": [
+              "application/pdf",
+              "image/jpeg",
+              "image/png",
+              "text/csv",
+              "text/tab-separated-values",
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ],
             "permissions": "None. Files are read locally from the user's device and are never transmitted.",
             "author": { "@id": "https://rzailabs.com/#amitraz" },
             "creator": { "@id": "https://rzailabs.com/#amitraz" },
@@ -144,13 +153,13 @@
             "@id": "https://freepdfmachine.com/#webpage",
             "url": "https://freepdfmachine.com/",
             "name": "Free PDF Editor: Edit PDFs Without Uploading | Free PDF Machine",
-            "description": "Private PDF editor to merge, create, crop and split pages, fill forms, run local OCR and add page numbers or watermarks. No uploads, signup or cost.",
+            "description": "Private PDF editor to merge, crop and split pages, convert Excel and CSV to PDF, fill forms, run local OCR and add watermarks. No uploads, signup or cost.",
             "isPartOf": { "@id": "https://freepdfmachine.com/#website" },
             "about": { "@id": "https://freepdfmachine.com/#app" },
             "primaryImageOfPage": "https://freepdfmachine.com/og-image.png",
             "inLanguage": "en",
             "datePublished": "2026-06-29",
-            "dateModified": "2026-08-03",
+            "dateModified": "2026-08-07",
             "author": { "@id": "https://rzailabs.com/#amitraz" },
             "speakable": {
               "@type": "SpeakableSpecification",
@@ -193,7 +202,15 @@
                 "name": "What can it do to a PDF?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "It can merge PDFs and images; insert editable blank pages; reorder, rotate, delete, resize and crop pages; undo and redo page edits; split ranges into a ZIP; add signatures, annotations, page numbers and watermarks; fill and flatten supported AcroForm fields; and run English OCR locally on selected scanned pages. You can export the whole document or only selected pages."
+                  "text": "It can merge PDFs, images and spreadsheets; insert editable blank pages; reorder, rotate, delete, resize and crop pages; undo and redo page edits; split ranges into a ZIP; add signatures, annotations, page numbers and watermarks; fill and flatten supported AcroForm fields; and run English OCR locally on selected scanned pages. You can export the whole document or only selected pages."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can it convert Excel or CSV files to PDF?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, and the conversion runs on your device like everything else. Open a .csv, .tsv, .xlsx or .xlsm file and each worksheet is drawn as a paginated table of real, selectable PDF text rather than a picture of a spreadsheet, so the result stays searchable and small and its pages merge, annotate, crop and export like any other page. Cell values, dates, percentages and number formats are carried across, and a sheet too wide for the paper continues on further pages with its heading row repeated. The spreadsheet's own appearance is not reproduced: cell colours, fonts, merged cells, charts and images do not come over. The older binary .xls format cannot be read in a browser, so re-save it as .xlsx or .csv first."
                 }
               },
               {
@@ -345,8 +362,8 @@
       <div class="landing-inner">
         <h1 id="about-heading">Free PDF editor that runs entirely in your browser</h1>
         <p class="landing-lede">
-          Merge PDFs, insert blank pages, reorder, crop and split; fill forms; add signatures, page numbers and
-          watermarks; or make scanned pages searchable with local OCR. Your documents stay in
+          Merge PDFs, convert Excel and CSV spreadsheets to PDF, insert blank pages, reorder, crop and split;
+          fill forms; add signatures, page numbers and watermarks; or make scanned pages searchable with local OCR. Your documents stay in
           this browser tab. There is no signup, no account and no cost, and the editor can be
           installed for offline use.
         </p>
@@ -355,7 +372,7 @@
           <li>No signup</li>
           <li>Nothing uploaded</li>
           <li>No quality loss</li>
-          <li>PDF, JPEG and PNG</li>
+          <li>PDF, JPEG, PNG, CSV and Excel</li>
         </ul>
 
         <section aria-labelledby="features-heading">
@@ -364,9 +381,18 @@
             <div>
               <dt>Merge</dt>
               <dd>
-                Combine any number of PDFs and images into one document. Each page's border is
+                Combine any number of PDFs, images and spreadsheets into one document. Each page's border is
                 colour-coded by the file it came from, with a legend, so you can still tell what
                 came from where after reordering.
+              </dd>
+            </div>
+            <div>
+              <dt>Spreadsheets to PDF</dt>
+              <dd>
+                Open a CSV, TSV or Excel workbook and every worksheet becomes a paginated table of
+                real, selectable PDF text, converted on this device. A sheet too wide for the paper
+                continues on further pages with its heading row repeated, and a right-to-left
+                worksheet keeps its direction — column A stays on the right.
               </dd>
             </div>
             <div>
@@ -498,7 +524,9 @@
             <h3>The trade-offs, stated fairly</h3>
             <p>
               Everything runs on your own hardware, so very large documents are bounded by your
-              device's memory. OCR is English-only, form filling supports standard AcroForms but
+              device's memory. A converted spreadsheet is redrawn as a plain table, so its cell colours,
+              fonts, merged cells and charts are not reproduced, and the older binary .xls format
+              cannot be read at all. OCR is English-only, form filling supports standard AcroForms but
               not XFA, and there is no compression targeting a smaller file size, collaboration
               or cloud storage. Nothing is kept between sessions. A PDF locked with a password to
               view cannot be opened.
@@ -534,7 +562,13 @@
             <div>
               <h3>What can it do to a PDF?</h3>
               <p>
-                It can merge PDFs and images; insert editable blank pages; reorder, rotate, delete, resize and crop pages; undo and redo page edits; split ranges into a ZIP; add signatures, annotations, page numbers and watermarks; fill and flatten supported AcroForm fields; and run English OCR locally on selected scanned pages. You can export the whole document or only selected pages.
+                It can merge PDFs, images and spreadsheets; insert editable blank pages; reorder, rotate, delete, resize and crop pages; undo and redo page edits; split ranges into a ZIP; add signatures, annotations, page numbers and watermarks; fill and flatten supported AcroForm fields; and run English OCR locally on selected scanned pages. You can export the whole document or only selected pages.
+              </p>
+            </div>
+            <div>
+              <h3>Can it convert Excel or CSV files to PDF?</h3>
+              <p>
+                Yes, and the conversion runs on your device like everything else. Open a .csv, .tsv, .xlsx or .xlsm file and each worksheet is drawn as a paginated table of real, selectable PDF text rather than a picture of a spreadsheet, so the result stays searchable and small and its pages merge, annotate, crop and export like any other page. Cell values, dates, percentages and number formats are carried across, and a sheet too wide for the paper continues on further pages with its heading row repeated. The spreadsheet's own appearance is not reproduced: cell colours, fonts, merged cells, charts and images do not come over. The older binary .xls format cannot be read in a browser, so re-save it as .xlsx or .csv first.
               </p>
             </div>
             <div>

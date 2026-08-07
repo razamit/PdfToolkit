@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { PdfSourceManager } from '@/managers/PdfSourceManager'
 import { ImageImportManager } from '@/managers/ImageImportManager'
+import {
+  SheetImportManager,
+  spreadsheetFormatOf,
+  unsupportedSpreadsheetReason,
+} from '@/managers/SheetImportManager'
 import { ThumbnailRenderManager } from '@/managers/ThumbnailRenderManager'
 import { TextContentManager } from '@/managers/TextContentManager'
 import { PdfExportManager } from '@/managers/PdfExportManager'
@@ -40,6 +45,7 @@ import {
 function createManagers() {
   const pdfSources = new PdfSourceManager()
   const imageManager = new ImageImportManager()
+  const sheetImporter = new SheetImportManager()
   const thumbnailRenderer = new ThumbnailRenderManager(pdfSources)
   const textContent = new TextContentManager(pdfSources)
   const exporter = new PdfExportManager(pdfSources, imageManager)
@@ -49,6 +55,7 @@ function createManagers() {
   return {
     pdfSources,
     imageManager,
+    sheetImporter,
     thumbnailRenderer,
     textContent,
     exporter,
@@ -85,6 +92,7 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
   const {
     pdfSources,
     imageManager,
+    sheetImporter,
     thumbnailRenderer,
     textContent,
     exporter,
@@ -190,9 +198,21 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
         const result = await imageManager.load(file)
         return { meta: result.meta, pages: [result.page] }
       }
-      throw new SourceLoadError(`"${file.name}" isn't a PDF or supported image.`)
+      const spreadsheet = spreadsheetFormatOf(file)
+      if (spreadsheet) {
+        // Converted on-device to PDF bytes, then loaded through the ordinary PDF
+        // path — so its pages annotate, crop, split and export like any other.
+        const bytes = await sheetImporter.convertToPdfBytes(file, spreadsheet)
+        const converted = new File([bytes as BlobPart], file.name, { type: 'application/pdf' })
+        const result = await pdfSources.load(converted)
+        return { meta: result.meta, pages: result.pages }
+      }
+      const unsupported = unsupportedSpreadsheetReason(file)
+      throw new SourceLoadError(
+        unsupported ?? `"${file.name}" isn't a PDF, image, or spreadsheet we can read.`,
+      )
     },
-    [pdfSources, imageManager],
+    [pdfSources, imageManager, sheetImporter],
   )
 
   const addFiles = useCallback(
