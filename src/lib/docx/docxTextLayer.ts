@@ -51,9 +51,21 @@ export function extractTextRuns(page: HTMLElement): DocxTextRun[] {
  * Boxes a page break must not cut through: every line of text, plus images and
  * table rows, which look far worse sliced than text does.
  */
+/**
+ * Grown slightly beyond the measured box because glyph ink is not confined to
+ * it: descenders, accents and tall faces paint a pixel or two outside the rect
+ * `getClientRects` reports. A break landing exactly on a boundary therefore
+ * shaves a sliver of the line onto the next page — visible as a thin smear
+ * along the top edge, which looks worse than the clean break it nearly was.
+ */
+const INK_BLEED_PX = 3
+
 export function extractUnbreakableBoxes(page: HTMLElement, runs: DocxTextRun[]): UnbreakableBox[] {
   const pageBox = page.getBoundingClientRect()
-  const boxes: UnbreakableBox[] = runs.map((run) => ({ top: run.y, bottom: run.y + run.height }))
+  const boxes: UnbreakableBox[] = runs.map((run) => ({
+    top: run.y - INK_BLEED_PX,
+    bottom: run.y + run.height + INK_BLEED_PX,
+  }))
   for (const element of page.querySelectorAll<HTMLElement>('img, tr, svg')) {
     const rect = element.getBoundingClientRect()
     if (rect.height < MIN_RUN_SIZE_PX) continue

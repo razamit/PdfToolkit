@@ -107,17 +107,26 @@ export class DocxImportManager {
     section: HTMLElement,
     font: PDFFont,
   ): Promise<void> {
-    // Measured before anything is moved: staging repositions the flowed element,
-    // and geometry read afterwards would not match the pixels being captured.
-    const runs = extractTextRuns(section)
+    // Page geometry comes from the section, which is not moved.
     const metrics = readPageMetrics(section)
-    const bands = computePageBands(metrics, extractUnbreakableBoxes(section, runs))
-    const { flowed, footer } = splitPageParts(section)
+    const { flowed, header, footer } = splitPageParts(section)
     if (!flowed) return
 
     const host = section.parentElement ?? section
-    const stage = createStage(host, flowed, metrics, footer)
+    const stage = createStage(host, flowed, metrics, header, footer)
     try {
+      // Everything else is measured *after* staging, in the flowed element's own
+      // space. Measuring beforehand looks equivalent and is not: moving the
+      // element changes margin collapsing, so bands computed from the old
+      // geometry sit a few pixels off the lines they were meant to fall between,
+      // and every page break shaves a sliver off the next page.
+      const runs = extractTextRuns(flowed)
+      const bandHeight = metrics.pageHeightPx - metrics.marginTopPx - metrics.marginBottomPx
+      const bands = computePageBands(
+        bandHeight,
+        flowed.getBoundingClientRect().height,
+        extractUnbreakableBoxes(flowed, runs),
+      )
       for (const band of bands) {
         stage.show(band)
         await this.addPage(document, stage.element, metrics, band, runs, font)
@@ -175,12 +184,12 @@ function drawInvisibleText(
   for (const run of runs) {
     const text = sanitizeAnnotationText(run.text)
     if (text.trim() === '') continue
-    // Element space → this page's space: the band's top is pulled to the top
+    // Flow space → this page's space: the band's top is pulled to the top
     // margin, exactly as the stage does for the pixels.
     const yPx = metrics.marginTopPx + (run.y - band.startPx)
     const size = fitSize(text, font, run.height * PX_TO_PT, run.width * PX_TO_PT)
     page.drawText(text, {
-      x: run.x * PX_TO_PT,
+      x: (metrics.marginLeftPx + run.x) * PX_TO_PT,
       // PDF y grows upward: the box's top-left becomes a baseline near its foot.
       y: heightPt - (yPx + run.height) * PX_TO_PT + size * 0.2,
       size,

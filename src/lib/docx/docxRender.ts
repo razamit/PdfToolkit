@@ -154,22 +154,36 @@ export function readPageMetrics(page: HTMLElement): PageMetrics {
     marginTopPx: parseFloat(style.paddingTop) || 0,
     marginBottomPx: parseFloat(style.paddingBottom) || 0,
     marginLeftPx: parseFloat(style.paddingLeft) || 0,
-    contentHeightPx: rect.height,
-    contentTopPx: parseFloat(style.paddingTop) || 0,
   }
 }
 
+/** A header or footer, with where it sat relative to the rendered page's top. */
+export interface PageChrome {
+  element: HTMLElement
+  offsetTopPx: number
+}
+
 /**
- * The flowing content and the footer, which are handled differently: content is
- * windowed per page, the footer is repeated on every page.
+ * The three parts of a rendered page, which are handled differently: the
+ * article is windowed one band at a time, while the header and footer are
+ * *repeated* on every page the way Word draws them. docx-preview renders each
+ * of them exactly once, at the top and foot of the whole flow.
  */
 export function splitPageParts(page: HTMLElement): {
   flowed: HTMLElement | null
-  footer: HTMLElement | null
+  header: PageChrome | null
+  footer: PageChrome | null
 } {
   const children = Array.from(page.children) as HTMLElement[]
+  const pageTop = page.getBoundingClientRect().top
+  const chrome = (tag: string): PageChrome | null => {
+    const element = children.find((child) => child.tagName === tag)
+    if (!element) return null
+    return { element, offsetTopPx: element.getBoundingClientRect().top - pageTop }
+  }
   return {
     flowed: children.find((child) => child.tagName === 'ARTICLE') ?? children[0] ?? null,
-    footer: children.find((child) => child.tagName === 'FOOTER') ?? null,
+    header: chrome('HEADER'),
+    footer: chrome('FOOTER'),
   }
 }

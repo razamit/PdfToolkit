@@ -6,6 +6,43 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-08-07 — Word headers now render and repeat per page, and page-break
+geometry moved into the flowed element's own space (offline, bug fixes +
+browser QA on five documents). ✅ DONE.** Prompted by a header/footer template
+the user supplied to test exactly this. Two bugs, one visible and one subtle.
+`splitPageParts` recognised only `ARTICLE` and `FOOTER`, so the `HEADER` a
+rendered page carries as its third child was never staged — every converted page
+lost its header entirely. Headers now clone onto each page like footers, keeping
+their measured offset (fixed within the top margin on every page) while the
+footer stays pinned to `pageHeight - marginBottom`, because its measured offset
+is the foot of the document rather than of a page. Second: bands were computed
+from geometry measured **before** the flowed element was staged, and moving it
+changes margin collapsing, so every break sat a few pixels off the gap it was
+chosen to fall in and shaved a sliver of the previous line onto the next page.
+All pagination geometry is now measured after staging, in the flowed element's
+own space. **Proof:** `npx tsc -b` exits 0; `npm run build` green; `npm run lint`
+unchanged at the same 4 pre-existing warnings. Browser QA on five documents —
+`letter.docx` 2 A4 pages, `termination.docx` 1 page with its signature intact,
+`litivest.docx` 4 Letter pages, `Document_with_Header_Footer.docx` 1 page with
+header and footer both rendered, and a six-times-repeated variant of it 3 pages
+with header **and** footer present on every page. The offending page went from a
+half-clipped line at its top to a clean paragraph start, and the Hebrew proposal
+recovered words at its breaks: **1,040 → 1,047** of 1,051, so the straddling-word
+gap fell from ~1% to ~0.4% and its ticket's figures are corrected. Two wrong
+diagnoses were tried first and are recorded in decision row 37 so they are not
+retried: padding unbreakable boxes for glyph ink (kept — independently correct,
+but not the cause) and awaiting a frame after `show()` (removed — the capture was
+never racing; it was rendering correct pixels for incorrect bands). **Files:**
+`src/lib/docx/{docxPaginate,docxRender,docxStage,docxTextLayer}.ts`,
+`src/managers/DocxImportManager.ts`,
+`docs/tickets/word-conversion-text-layer-has-three-gaps.md`,
+`docs/{PROGRESS,DECISIONS}.md`. Cross-ref: decision row 37, refining row 35.
+**Newly known gap:** a footer containing a real `PAGE` field would show the same
+number on every page, because one rendered footer is cloned; the test template
+uses literal text so this was not exercised. Not committed at time of writing.
+
+---
+
 **2026-08-07 — Added on-device Word (.docx) to PDF conversion with app-side
 pagination, and collapsed the four per-format add buttons into one picker
 (offline, code + discovery surfaces + browser QA on two real documents).

@@ -1,3 +1,4 @@
+import type { PageChrome } from './docxRender'
 import type { PageBand, PageMetrics } from './docxPaginate'
 
 /**
@@ -24,7 +25,8 @@ export function createStage(
   host: HTMLElement,
   flowed: HTMLElement,
   metrics: PageMetrics,
-  footer: HTMLElement | null,
+  header: PageChrome | null,
+  footer: PageChrome | null,
 ): Stage {
   const parent = flowed.parentElement
   const nextSibling = flowed.nextSibling
@@ -65,33 +67,26 @@ export function createStage(
   contentWindow.appendChild(flowed)
   stage.appendChild(contentWindow)
 
-  if (footer) {
-    // Word draws the footer in the bottom margin of *every* page; docx-preview
-    // renders it once, at the foot of the whole flow. Cloning it onto the stage
-    // restores the repetition. A clone is safe here: it is small, static, and
-    // nothing measures it.
-    const footerSlot = document.createElement('div')
-    footerSlot.style.cssText = [
-      'position:absolute',
-      'left:0',
-      `top:${metrics.pageHeightPx - metrics.marginBottomPx}px`,
-      `width:${metrics.pageWidthPx}px`,
-      `padding:0 ${metrics.marginLeftPx}px`,
-      'box-sizing:border-box',
-    ].join(';')
-    footerSlot.appendChild(footer.cloneNode(true))
-    stage.appendChild(footerSlot)
-  }
+  // Word draws the header and footer in the margins of *every* page;
+  // docx-preview renders each exactly once, at the top and foot of the whole
+  // flow. Cloning them onto the stage restores the repetition. Clones are safe
+  // here: both are small, static, and nothing measures them.
+  //
+  // The header keeps its measured offset, because it is positioned within the
+  // top margin (typically bottom-aligned against the text area) and that offset
+  // is the same on every page. The footer cannot use its measured offset — in a
+  // multi-page flow that is the foot of the *document*, not of a page — so it is
+  // placed at the top of the bottom margin instead.
+  appendChrome(stage, metrics, header, header?.offsetTopPx ?? 0)
+  appendChrome(stage, metrics, footer, metrics.pageHeightPx - metrics.marginBottomPx)
 
   host.appendChild(stage)
 
   return {
     element: stage,
     show(band) {
-      // Bands are in page-element space, where the flow starts at `contentTopPx`
-      // rather than at 0, so that offset is subtracted before shifting. Getting
-      // this wrong displaces every page by exactly one top margin.
-      flowed.style.top = `${-(band.startPx - metrics.contentTopPx)}px`
+      // Bands are in the flowed element's own space, so the offset is direct.
+      flowed.style.top = `${-band.startPx}px`
     },
     dispose() {
       flowed.style.position = ''
@@ -102,4 +97,24 @@ export function createStage(
       stage.remove()
     },
   }
+}
+
+function appendChrome(
+  stage: HTMLElement,
+  metrics: PageMetrics,
+  chrome: PageChrome | null,
+  topPx: number,
+): void {
+  if (!chrome) return
+  const slot = document.createElement('div')
+  slot.style.cssText = [
+    'position:absolute',
+    'left:0',
+    `top:${topPx}px`,
+    `width:${metrics.pageWidthPx}px`,
+    `padding:0 ${metrics.marginLeftPx}px`,
+    'box-sizing:border-box',
+  ].join(';')
+  slot.appendChild(chrome.element.cloneNode(true))
+  stage.appendChild(slot)
 }

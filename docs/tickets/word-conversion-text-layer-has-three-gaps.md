@@ -27,10 +27,12 @@ Measured on `Litivest_Engagement_Structure_updated.docx` (4 pages, heavy RTL):
 
 ```
 whole document, one flow : 1051 words
-sum of the four pages    : 1040 words   (172 + 274 + 368 + 226)
+sum of the four pages    : 1047 words
 ```
 
-11 words, ~1%, lost at the three break points. Breaks are already chosen to
+4 words, ~0.4%, lost at the three break points. (This was 11 words until the
+band geometry was moved into the flowed element's own space — see the progress
+entry of 2026-08-07; measuring before staging put every break a few pixels off.) Breaks are already chosen to
 avoid cutting lines (`computePageBands`), but the pull-back is capped at 25% of
 a page, so an object taller than that — a tall table row — is cut anyway and its
 words straddle.
