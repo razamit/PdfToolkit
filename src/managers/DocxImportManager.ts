@@ -107,29 +107,27 @@ export class DocxImportManager {
     section: HTMLElement,
     font: PDFFont,
   ): Promise<void> {
-    // Page geometry comes from the section, which is not moved.
     const metrics = readPageMetrics(section)
     const { flowed, header, footer } = splitPageParts(section)
     if (!flowed) return
 
-    const host = section.parentElement ?? section
-    const stage = createStage(host, flowed, metrics, header, footer)
+    // Measured from the pristine render. Staging is paint-only — it applies no
+    // property that participates in layout — so this geometry stays valid for
+    // every page and is what the captured pixels actually show.
+    const runs = extractTextRuns(flowed)
+    const bandHeight = metrics.pageHeightPx - metrics.marginTopPx - metrics.marginBottomPx
+    const bands = computePageBands(
+      bandHeight,
+      flowed.getBoundingClientRect().height,
+      extractUnbreakableBoxes(flowed, runs),
+    )
+
+    const buckets = bucketRunsByBand(runs, bands)
+    const stage = createStage(section, flowed, metrics, header, footer)
     try {
-      // Everything else is measured *after* staging, in the flowed element's own
-      // space. Measuring beforehand looks equivalent and is not: moving the
-      // element changes margin collapsing, so bands computed from the old
-      // geometry sit a few pixels off the lines they were meant to fall between,
-      // and every page break shaves a sliver off the next page.
-      const runs = extractTextRuns(flowed)
-      const bandHeight = metrics.pageHeightPx - metrics.marginTopPx - metrics.marginBottomPx
-      const bands = computePageBands(
-        bandHeight,
-        flowed.getBoundingClientRect().height,
-        extractUnbreakableBoxes(flowed, runs),
-      )
-      for (const band of bands) {
+      for (const [index, band] of bands.entries()) {
         stage.show(band)
-        await this.addPage(document, stage.element, metrics, band, runs, font)
+        await this.addPage(document, stage.element, metrics, band, buckets[index], font)
       }
     } finally {
       stage.dispose()
@@ -151,18 +149,31 @@ export class DocxImportManager {
 
     const image = await document.embedPng(raster.bytes)
     page.drawImage(image, { x: 0, y: 0, width: widthPt, height: heightPt })
-    drawInvisibleText(page, runsForBand(runs, band), metrics, band, font, widthPt, heightPt)
+    drawInvisibleText(page, runs, metrics, band, font, widthPt, heightPt)
   }
 }
 
 /**
- * Words wholly inside the band. A word straddling the break is dropped rather
- * than duplicated onto both pages: the break was already chosen to avoid
- * cutting lines, so anything still straddling is an oversized object the reader
- * can see in the raster regardless.
+ * Assign every word to exactly one page, by which band holds its **midpoint**.
+ *
+ * Requiring full containment instead looks stricter and is simply wrong in both
+ * directions. Text routinely paints outside the flow's box — a heading's line
+ * box measured at `y = -4` put the whole title page's text above the first
+ * band, and every word of it was silently dropped from the text layer. At the
+ * other end, a word straddling a break belonged to no band at all. A midpoint
+ * always lands somewhere, so no word can fall through, and clamping covers
+ * anything that overshoots the first or last band.
  */
-function runsForBand(runs: DocxTextRun[], band: PageBand): DocxTextRun[] {
-  return runs.filter((run) => run.y >= band.startPx - 0.5 && run.y + run.height <= band.endPx + 0.5)
+function bucketRunsByBand(runs: DocxTextRun[], bands: PageBand[]): DocxTextRun[][] {
+  const buckets: DocxTextRun[][] = bands.map(() => [])
+  if (bands.length === 0) return buckets
+  for (const run of runs) {
+    const middle = run.y + run.height / 2
+    let index = bands.findIndex((band) => middle >= band.startPx && middle < band.endPx)
+    if (index < 0) index = middle < bands[0].startPx ? 0 : bands.length - 1
+    buckets[index].push(run)
+  }
+  return buckets
 }
 
 /**

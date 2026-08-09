@@ -6,6 +6,41 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-08-09 — Rebuilt Word page windowing as a paint-only operation and fixed
+silent text loss at band edges; confirmed two remaining gaps with a purpose-built
+stress fixture. ✅ DONE.** A generated fixture (`docs/samples/stress_test.docx`:
+three sections, a landscape section, real `PAGE`/`NUMPAGES` fields, a
+`tblHeader` table, merged cells, an inline image, a hyperlink, Hebrew) converted
+to **15 pages** for a ~7-page document. Root cause: staging moved the flowed
+element and set `position: absolute`, stopping child-margin collapsing and
+inflating one section's flow from **2,908px to 4,752px**. Windowing now uses
+`transform` + `clip-path` on the untouched element — paint-only, so it cannot
+reflow — and geometry is measured from the pristine render again. Separately,
+runs are now assigned to the band holding their **midpoint** instead of
+requiring full containment: a heading line box at `y = -4` had put the whole
+title page above the first band, dropping all four words of the document title
+from the text layer while rendering perfectly. **Proof:** 15 → 13 pages with the
+inflation gone; title page text layer 0 words → full title; the Hebrew proposal
+held 5,345 → 5,333 extracted characters (no text lost — the word-count delta is
+RTL tokenisation noise from tighter spacing); all six documents held their page
+counts — `letter` 2, `termination` 1, `litivest` 4, `hf` 1, `hf-long` 3,
+`stress_test` 13, and portrait→landscape section changes verified as
+612×792 → 792×612 within one document. `npx tsc -b` exits 0, `npm run build`
+green, `npm run lint` unchanged at 4. **Confirmed but not fixed**, now filed in
+`docs/tickets/word-fields-and-repeating-table-headers-are-not-rendered.md`:
+`PAGE`/`NUMPAGES` fields render as *nothing* (`Page  of `) because docx-preview
+does not evaluate fields — worse than the predicted "same number every page";
+and `tblHeader` rows do not repeat, verified by reading the top line of the three
+pages the wide table spans (`Col 1 Col 2`, then `R16C0`, then `R32C0`). **Still
+untested** because the fixture lacks them: footnotes, real multi-level `numPr`
+lists, text boxes, anchored/wrapped images, and `<w:rtl/>` runs. **Files:**
+`src/lib/docx/docxStage.ts`, `src/managers/DocxImportManager.ts`,
+`docs/samples/stress_test.docx`, `docs/{PROGRESS,DECISIONS}.md`, and added
+`docs/tickets/word-fields-and-repeating-table-headers-are-not-rendered.md`.
+Cross-ref: decision row 38, correcting rows 35 and 37.
+
+---
+
 **2026-08-07 — Word headers now render and repeat per page, and page-break
 geometry moved into the flowed element's own space (offline, bug fixes +
 browser QA on five documents). ✅ DONE.** Prompted by a header/footer template
