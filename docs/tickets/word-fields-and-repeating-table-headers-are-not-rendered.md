@@ -1,18 +1,18 @@
-# Converted Word pages lose PAGE fields and repeating table header rows
+# Converted Word pages lose repeating table header rows
 
-Status: OPEN · Priority: MEDIUM · Type: missing feature · Cost: none
+Status: PARTIALLY RESOLVED · Priority: LOW · Type: missing feature · Cost: none
 
-> Both were predicted before the fixture existed and both are now confirmed on
-> `docs/samples/stress_test.docx`. Priority is MEDIUM rather than LOW because
-> the first one makes a footer look *broken* rather than merely different.
+> **Page fields are fixed** — see decision row 40 and the progress entry of
+> 2026-08-09; a footer now reads "Page 2 of 3", numbering continues across
+> section boundaries, and both the well-formed and the malformed field shapes
+> are handled. What remains is the repeating table header row, which is why the
+> priority dropped to LOW.
 
 ## Symptom
 
-**1. `PAGE` and `NUMPAGES` fields render as nothing.** A footer whose Word
-content is `Page {PAGE} of {NUMPAGES}` converts to the literal text
-`Page  of ` — the numbers are absent, not merely wrong. This is worse than the
-predicted failure, which was that one cloned footer would show the same number
-on every page.
+~~**1. `PAGE` and `NUMPAGES` fields render as nothing.**~~ **Fixed.** The
+converter resolves them itself, since it is the one component that knows both a
+page's index and — after a first pass that paginates every section — the total.
 
 **2. A table's repeating header row does not repeat.** A row marked
 `<w:tblHeader/>` is drawn on the first page of the table only; every later page
@@ -43,10 +43,6 @@ The rendered title page shows `Page  of ` in its footer.
 
 ## Why it matters
 
-Page numbers are close to universal in business documents, and an empty
-`Page  of ` reads as a bug in the converter rather than as a limitation. It is
-the most visible defect remaining in Word conversion.
-
 Repeating header rows matter on any multi-page table — a price list, a risk
 register — where losing the headings makes later pages hard to read. Less
 common than page numbers, and less visibly broken.
@@ -56,16 +52,12 @@ Neither affects the text layer beyond what is already recorded in
 
 ## Scope to decide
 
-- Option A — Resolve `PAGE`/`NUMPAGES` ourselves. The converter is the one
-  component that knows both numbers: `addSection` has the band index, and the
-  total is known once every section is paginated. It would mean a two-pass
-  render (paginate everything, then draw), and locating the field's placeholder
-  in the rendered footer to substitute into. This is the higher-value half.
-- OR Option B — Repeat `tblHeader` rows. Hard under the current paint-only
+- ~~Option A — Resolve `PAGE`/`NUMPAGES` ourselves.~~ Done.
+- Option B — Repeat `tblHeader` rows. Hard under the current paint-only
   staging, which slices a single rendered flow: the header row would have to be
   cloned and pinned at the top of each band that continues a table, in the
   layout rather than in the raster.
-- OR Option C — Neither; disclose both on the discovery surfaces alongside the
-  existing conversion caveats.
+- OR Option C — Leave it; disclose non-repeating table headers on the discovery
+  surfaces alongside the existing conversion caveats.
 
 No code change made by this ticket — it is an observation on the record.

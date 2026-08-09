@@ -6,6 +6,38 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-08-09 — Word `PAGE`/`NUMPAGES` fields now resolve; conversion split into
+a planning pass and a rendering pass (offline, code + browser QA on seven
+documents). ✅ DONE.** docx-preview does not evaluate fields — it drops the
+field runs, so a real footer rendered as "Page  of ". The converter now resolves
+them itself, which it is uniquely able to do: the page index is known while
+paginating and the total only once every section has been paginated, so
+`planSection` measures and chooses breaks for all sections before
+`renderSection` draws anything. Because the rendered DOM holds no placeholder,
+each field's position is read from the source XML as the count of literal text
+runs preceding it, and the rendered spans are matched against that sequence by
+text signature — necessary because the target may be a cloned default header.
+**Proof:** a three-page fixture's footer reads "Page 1 of 3", "Page 2 of 3",
+"Page 3 of 3", the last of those in a *different section*, so numbering carries
+across section boundaries. All seven documents hold their page counts —
+`letter` 2, `termination` 1, `litivest` 4, `hf` 1, `hf-long` 3, `stress_test` 13,
+`stress_test_2` 3. `npx tsc -b` exits 0, `npm run build` green, `npm run lint`
+unchanged at 4. **Two bugs hit while building it**, both recorded in decision
+row 40: the parser assumed Word's canonical `begin`/instruction/`separate`/
+`end` run split and silently dropped a generated fixture's fields, which put
+`begin` and the instruction in one run with no `end`; and matching on the full
+text signature was self-defeating, because writing page 1's number into a
+cached-result run changed the text page 2 compared against, so page 2 kept
+page 1's number. `docs/samples/stress_test_2.docx` gained a well-formed field
+so both shapes are covered. Partially resolves
+`docs/tickets/word-fields-and-repeating-table-headers-are-not-rendered.md` —
+repeating table header rows remain open. **Files:** added
+`src/lib/docx/docxFields.ts`; edited `src/lib/docx/docxStage.ts`,
+`src/managers/DocxImportManager.ts`, `docs/samples/stress_test_2.docx`,
+`docs/{PROGRESS,DECISIONS}.md`, and the ticket above. Cross-ref: decision row 40.
+
+---
+
 **2026-08-09 — Fixed nested list numbering, footnote placement and the
 first-page header in Word conversion; diagnosed a fourth defect as third-party
 (offline, code + a purpose-written fixture). ✅ DONE.** Wrote

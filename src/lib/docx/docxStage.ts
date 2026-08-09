@@ -21,6 +21,8 @@ import type { PageBand, PageMetrics } from './docxPaginate'
 export interface Stage {
   /** The page-sized element to capture. */
   element: HTMLElement
+  /** Header/footer elements visible on the current page, for field values. */
+  chromeFor(isFirstPage: boolean): HTMLElement[]
   /** Show a band, with the footnotes referenced from it. */
   show(band: PageBand, footnotes: HTMLElement[], isFirstPage: boolean): void
   /** Restore every property this touched. */
@@ -120,6 +122,13 @@ export function createStage(
 
   return {
     element: section,
+    chromeFor(isFirstPage) {
+      const visible: HTMLElement[] = []
+      if (header && (!laterSlot || isFirstPage)) visible.push(header.element)
+      if (laterSlot && !isFirstPage) visible.push(laterSlot)
+      if (footer) visible.push(footer.element)
+      return visible
+    },
     show(band, footnotes, isFirstPage) {
       if (laterSlot && header) {
         laterSlot.style.display = isFirstPage ? 'none' : 'block'

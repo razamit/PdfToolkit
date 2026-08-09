@@ -6,6 +6,7 @@ import { computePageBands, type PageBand, type PageMetrics } from '@/lib/docx/do
 import { rasterizePage } from '@/lib/docx/docxRasterize'
 import { readPageMetrics, renderDocx, splitPageParts } from '@/lib/docx/docxRender'
 import { hasTitlePage, withoutTitlePage } from '@/lib/docx/docxTitlePage'
+import { applyFields, clearFields, readFieldPlans, type FieldPlan } from '@/lib/docx/docxFields'
 import { footnoteHeightFor, footnotesForBand, indexFootnotes } from '@/lib/docx/docxFootnotes'
 import { createStage } from '@/lib/docx/docxStage'
 import { extractTextRuns, extractUnbreakableBoxes, type DocxTextRun } from '@/lib/docx/docxTextLayer'
@@ -86,10 +87,22 @@ export class DocxImportManager {
       document.setTitle(file.name)
       const font = await embedTextLayerFont(document)
 
-      // Each rendered element is one *section*; a section may still be many
-      // pages long, so every one of them is paginated in turn.
-      for (const [index, section] of rendered.pages.entries()) {
-        await this.addSection(document, section, font, laterHeaders?.pages[index] ?? null)
+      // Two passes, because a `NUMPAGES` field cannot be written until every
+      // section has been paginated. Pass one only measures — nothing is staged,
+      // so the geometry it reads is the pristine layout.
+      const plans = rendered.pages.map((section) => this.planSection(section))
+      const totalPages = plans.reduce((sum, plan) => sum + (plan?.bands.length ?? 0), 0)
+      const fieldPlans = await readFieldPlans(bytes)
+
+      let pageNumber = 0
+      for (const [index, plan] of plans.entries()) {
+        if (!plan) continue
+        pageNumber = await this.renderSection(document, plan, font, {
+          laterSection: laterHeaders?.pages[index] ?? null,
+          fieldPlans,
+          firstPageNumber: pageNumber + 1,
+          totalPages,
+        })
       }
       return document.save()
     } finally {
@@ -129,23 +142,18 @@ export class DocxImportManager {
     }
   }
 
-  private async addSection(
-    document: PDFDocument,
-    section: HTMLElement,
-    font: PDFFont,
-    laterSection: HTMLElement | null,
-  ): Promise<void> {
+  /**
+   * Measure a section and choose its page breaks, without staging anything.
+   * Separated from rendering so the whole document's page count is known before
+   * the first page is drawn, which is what `NUMPAGES` needs.
+   */
+  private planSection(section: HTMLElement): SectionPlan | null {
     const metrics = readPageMetrics(section)
     const { flowed, header, footer, footnotes } = splitPageParts(section)
-    if (!flowed) return
+    if (!flowed) return null
 
-    // Measured from the pristine render. Staging is paint-only — it applies no
-    // property that participates in layout — so this geometry stays valid for
-    // every page and is what the captured pixels actually show.
     const runs = extractTextRuns(flowed)
     const bandHeight = metrics.pageHeightPx - metrics.marginTopPx - metrics.marginBottomPx
-    // Indexed before banding: a page's footnotes shorten its text area, so the
-    // pagination has to know about them while it is choosing the breaks.
     const footnoteIndex = indexFootnotes(flowed, footnotes)
     const bands = computePageBands(
       bandHeight,
@@ -153,26 +161,54 @@ export class DocxImportManager {
       extractUnbreakableBoxes(flowed, runs),
       (startPx, endPx) => footnoteHeightFor(footnoteIndex, startPx, endPx),
     )
-
-    const buckets = bucketRunsByBand(runs, bands)
-    const laterHeader = laterSection ? splitPageParts(laterSection).header : null
-    const stage = createStage(
+    return {
       section,
       flowed,
       metrics,
       header,
       footer,
       footnotes,
+      footnoteIndex,
+      bands,
+      buckets: bucketRunsByBand(runs, bands),
+    }
+  }
+
+  /** Draw a planned section's pages. Returns the last page number used. */
+  private async renderSection(
+    document: PDFDocument,
+    plan: SectionPlan,
+    font: PDFFont,
+    context: RenderContext,
+  ): Promise<number> {
+    const laterHeader = context.laterSection ? splitPageParts(context.laterSection).header : null
+    const stage = createStage(
+      plan.section,
+      plan.flowed,
+      plan.metrics,
+      plan.header,
+      plan.footer,
+      plan.footnotes,
       laterHeader?.element ?? null,
     )
+    let pageNumber = context.firstPageNumber
     try {
-      for (const [index, band] of bands.entries()) {
-        stage.show(band, footnotesForBand(footnoteIndex, band), index === 0)
-        await this.addPage(document, stage.element, metrics, band, buckets[index], font)
+      for (const [index, band] of plan.bands.entries()) {
+        const isFirstPage = index === 0
+        stage.show(band, footnotesForBand(plan.footnoteIndex, band), isFirstPage)
+        const chrome = stage.chromeFor(isFirstPage)
+        for (const element of chrome) {
+          clearFields(element)
+          applyFields(element, context.fieldPlans, pageNumber, context.totalPages)
+        }
+        await this.addPage(document, stage.element, plan.metrics, band, plan.buckets[index], font)
+        for (const element of chrome) clearFields(element)
+        pageNumber += 1
       }
     } finally {
       stage.dispose()
     }
+    return pageNumber - 1
   }
 
   private async addPage(
@@ -192,6 +228,25 @@ export class DocxImportManager {
     page.drawImage(image, { x: 0, y: 0, width: widthPt, height: heightPt })
     drawInvisibleText(page, runs, metrics, band, font, widthPt, heightPt)
   }
+}
+
+interface SectionPlan {
+  section: HTMLElement
+  flowed: HTMLElement
+  metrics: PageMetrics
+  header: ReturnType<typeof splitPageParts>['header']
+  footer: ReturnType<typeof splitPageParts>['footer']
+  footnotes: HTMLElement | null
+  footnoteIndex: ReturnType<typeof indexFootnotes>
+  bands: PageBand[]
+  buckets: DocxTextRun[][]
+}
+
+interface RenderContext {
+  laterSection: HTMLElement | null
+  fieldPlans: FieldPlan[]
+  firstPageNumber: number
+  totalPages: number
 }
 
 /**
