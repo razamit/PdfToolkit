@@ -5,6 +5,8 @@ import { loadDocxSubstituteFonts } from '@/lib/docx/docxFonts'
 import { computePageBands, type PageBand, type PageMetrics } from '@/lib/docx/docxPaginate'
 import { rasterizePage } from '@/lib/docx/docxRasterize'
 import { readPageMetrics, renderDocx, splitPageParts } from '@/lib/docx/docxRender'
+import { hasTitlePage, withoutTitlePage } from '@/lib/docx/docxTitlePage'
+import { footnoteHeightFor, footnotesForBand, indexFootnotes } from '@/lib/docx/docxFootnotes'
 import { createStage } from '@/lib/docx/docxStage'
 import { extractTextRuns, extractUnbreakableBoxes, type DocxTextRun } from '@/lib/docx/docxTextLayer'
 import { SourceLoadError } from '@/domain/errors'
@@ -72,7 +74,10 @@ export class DocxImportManager {
     // race it is. A font failure is not fatal — the document still renders.
     await loadDocxSubstituteFonts().catch(() => undefined)
 
-    const rendered = await this.render(file)
+    const bytes = new Uint8Array(await file.arrayBuffer())
+    const rendered = await this.render(file, bytes)
+    // Only paid for by documents that actually declare a title page.
+    const laterHeaders = await this.renderLaterHeaders(bytes)
     try {
       if (rendered.pages.length === 0) {
         throw new SourceLoadError(`"${file.name}" has no pages to convert.`)
@@ -83,18 +88,22 @@ export class DocxImportManager {
 
       // Each rendered element is one *section*; a section may still be many
       // pages long, so every one of them is paginated in turn.
-      for (const section of rendered.pages) {
-        await this.addSection(document, section, font)
+      for (const [index, section] of rendered.pages.entries()) {
+        await this.addSection(document, section, font, laterHeaders?.pages[index] ?? null)
       }
       return document.save()
     } finally {
       rendered.host.remove()
+      laterHeaders?.host.remove()
     }
   }
 
-  private async render(file: File): Promise<Awaited<ReturnType<typeof renderDocx>>> {
+  private async render(
+    file: File,
+    bytes: Uint8Array,
+  ): Promise<Awaited<ReturnType<typeof renderDocx>>> {
     try {
-      return await renderDocx(new Uint8Array(await file.arrayBuffer()))
+      return await renderDocx(bytes)
     } catch {
       throw new SourceLoadError(
         `"${file.name}" could not be opened — it may be corrupted, password-protected, or not a real .docx file.`,
@@ -102,13 +111,32 @@ export class DocxImportManager {
     }
   }
 
+  /**
+   * Re-render with `titlePg` stripped, purely to obtain each section's *default*
+   * header — docx-preview renders only the first-page one when the flag is set.
+   * Returns `null` for the overwhelming majority of documents, which have no
+   * title page and must not pay for a second render.
+   */
+  private async renderLaterHeaders(
+    bytes: Uint8Array,
+  ): Promise<Awaited<ReturnType<typeof renderDocx>> | null> {
+    try {
+      if (!(await hasTitlePage(bytes))) return null
+      const stripped = await withoutTitlePage(bytes)
+      return stripped ? await renderDocx(stripped) : null
+    } catch {
+      return null
+    }
+  }
+
   private async addSection(
     document: PDFDocument,
     section: HTMLElement,
     font: PDFFont,
+    laterSection: HTMLElement | null,
   ): Promise<void> {
     const metrics = readPageMetrics(section)
-    const { flowed, header, footer } = splitPageParts(section)
+    const { flowed, header, footer, footnotes } = splitPageParts(section)
     if (!flowed) return
 
     // Measured from the pristine render. Staging is paint-only — it applies no
@@ -116,17 +144,30 @@ export class DocxImportManager {
     // every page and is what the captured pixels actually show.
     const runs = extractTextRuns(flowed)
     const bandHeight = metrics.pageHeightPx - metrics.marginTopPx - metrics.marginBottomPx
+    // Indexed before banding: a page's footnotes shorten its text area, so the
+    // pagination has to know about them while it is choosing the breaks.
+    const footnoteIndex = indexFootnotes(flowed, footnotes)
     const bands = computePageBands(
       bandHeight,
       flowed.getBoundingClientRect().height,
       extractUnbreakableBoxes(flowed, runs),
+      (startPx, endPx) => footnoteHeightFor(footnoteIndex, startPx, endPx),
     )
 
     const buckets = bucketRunsByBand(runs, bands)
-    const stage = createStage(section, flowed, metrics, header, footer)
+    const laterHeader = laterSection ? splitPageParts(laterSection).header : null
+    const stage = createStage(
+      section,
+      flowed,
+      metrics,
+      header,
+      footer,
+      footnotes,
+      laterHeader?.element ?? null,
+    )
     try {
       for (const [index, band] of bands.entries()) {
-        stage.show(band)
+        stage.show(band, footnotesForBand(footnoteIndex, band), index === 0)
         await this.addPage(document, stage.element, metrics, band, buckets[index], font)
       }
     } finally {

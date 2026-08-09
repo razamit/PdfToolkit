@@ -6,6 +6,43 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-08-09 — Fixed nested list numbering, footnote placement and the
+first-page header in Word conversion; diagnosed a fourth defect as third-party
+(offline, code + a purpose-written fixture). ✅ DONE.** Wrote
+`docs/samples/stress_test_2.docx` by hand — raw OOXML rather than python-docx —
+carrying the eight constructs a generated fixture had silently dropped, and
+verified all eight present in its XML before testing. It found four defects on
+first run; three are fixed. **(1) Nested counters:** docx-preview restarts a
+sublevel with `counter-set` on the *element*, while `counter-increment` sits on
+the `::before`; the resolver read only the pseudo-element and only
+`counter-reset`, so a list numbered 1., 1.1., 1.2., 2., **2.3.**, 2.4. Now
+1., 1.1., 1.1.1., 1.1.2., 1.2., 2., **2.1.**, 2.2., 3. **(2) Footnotes:** the
+`<ol>` docx-preview emits after the article was never staged, so marks rendered
+and note text did not. Notes are now matched to pages via the reference mark's
+1-based position in that list, and the band shrinks by their measured height —
+`settleBand` resolves the circularity in at most two passes. **(3) First-page
+header:** with `titlePg`, docx-preview renders only the first-page header, so
+repeating it stamped "DRAFT" on every page; the package is now re-rendered once
+with the flag stripped, purely to harvest each section's default header, and
+only when the flag is actually present. **Proof:** `npx tsc -b` exits 0,
+`npm run build` green, `npm run lint` unchanged at 4. Page 1 shows the
+first-page header, page 2 the default; footnotes 1–2 sit at the foot of page 1
+and footnote 3 at the foot of page 2, none overlapping body text. All seven
+documents hold their page counts — `letter` 2, `termination` 1, `litivest` 4,
+`hf` 1, `hf-long` 3, `stress_test` 13, `stress_test_2` 3. **(4) Not fixed, and
+not ours:** a two-column section captures with text drawn over itself. The
+section is a single band, and a screenshot of the live DOM shows two clean
+columns while the captured copy overlaps — so the fault is in `@zumer/snapdom`.
+A height/`column-fill` workaround was tried, did not help, and was reverted;
+filed as `docs/tickets/snapdom-duplicates-text-in-multi-column-sections.md`.
+**Files:** added `src/lib/docx/{docxFootnotes,docxTitlePage}.ts`,
+`docs/samples/stress_test_2.docx`, the ticket above; edited
+`src/lib/docx/{docxMarkers,docxRender,docxStage,docxPaginate}.ts`,
+`src/managers/DocxImportManager.ts`, `docs/{PROGRESS,DECISIONS}.md`.
+Cross-ref: decision row 39.
+
+---
+
 **2026-08-09 — Rebuilt Word page windowing as a paint-only operation and fixed
 silent text loss at band edges; confirmed two remaining gaps with a purpose-built
 stress fixture. ✅ DONE.** A generated fixture (`docs/samples/stress_test.docx`:

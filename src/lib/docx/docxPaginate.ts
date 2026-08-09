@@ -52,28 +52,57 @@ export function computePageBands(
   bandHeightPx: number,
   contentHeightPx: number,
   unbreakable: UnbreakableBox[],
+  /**
+   * Extra height this page must give up — footnotes, which occupy the foot of
+   * the page they are referenced from and therefore shorten the text area.
+   * Called with a provisional band because what a page reserves depends on what
+   * it contains, and what it contains depends on what it reserves.
+   */
+  reserveFor?: (startPx: number, endPx: number) => number,
 ): PageBand[] {
   if (bandHeightPx <= 0 || contentHeightPx <= 0) {
     return [{ startPx: 0, endPx: Math.max(0, contentHeightPx) }]
   }
-  const maxPullback = bandHeightPx * MAX_PULLBACK_RATIO
   const sorted = [...unbreakable].sort((a, b) => a.top - b.top)
 
   const bands: PageBand[] = []
   let start = 0
-  // Bounded rather than `while (start < contentHeightPx)`: a pathological
-  // pull-back that failed to advance would otherwise spin forever.
   for (let guard = 0; guard < MAX_PAGES && start < contentHeightPx - 1; guard += 1) {
-    const ideal = start + bandHeightPx
-    if (ideal >= contentHeightPx) {
-      bands.push({ startPx: start, endPx: contentHeightPx })
-      break
-    }
-    const end = breakBefore(ideal, start + bandHeightPx - maxPullback, sorted)
+    const end = settleBand(start, bandHeightPx, contentHeightPx, sorted, reserveFor)
     bands.push({ startPx: start, endPx: end })
+    if (end <= start) break
     start = end
   }
   return bands.length > 0 ? bands : [{ startPx: 0, endPx: contentHeightPx }]
+}
+
+/**
+ * Resolve one band's end. Two passes at most: the first finds what the page
+ * would hold at full height, the second re-cuts it against whatever that
+ * content reserves. Iterating further could oscillate between two answers, and
+ * a page one line short is a far smaller error than a loop that never settles.
+ */
+function settleBand(
+  start: number,
+  bandHeightPx: number,
+  contentHeightPx: number,
+  sorted: UnbreakableBox[],
+  reserveFor?: (startPx: number, endPx: number) => number,
+): number {
+  let available = bandHeightPx
+  let end = Math.min(start + available, contentHeightPx)
+  for (let pass = 0; pass < 2; pass += 1) {
+    const ideal = start + available
+    end = ideal >= contentHeightPx
+      ? contentHeightPx
+      : breakBefore(ideal, start + available - available * MAX_PULLBACK_RATIO, sorted)
+    if (!reserveFor) break
+    const reserved = reserveFor(start, end)
+    const next = Math.max(bandHeightPx * 0.25, bandHeightPx - reserved)
+    if (Math.abs(next - available) < 1) break
+    available = next
+  }
+  return end
 }
 
 /** Safety valve; a document this long is a bug or an attack, not a document. */

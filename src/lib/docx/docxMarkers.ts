@@ -35,10 +35,17 @@ export function flattenGeneratedContent(host: HTMLElement): void {
   const walker = document.createTreeWalker(host, NodeFilter.SHOW_ELEMENT)
   let element = walker.currentNode as HTMLElement | null
   while (element) {
+    // The element's own counter operations run before its pseudo-elements',
+    // because ::before is a child box. This ordering is what makes nesting
+    // work: a level-1 item carries `counter-set: <level-2 counter> 0`, so the
+    // deeper counter must be zeroed here, before the ::before increments its
+    // own. Reading only the pseudo-element — as this did originally — leaves
+    // sub-counters running and a list numbers 1., 1.1., 1.2., 2., **2.3.**
+    applyCounterStyles(getComputedStyle(element), counters)
+
     for (const pseudo of ['::before', '::after'] as const) {
       const style = getComputedStyle(element, pseudo)
-      applyCounterOperations(style.counterReset, counters, true)
-      applyCounterOperations(style.counterIncrement, counters, false)
+      applyCounterStyles(style, counters)
 
       const resolved = resolveContent(style.content, counters)
       if (resolved !== null) {
@@ -61,13 +68,30 @@ export function flattenGeneratedContent(host: HTMLElement): void {
 }
 
 /**
- * `counter-reset: a 0 b 3` / `counter-increment: a 1`. Values are optional and
- * default to 0 for a reset and 1 for an increment.
+ * Apply one style's counter properties in the order CSS defines: reset, then
+ * increment, then set.
+ *
+ * `counter-set` is not an alias for `counter-reset` and must be read
+ * separately — it is the property docx-preview actually uses to restart a
+ * nested list level, so ignoring it breaks multi-level numbering while leaving
+ * single-level lists looking perfect.
+ */
+function applyCounterStyles(style: CSSStyleDeclaration, counters: Map<string, number>): void {
+  applyCounterOperations(style.counterReset, counters, 'reset')
+  applyCounterOperations(style.counterIncrement, counters, 'increment')
+  applyCounterOperations(style.counterSet, counters, 'set')
+}
+
+type CounterOperation = 'reset' | 'increment' | 'set'
+
+/**
+ * `counter-reset: a 0 b 3` / `counter-increment: a 1` / `counter-set: a 0`.
+ * The value is optional and defaults to 1 for an increment, 0 otherwise.
  */
 function applyCounterOperations(
   value: string,
   counters: Map<string, number>,
-  isReset: boolean,
+  operation: CounterOperation,
 ): void {
   if (!value || value === 'none') return
   const tokens = value.trim().split(/\s+/)
@@ -76,9 +100,9 @@ function applyCounterOperations(
     if (!/^[-\w]+$/.test(name) || /^-?\d+$/.test(name)) continue
     const next = tokens[index + 1]
     const explicit = next !== undefined && /^-?\d+$/.test(next)
-    const amount = explicit ? Number(next) : isReset ? 0 : 1
+    const amount = explicit ? Number(next) : operation === 'increment' ? 1 : 0
     if (explicit) index += 1
-    counters.set(name, isReset ? amount : (counters.get(name) ?? 0) + amount)
+    counters.set(name, operation === 'increment' ? (counters.get(name) ?? 0) + amount : amount)
   }
 }
 

@@ -173,6 +173,8 @@ export function splitPageParts(page: HTMLElement): {
   flowed: HTMLElement | null
   header: PageChrome | null
   footer: PageChrome | null
+  /** Footnote list for the section, rendered once as a sibling of the article. */
+  footnotes: HTMLElement | null
 } {
   const children = Array.from(page.children) as HTMLElement[]
   const pageTop = page.getBoundingClientRect().top
@@ -185,5 +187,9 @@ export function splitPageParts(page: HTMLElement): {
     flowed: children.find((child) => child.tagName === 'ARTICLE') ?? children[0] ?? null,
     header: chrome('HEADER'),
     footer: chrome('FOOTER'),
+    // docx-preview collects a section's footnotes into a single ordered list
+    // placed after the article. Left alone it is neither windowed nor staged,
+    // so the reference marks render and their text silently does not.
+    footnotes: children.find((child) => child.tagName === 'OL') ?? null,
   }
 }
