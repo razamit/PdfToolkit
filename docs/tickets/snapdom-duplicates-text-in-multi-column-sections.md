@@ -1,6 +1,16 @@
 # Multi-column Word sections capture with text drawn over itself
 
-Status: OPEN · Priority: LOW · Type: third-party limitation · Cost: none
+Status: CLOSED (2026-08-09) — WON'T FIX · Priority: LOW · Type: third-party limitation · Cost: none
+
+> **Closed 2026-08-09 — won't fix.** Office conversion was removed from the
+> product entirely; see decision row 41 in `docs/DECISIONS.md` and the
+> 2026-08-09 entry in `docs/PROGRESS.md`. The application that owns the format
+> exports a more faithful PDF than any in-browser converter can, so the product
+> now points the user at File → Print → Save as PDF instead of converting. This
+> ticket's subject no longer exists in the codebase; it is kept as the record of
+> what was observed.
+>
+> Moot: `@zumer/snapdom` was the rasterizer for Word conversion and has been removed from the dependency list along with it, so nothing in the product hits this third-party bug.
 
 > The fault is in the capture library, not in this codebase — the live DOM is
 > correct and only the rasterised copy is wrong. Recorded so the next person to

@@ -25,11 +25,6 @@ interface SupportedFormat {
 const FORMATS: SupportedFormat[] = [
   { extension: 'PDF', color: '#dc2626', label: 'PDF', detail: '.pdf' },
   { extension: 'IMG', color: '#7c3aed', label: 'Images', detail: '.jpg .png' },
-  // Deliberately XLSX and DOCX, not XLS and DOC: the legacy binary formats are
-  // the ones the importer *rejects* by name, so labelling the badges with them
-  // would promise the exact thing that fails.
-  { extension: 'XLSX', color: '#16a34a', label: 'Spreadsheets', detail: '.csv .xlsx' },
-  { extension: 'DOCX', color: '#2563eb', label: 'Word', detail: '.docx' },
 ]
 
 export function SupportedFormats({ className }: { className?: string }) {

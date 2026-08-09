@@ -1,6 +1,16 @@
 # Word (.docx) and PowerPoint (.pptx) files cannot be added to a document
 
-Status: OPEN · Priority: MEDIUM · Type: missing feature · Cost: none
+Status: CLOSED (2026-08-09) — WON'T FIX · Priority: MEDIUM · Type: missing feature · Cost: none
+
+> **Closed 2026-08-09 — won't fix.** Office conversion was removed from the
+> product entirely; see decision row 41 in `docs/DECISIONS.md` and the
+> 2026-08-09 entry in `docs/PROGRESS.md`. The application that owns the format
+> exports a more faithful PDF than any in-browser converter can, so the product
+> now points the user at File → Print → Save as PDF instead of converting. This
+> ticket's subject no longer exists in the codebase; it is kept as the record of
+> what was observed.
+>
+> Resolved by deciding *not* to build it. Option B of the Scope below was chosen and then widened: rather than only naming the formats as unsupported, the app tells the user the route that produces a better PDF than the converter would have. PowerPoint support was prototyped first (pptx-viewer 0.3.0 vendored, raster + invisible text layer, working end to end) and that prototype was discarded with the rest.
 
 > This is the deferred half of the 2026-08-06 request that shipped CSV/XLSX
 > import (decision row 32). It is not a defect in that work — the scope was cut

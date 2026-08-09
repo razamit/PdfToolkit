@@ -1,6 +1,16 @@
 # Converted Word pages lose repeating table header rows
 
-Status: PARTIALLY RESOLVED · Priority: LOW · Type: missing feature · Cost: none
+Status: CLOSED (2026-08-09) — WON'T FIX · Priority: LOW · Type: missing feature · Cost: none
+
+> **Closed 2026-08-09 — won't fix.** Office conversion was removed from the
+> product entirely; see decision row 41 in `docs/DECISIONS.md` and the
+> 2026-08-09 entry in `docs/PROGRESS.md`. The application that owns the format
+> exports a more faithful PDF than any in-browser converter can, so the product
+> now points the user at File → Print → Save as PDF instead of converting. This
+> ticket's subject no longer exists in the codebase; it is kept as the record of
+> what was observed.
+>
+> Moot: Word conversion no longer exists. `PAGE`/`NUMPAGES` were fixed on 2026-08-09 (decision row 40) hours before the feature was removed; repeating table header rows were never built.
 
 > **Page fields are fixed** — see decision row 40 and the progress entry of
 > 2026-08-09; a footer now reads "Page 2 of 3", numbering continues across

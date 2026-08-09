@@ -1,8 +1,7 @@
 # Free PDF Machine
 
 **Private PDF editor that runs entirely in your browser.** Merge, crop and split
-PDFs, convert Word documents and Excel or CSV spreadsheets to PDF, fill forms, add
-page numbers and watermarks, and run English OCR locally.
+PDFs, fill forms, add page numbers and watermarks, and run English OCR locally.
 Document content is never uploaded, and there is no signup, account or cost.
 
 Open it at [freepdfmachine.com](https://freepdfmachine.com/), pick your files, and
@@ -16,15 +15,18 @@ offline use after the first online visit.
 - **No quality loss.** The exported PDF is rebuilt from the original bytes of the
   file you opened, not from what is drawn on screen.
 
-Accepts PDF, JPEG, PNG, CSV, TSV, Excel (.xlsx/.xlsm) and Word (.docx). Exports a single PDF.
+Accepts PDF, JPEG and PNG. Exports a single PDF.
+
+Office files are not converted, on purpose: Word, PowerPoint and Excel each export
+a better PDF than a browser can, with your real fonts and their own layout engine.
+Use File → Print → Save as PDF (or File → Export as PDF) there, then open that PDF
+here.
 
 ## What you can do
 
 | | |
 |---|---|
-| **Merge** | Combine any number of PDFs, images and spreadsheets into one document. Each page's border is colour-coded by the file it came from. |
-| **Word to PDF** | Open a .docx and each page converts on this device with its styles, lists, tables, images, headers and footers intact, plus an invisible text layer so it still selects and searches. Converted pages are images, so they are larger than a typed PDF. |
-| **Spreadsheets to PDF** | Open a CSV, TSV or Excel workbook and every worksheet becomes a paginated table of real, selectable PDF text, converted on this device. Wide sheets continue on further pages with the heading row repeated, and right-to-left worksheets keep their direction. |
+| **Merge** | Combine any number of PDFs and images into one document. Each page's border is colour-coded by the file it came from. |
 | **Add blank pages** | Start with an A4 page or append one matching the document's prevailing paper size, then edit and reorder it like any other page. |
 | **Reorder** | Drag pages into any order, freely across source files. |
 | **Rotate and delete** | In 90 degree steps, one page at a time or many at once. |
@@ -101,19 +103,20 @@ No. There is no account system at all. The consequence is that nothing is saved
 between visits, so download your exported PDF before closing the tab.
 
 **What can it do to a PDF?**
-Merge PDFs, images, spreadsheets and Word documents; insert editable blank pages; reorder, rotate, delete,
+Merge PDFs and images; insert editable blank pages; reorder, rotate, delete,
 resize and crop pages; undo and redo page edits; split ranges into a ZIP; add signatures, annotations, page
 numbers and watermarks; fill and flatten supported AcroForm fields; and run
 English OCR locally on selected scanned pages. Export the whole document or only
 selected pages.
 
-**Can it convert Excel or CSV files to PDF?**
-Yes, on your device like everything else. Each worksheet is drawn as a paginated
-table of real, selectable PDF text rather than a picture of a spreadsheet, so the
-result stays searchable and small and its pages behave like any other page. Values,
-dates, percentages and number formats come across; cell colours, fonts, merged
-cells, charts and images do not. The older binary .xls format cannot be read in a
-browser, so re-save it as .xlsx or .csv first.
+**Can it convert Word, PowerPoint or Excel files to PDF?**
+No, and that is deliberate. Word, PowerPoint, Excel, Pages and Keynote can each
+export a PDF themselves, and that file is produced by the application that owns the
+format, using your real fonts and its own layout engine, so it matches your
+document exactly. A converter running inside a browser has to reimplement that
+layout with substituted fonts, and it will differ somewhere. Export the PDF from
+the application that made the file, then add it here to merge, crop, split, sign,
+annotate, fill or OCR it.
 
 **Does it work offline?**
 Yes, after the first online visit. Install it or revisit it after the offline
@@ -140,4 +143,4 @@ consulting and software development practice in Haifa, Israel.
 - Source: https://github.com/razamit/PdfToolkit
 - Contact: amit@rzailabs.com
 
-Last verified: 2026-08-07
+Last verified: 2026-08-09

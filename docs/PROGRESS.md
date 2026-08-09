@@ -6,6 +6,55 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-08-09 — Removed Office conversion from the product: Word, spreadsheets and
+the in-progress PowerPoint work all deleted; a dropped Office file is now told to
+export a PDF from the app that made it (offline, code + browser QA). ✅ DONE.**
+The session began building `.pptx` support and ended by removing the whole
+category. A three-library bake-off was run first against a purpose-built deck
+(slide masters, layout placeholders, theme inheritance, a native chart part, a
+table, gradient and rotated shapes, mixed-run text): `pptx-viewer` rendered a
+centred title left-aligned and lost the spaces between styled runs; `pptxviewjs`
+dropped 3 of 7 bullets, painted a gradient fill solid black and produced a
+*tainted* canvas that `toBlob` refuses to export; `pptx-preview` rendered an
+empty chart, dropped a rotated shape, and turned out to be closed source despite
+declaring ISC. `pptx-viewer` 0.3.0 was vendored (npm's 0.2.2 ships an unfixed XSS
+where a crafted font name in a `.pptx` injects markup into the host page, and the
+repo has no `prepare` script so a git dependency installs with no build output),
+wired end to end, and **worked** — a 6-slide deck converted to a 1.25 MB PDF with
+an invisible text layer. It was then discarded along with Word and spreadsheets,
+on the user's argument that a print-to-PDF from the source application is always
+better than an in-browser conversion. **Proof:** `npx tsc -b` exits 0,
+`npm run build` green, `npm run lint` unchanged at 4 warnings. Entry chunk
+1,458.21 kB → **1,426.54 kB** (gzip 511.73 → 500.49), measured against a
+`git worktree` build of `origin/main`; the `docx-preview` (171 kB) and `snapdom`
+(150 kB) chunks are gone. Across code and discovery surfaces, 3,684 lines deleted
+against 161 added, plus 2.6 MB of bundled Carlito/Caladea fonts. In the running app a PDF and a PNG still load, the
+single "Add files" picker and "Start blank" are intact, the format badges are
+down to PDF and Images, and a `.pptx` returns "Open it in the app that made it
+and choose File → Print → Save as PDF". All 8 FAQ answers verified word-for-word
+identical between the JSON-LD and the visible page by a parser, and the JSON-LD
+and agent card both re-validated. **Not done:** the app-path bug found just before
+the reversal (the PPTX converter succeeded when called directly but `loadFile`
+reported a generic failure) was never diagnosed — it died with the feature.
+**Files:** deleted `src/lib/docx/` (10 files), `src/lib/sheets/` (8 files),
+`src/managers/{DocxImportManager,SheetImportManager}.ts`, `docs/samples/` (2
+fixtures), `public/fonts/docx/` (10 files); added `src/lib/unsupportedFiles.ts`;
+edited `src/coordinator/PdfToolkitCoordinator.tsx`, `src/lib/fileAccept.ts`,
+`src/components/{SupportedFormats,FileTypeBadge}.tsx`, `package.json`,
+`package-lock.json`, `README.md`, `index.html`, `public/llms.txt`,
+`public/llms-full.txt`, `public/index.md`,
+`public/.well-known/agent-card.json`, `public/sitemap.xml`, and
+`docs/{PROGRESS,DECISIONS}.md`. **Closed six tickets as won't-fix:**
+`word-and-powerpoint-conversion-not-implemented`,
+`spreadsheet-conversion-does-not-reproduce-workbook-formatting`,
+`spreadsheet-number-formats-use-a-bounded-subset`,
+`word-conversion-text-layer-has-three-gaps`,
+`word-fields-and-repeating-table-headers-are-not-rendered`,
+`snapdom-duplicates-text-in-multi-column-sections`. Cross-ref: decision row 41,
+which reverses rows 32, 35, 37, 38, 39 and 40.
+
+---
+
 **2026-08-09 — Word `PAGE`/`NUMPAGES` fields now resolve; conversion split into
 a planning pass and a rendering pass (offline, code + browser QA on seven
 documents). ✅ DONE.** docx-preview does not evaluate fields — it drops the

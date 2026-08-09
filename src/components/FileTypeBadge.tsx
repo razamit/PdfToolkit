@@ -2,12 +2,11 @@
  * A file-type badge: a document sheet with a folded corner, tinted per format,
  * with the extension set inside it.
  *
- * Why not the real Adobe / Microsoft marks, which is what "PDF, Excel and Word
- * icons" usually means: those are trademarked logos, and putting them on a
- * product that competes with their owners' tools implies an endorsement that
- * does not exist. Drawing our own sheet and colouring it the way people already
- * associate with each format — red for PDF, green for spreadsheets, blue for
- * Word — gets the same instant recognition with none of that.
+ * Why not the real Adobe mark, which is what "a PDF icon" usually means: it is
+ * a trademarked logo, and putting it on a product that competes with its
+ * owner's tools implies an endorsement that does not exist. Drawing our own
+ * sheet and colouring it the way people already associate with each format —
+ * red for PDF — gets the same instant recognition with none of that.
  *
  * The per-format colours are a deliberate, bounded exception to the single
  * indigo accent, on the same grounds as the source-colour palette of decision

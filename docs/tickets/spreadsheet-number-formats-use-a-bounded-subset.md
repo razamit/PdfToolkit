@@ -1,6 +1,16 @@
 # Spreadsheet number formats are honoured only as a bounded subset
 
-Status: OPEN · Priority: LOW · Type: known scope limit · Cost: none
+Status: CLOSED (2026-08-09) — WON'T FIX · Priority: LOW · Type: known scope limit · Cost: none
+
+> **Closed 2026-08-09 — won't fix.** Office conversion was removed from the
+> product entirely; see decision row 41 in `docs/DECISIONS.md` and the
+> 2026-08-09 entry in `docs/PROGRESS.md`. The application that owns the format
+> exports a more faithful PDF than any in-browser converter can, so the product
+> now points the user at File → Print → Save as PDF instead of converting. This
+> ticket's subject no longer exists in the codebase; it is kept as the record of
+> what was observed.
+>
+> Moot: spreadsheet conversion no longer exists, so there is no number-format subset to widen.
 
 > Deliberate scope of decision row 32. Distinct from
 > `spreadsheet-conversion-does-not-reproduce-workbook-formatting.md`, which

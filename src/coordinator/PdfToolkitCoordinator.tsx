@@ -1,16 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { PdfSourceManager } from '@/managers/PdfSourceManager'
 import { ImageImportManager } from '@/managers/ImageImportManager'
-import {
-  SheetImportManager,
-  spreadsheetFormatOf,
-  unsupportedSpreadsheetReason,
-} from '@/managers/SheetImportManager'
-import {
-  DocxImportManager,
-  unsupportedWordReason,
-  wordFormatOf,
-} from '@/managers/DocxImportManager'
 import { ThumbnailRenderManager } from '@/managers/ThumbnailRenderManager'
 import { TextContentManager } from '@/managers/TextContentManager'
 import { PdfExportManager } from '@/managers/PdfExportManager'
@@ -20,6 +10,7 @@ import { SourceColorRegistry } from '@/managers/SourceColorRegistry'
 import { createAnalyticsTracker } from '@/analytics/createAnalyticsTracker'
 import { SourceLoadError } from '@/domain/errors'
 import { downloadBlob, downloadPdf } from '@/lib/download'
+import { officeFileAdvice } from '@/lib/unsupportedFiles'
 import { createId } from '@/lib/id'
 import { useSelection } from '@/hooks/useSelection'
 import { preferredBlankPageSize, resizePagesToPreset } from '@/lib/pageSizing'
@@ -50,8 +41,6 @@ import {
 function createManagers() {
   const pdfSources = new PdfSourceManager()
   const imageManager = new ImageImportManager()
-  const sheetImporter = new SheetImportManager()
-  const docxImporter = new DocxImportManager()
   const thumbnailRenderer = new ThumbnailRenderManager(pdfSources)
   const textContent = new TextContentManager(pdfSources)
   const exporter = new PdfExportManager(pdfSources, imageManager)
@@ -61,8 +50,6 @@ function createManagers() {
   return {
     pdfSources,
     imageManager,
-    sheetImporter,
-    docxImporter,
     thumbnailRenderer,
     textContent,
     exporter,
@@ -99,8 +86,6 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
   const {
     pdfSources,
     imageManager,
-    sheetImporter,
-    docxImporter,
     thumbnailRenderer,
     textContent,
     exporter,
@@ -196,16 +181,6 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [undo, redo])
 
-  /** Wrap converted bytes as a File so the PDF path can own them unchanged. */
-  const loadConverted = useCallback(
-    async (bytes: Uint8Array, name: string) => {
-      const converted = new File([bytes as BlobPart], name, { type: 'application/pdf' })
-      const result = await pdfSources.load(converted)
-      return { meta: result.meta, pages: result.pages }
-    },
-    [pdfSources],
-  )
-
   const loadFile = useCallback(
     async (file: File): Promise<{ meta: SourceMeta; pages: PageDescriptor[] }> => {
       if (isPdf(file)) {
@@ -216,23 +191,11 @@ export function PdfToolkitProvider({ children }: { children: ReactNode }) {
         const result = await imageManager.load(file)
         return { meta: result.meta, pages: [result.page] }
       }
-      // Both converters produce PDF bytes on-device, which then go through the
-      // ordinary PDF path — so their pages annotate, crop, split and export
-      // like any other, with no branch anywhere downstream.
-      const spreadsheet = spreadsheetFormatOf(file)
-      if (spreadsheet) {
-        return loadConverted(await sheetImporter.convertToPdfBytes(file, spreadsheet), file.name)
-      }
-      if (wordFormatOf(file)) {
-        return loadConverted(await docxImporter.convertToPdfBytes(file), file.name)
-      }
-      const unsupported = unsupportedSpreadsheetReason(file) ?? unsupportedWordReason(file)
       throw new SourceLoadError(
-        unsupported ??
-          `"${file.name}" isn't a PDF, image, spreadsheet, or Word document we can read.`,
+        officeFileAdvice(file) ?? `"${file.name}" isn't a PDF or image we can read.`,
       )
     },
-    [pdfSources, imageManager, sheetImporter, docxImporter, loadConverted],
+    [pdfSources, imageManager],
   )
 
   const addFiles = useCallback(
