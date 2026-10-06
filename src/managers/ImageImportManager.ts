@@ -1,4 +1,5 @@
 import { createId } from '@/lib/id'
+import { IMAGE_MIME_TYPES, detectImageFormat } from '@/lib/imageFormat'
 import { SourceLoadError } from '@/domain/errors'
 import type { ImageFormat, PageDescriptor, SourceMeta } from '@/domain/types'
 
@@ -14,13 +15,6 @@ export interface ImageLoadResult {
   objectUrl: string
 }
 
-/** MIME types we can embed losslessly. */
-const SUPPORTED_TYPES: Record<string, ImageFormat> = {
-  'image/jpeg': 'jpeg',
-  'image/jpg': 'jpeg',
-  'image/png': 'png',
-}
-
 /**
  * Ingests JPEG/PNG images and owns their display object URLs.
  *
@@ -28,14 +22,20 @@ const SUPPORTED_TYPES: Record<string, ImageFormat> = {
  * exported PDF without re-encoding (JPEG is byte-identical; PNG is re-encoded
  * via lossless Flate but pixel-identical). Anything else is rejected so the
  * "original quality" guarantee is never silently broken.
+ *
+ * The format is read from the bytes, not from `file.type`: that only echoes the
+ * extension, and a PNG named `.jpeg` would otherwise reach the JPEG embedder at
+ * export and fail there.
  */
 export class ImageImportManager {
   private readonly loaded = new Map<string, LoadedImage>()
 
   async load(file: File): Promise<ImageLoadResult> {
-    const format = this.resolveFormat(file)
     const originalBytes = new Uint8Array(await file.arrayBuffer())
-    const objectUrl = URL.createObjectURL(new Blob([originalBytes], { type: file.type }))
+    const format = this.resolveFormat(file, originalBytes)
+    const objectUrl = URL.createObjectURL(
+      new Blob([originalBytes], { type: IMAGE_MIME_TYPES[format] }),
+    )
     const { width, height } = await this.readDimensions(objectUrl, file.name)
 
     const id = createId('img')
@@ -81,8 +81,8 @@ export class ImageImportManager {
     this.loaded.clear()
   }
 
-  private resolveFormat(file: File): ImageFormat {
-    const format = SUPPORTED_TYPES[file.type.toLowerCase()]
+  private resolveFormat(file: File, bytes: Uint8Array): ImageFormat {
+    const format = detectImageFormat(bytes)
     if (!format) {
       throw new SourceLoadError(
         `"${file.name}" isn't a JPEG or PNG. Only those formats can be added without quality loss.`,

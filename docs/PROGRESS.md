@@ -6,6 +6,45 @@ files touched, cross-refs to decisions and tickets. Never rewrite old entries.
 
 ---
 
+**2026-10-06: Exporting a PDF that contains a mislabelled image no longer fails
+with "SOI not found in JPEG": image format is now read from the file's bytes
+(offline, code + browser QA + docs). ✅ DONE.**
+The user placed a `.jpeg` on a page as an image annotation and Export returned
+the red banner "SOI not found in JPEG". Root cause: both image paths took the
+format from `file.type`, which only echoes the extension, while the browser's
+`<img>` sniffs content and previews the file regardless. A PNG named `.jpeg` was
+therefore stored as `format: 'jpeg'` and handed to pdf-lib's `embedJpg`, whose
+first check is that the bytes start `FF D8`. Three such files were sitting in the
+user's Downloads (`file` reports "PNG image data" for `Western.jpeg`,
+`DresageSilouhet.jpeg`, `Jumping.jpeg`). Fix: a new `src/lib/imageFormat.ts`
+detects JPEG and PNG from their signatures, and both `readAnnotationImage`
+(annotations) and `ImageImportManager` (image pages) use it in place of their
+duplicated MIME tables. The annotation data URL and the image page's object URL
+are rebuilt under the detected type so their label cannot disagree with the
+stored format. **Proof:** old path reproduced against a 240x160 PNG fixture named
+`png-named-as.jpeg`: `embedJpg` throws `SOI not found in JPEG`, `embedPng` on the
+same bytes succeeds. Then in the running app (dev server, driven with
+agent-browser): the fixture was added both as its own page and as an image
+annotation on a PDF page; the pick step previewed it as
+`data:image/png;base64,...`; Export produced a 164,517-byte `%PDF-1.7` with no
+error banner, and `pdfimages -list` shows both copies embedded (pages 1 and 2,
+240x160 rgb). A genuine JPEG added afterwards exported as a third page with
+`enc jpeg`, 3,967 bytes, so the byte-identical JPEG path is unchanged.
+`npx tsc -b` exits 0, `npm run build` green, `npm run lint` unchanged at 4
+warnings. The project has no automated test suite, so there is no unit test for
+the detector; the proof above is manual. **Not verified:** a WebP or HEIC file
+named `.jpg`. By the code it is now refused at add time with the existing
+"isn't a JPEG or PNG" message, where before it would have failed at export.
+No user-facing claim changed (still JPEG and PNG only), so the discovery
+surfaces were not touched. **Files:** added `src/lib/imageFormat.ts`; edited
+`src/lib/readAnnotationImage.ts`, `src/managers/ImageImportManager.ts`,
+`docs/{PROGRESS,DECISIONS}.md`; added
+`docs/tickets/images-with-no-mime-type-are-rejected-before-their-bytes-are-read.md`.
+Cross-ref: decision row 42; the new ticket records the same MIME assumption
+still present in `loadFile`'s dispatch, left open.
+
+---
+
 **2026-08-09 — Removed Office conversion from the product: Word, spreadsheets and
 the in-progress PowerPoint work all deleted; a dropped Office file is now told to
 export a PDF from the app that made it (offline, code + browser QA). ✅ DONE.**
